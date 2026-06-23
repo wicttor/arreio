@@ -1,6 +1,7 @@
 ---
 type: skill
-title: plan
+title: Plan
+name: plan
 description: Create structured implementation plans with three tiers, Fast, Standard, Deep. Orchestrates scope, research, design, and generation phases.
 group: plan
 argument-hint: "[task description, requirements doc, or goal to plan]"
@@ -8,31 +9,45 @@ tags:
   - planning
   - architecture
   - structured-output
-aliases: torquem-plan
 author: "@wicttor"
-zed:
-  disable-model-invocation: false
-  when-to-use: User requests a plan for implementing a feature, refactoring work, or solving a technical problem
-cursor:
-  user-invocable: true
-  instructions-context: Use pwrl-plan-scope, pwrl-plan-research, pwrl-plan-design, and pwrl-plan-generate substeps
-claude:
-  instructions-context: Gathers context, performs research, creates technical design, then generates final plan
-  output-format: structured markdown with YAML frontmatter
-pi:
-  disable-model-invocation: false
-  metadata:
-    workflow-type: multi-phase-pipeline
-    primary-tools:
-      - file-read
-      - file-write
-      - grep
-copilot:
-  user-invocable: true
-  instructions-context: Create implementation plan with tiered approaches (Fast/Standard/Deep)
-  output-format: markdown with clear sections and action items
-  integration-hints:
-    - github-issues
-    - project-management
-    - pull-requests
 ---
+
+# Plan
+
+Create durable implementation plans that can be handed off for execution. Orchestrates a deterministic pipeline of micro-skills: scope → research → design → generate.
+
+## Purpose
+
+Plans capture decisions, structure, and approach before execution. They enable into the project:
+
+- Remove uncertainty about the implementation
+- Clarify ambiguities regarding the request, idea or prompt provided
+- Clear scope and success criteria
+- Identified risks and dependencies
+- Concrete implementation units with acceptance criteria
+- Knowledge reuse through related learnings
+- Confidence that work won't go off the rails
+
+## Core Workflow: Phased pipeline
+
+```
+INPUT (task description)
+  ↓
+PHASE 1: Scope (pwrl-plan-scope)
+  → Gather context, validate domain, bootstrap requirements
+  → Output: Scoped context artifact
+  ↓
+PHASE 2: Research (pwrl-plan-research)
+  → Discover patterns, identify risks, recommend external research
+  → Output: Research findings artifact
+  ↓
+PHASE 3: Design (pwrl-plan-design)
+  → Decompose into units, map dependencies, assess complexity
+  → Output: Design artifact with unit decomposition
+  ↓
+PHASE 4: Generate (pwrl-plan-generate)
+  → Select tier, render plan, embed learnings, save to docs/plans/
+  → Output: Final plan document saved to file
+  ↓
+OUTPUT (plan file ready for execution)
+```

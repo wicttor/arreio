@@ -1,3 +1,10 @@
+---
+type: readme
+name: readme
+title: Readme
+description: The main readme file for the Torquem project.
+---
+
 The main project README to be added here.
 
 Main Skills:
