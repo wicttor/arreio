@@ -1,0 +1,56 @@
+workflow: plan
+phases:
+  - number: 1
+    name: "Scope"
+    required_steps:
+      - problem frame
+      - intended behavior
+      - success criteria
+      - interaction_mode
+      - Confirm context
+  - number: 2
+    name: "Research"
+    required_steps:
+      - tech stack
+      - local patterns
+      - risk areas
+      - learnings
+  - number: 3
+    name: "Design"
+    required_steps:
+      - implementation units
+      - dependencies
+      - risk
+      - effort
+      - complexity
+  - number: 4
+    name: "Generate"
+    required_steps:
+      - plan document
+      - tier
+      - template
+      - learnings
+  - number: 1
+    name: "(Scope) Errors"
+    required_steps:
+      - Empty Input
+      - Non-Software Domain
+      - Recovery
+  - number: 2
+    name: "(Research) Errors"
+    required_steps:
+      - Codebase Analysis Fails
+      - High-Risk Area Identified
+      - Recovery
+  - number: 3
+    name: "(Design) Errors"
+    required_steps:
+      - Circular Dependency Detected
+      - Too Many Units
+      - Recovery
+  - number: 4
+    name: "(Generate) Errors"
+    required_steps:
+      - Filename Collision
+      - Failed File Write
+      - Recovery
