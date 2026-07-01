@@ -16,3 +16,7 @@
 *.swo
 
 .obsidian/
+
+# PWRL
+.context/
+.pwrlrc.json
