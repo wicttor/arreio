@@ -24,12 +24,12 @@
 
 ### Missing Directories
 
-**Error:** `docs/plans/`, `docs/learnings/INDEX.md`, `docs/requirements/`, or `docs/brainstorms/` do not exist.
+**Error:** `docs/plans/`, `docs/learnings/index.md`, `docs/requirements/`, or `docs/brainstorms/` do not exist.
 
 **Recovery:**
 
 - If `docs/plans/` does not exist, treat it as an empty directory and continue.
-- If `docs/learnings/INDEX.md`, `docs/requirements/`, or `docs/brainstorms/` do not exist, skip those lookup steps and note in the scope artifact: "No prior context found for [directory]."
+- If `docs/learnings/index.md`, `docs/requirements/`, or `docs/brainstorms/` do not exist, skip those lookup steps and note in the scope artifact: "No prior context found for [directory]."
 
 ### Resume Operation
 

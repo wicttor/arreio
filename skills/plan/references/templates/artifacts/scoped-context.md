@@ -37,7 +37,7 @@ action: resume | review | archive | delete | create-new | none
 
 ## Related Learnings
 - docs/learnings/XXX.md — [1-line applicability note]
-- (List from docs/learnings/INDEX.md; empty list if none)
+- (List from docs/learnings/index.md; empty list if none)
 
 ## Learning Gaps
 - [Gap name] — [Follow-up action via /learnings]

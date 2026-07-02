@@ -78,15 +78,49 @@ Always search for project learnings (in `docs/learnings/index.md`) for entries m
 
 ### Step 6: Generate the Scoped Context Artifact
 
-Produce a Scoped Context Artifact block (as markdown) with the schema defined in `references/templates/artifacts/scoped-context.md`.
+1. **Generate a unique `scope-id`** using the daily counter algorithm:
+   - Format: `YYYY-MM-DD-NNN-scope` where `NNN` is a zero-padded 3-digit counter
+   - **Algorithm:**
+     - Get current date in UTC (e.g., 2026-07-02)
+     - Check existing scoped context files in `docs/plans/.scope/` for today's date
+     - Count existing files matching `2026-07-02-*.md`
+     - Set `NNN = (count + 1)` formatted as zero-padded 3 digits (001, 002, 010, etc.)
+     - Example: If two plans created today, next one gets `scope-id: 2026-07-02-003-scope`
+   - **Error handling:** If `docs/plans/.scope/` does not exist, create it; treat count as 0 and start from 001
+
+2. Produce a Scoped Context Artifact block (as markdown) with the schema defined in `references/templates/artifacts/scoped-context.md`.
+   - Include the generated `scope-id` in the artifact
 
 ### Step 7: Confirm and Return Scoped Context Artifact
 
-1. Present the assembled Scoped Context Artifact to the user via `ask_user_question` for confirmation.
-2. Ask: "Is this context correct? Should I proceed to the research phase?"
-3. **If confirmed:** Save the Scoped Context Artifact (markdown block as defined above) to `docs/plans/.scope/<scope-id>.md`.
-4. **If corrections needed:** Iterate through Steps 2-5 as needed based on user feedback.
-5. **Do not proceed to Research Phase** — Stop here and return the negative confirmation to the Orchestrator skill. The Orchestrator will handle the next steps based on user input.
+1. Read the `interactionMode` value from the context (set by Orchestrator; see **[interaction-mode-propagation.md](references/interaction-mode-propagation.md)** for details).
+
+2. **If `interactionMode = detailed`:**
+   - Present the assembled Scoped Context Artifact to the user via `ask_user_question` for explicit confirmation
+   - Ask: "Is this context correct? Should I proceed to the research phase?"
+   - Options: (1) Proceed to Research, (2) Edit & Retry, (3) Abort
+   - If user selects "Edit & Retry," iterate through Steps 2-5 as needed
+   - If user selects "Abort," stop and inform Orchestrator of abort
+   - If user selects "Proceed," continue to Step 3 below
+
+3. **If `interactionMode = smart`:**
+   - Check for HIGH-risk flags in the Scoped Context:
+     - Are there 3+ learning gaps?
+     - Did domain validation flag non-software task?
+     - Are requirements conflicting?
+   - If HIGH-risk flag present: Pause and show artifact with risk description; ask "Should I proceed anyway?"
+   - If no HIGH-risk flag: Auto-proceed (no confirmation)
+
+4. **If `interactionMode = autopilot`:**
+   - Auto-proceed immediately to save and return (no confirmation needed)
+
+5. **Save the artifact:**
+   - Save the Scoped Context Artifact (markdown block) to `docs/plans/.scope/<scope-id>.md`
+   - Verify that `interactionMode` is included in the saved artifact (for downstream phases to read)
+
+6. **Return to Orchestrator:**
+   - Return the Scoped Context Artifact and `interactionMode` value to the Orchestrator skill
+   - Orchestrator will handle transition to Phase 2 (Research) or abort based on confirmation result
 
 ## Output: Scoped Context Artifact
 
