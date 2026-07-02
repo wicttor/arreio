@@ -1,5 +1,0 @@
----
-Title: Learn
-Type: Documentation
----
-

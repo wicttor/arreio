@@ -1,0 +1,51 @@
+---
+title: Scoped Context Artifact
+type: Template
+version: 1.0
+date: 2026-07-01
+---
+
+# Scoped Context Artifact
+
+The product of the **Scope** phase is a structured context object that downstream modules (research, design, generate) consume. It captures the problem frame, intended behavior, success criteria, and any relevant learnings or requirements.
+
+When the **Scope** phase completes, the orchestrator produces a scoped context block (as markdown) with this schema:
+
+```yaml
+title: [plan title]
+type: scope
+scope-id: YYYY-MM-DD-NNN-scope
+domain: software | non-software
+status: confirmed
+interactionMode: detailed | smart | autopilot
+
+# Scoped Context
+
+## Problem
+[Clear statement of the problem frame]
+
+## Intended Behavior
+[Description of desired outcome]
+
+## Success Criteria
+- [Criterion 1]
+- [Criterion 2]
+
+## Existing Plan
+path: docs/plans/...md | null
+action: resume | review | archive | delete | create-new | none
+
+## Related Learnings
+- docs/learnings/XXX.md — [1-line applicability note]
+- (List from docs/learnings/INDEX.md; empty list if none)
+
+## Learning Gaps
+- [Gap name] — [Follow-up action via /learnings]
+
+## Requirements Found
+- docs/brainstorms/XXX.md — [relevant excerpt]
+- docs/requirements/XXX.md — [relevant excerpt]
+- (Empty list if none found)
+```
+
+Also save the scoped context to `docs/plans/.scope/<scope-id>.md` for future reference or reuse. The `interactionMode` value flows into `research`, `design`, and `generate` artifacts.

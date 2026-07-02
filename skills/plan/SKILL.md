@@ -1,8 +1,10 @@
 ---
 name: plan
-title: Plan
 description: Create durable implementation plans that can be handed off for execution. Orchestrates a deterministic pipeline of micro-skills: Scope -> Research -> Design -> Generate -> Tasks. No agent dependency, no fallback paths.
-type: Documentation
+title: Plan
+type: Skill
+version: 1.0
+date: 2026-07-01
 ---
 
 # Plan
@@ -85,7 +87,7 @@ Each phase is orchestrated sequentially: the orchestrator (this skill) calls the
 
 - This phase is optional and can be skipped if the user prefers to slice tasks manually, ask it before continuing even in Autopilot mode.
 - Slice plan into executable tasks from the Unit Task List generated in the previous phases, and save to docs/tasks/PLAN_ID/
-- Output: [Task list artifact](references/templates/artifacts/task-list.md)
+- Output: [Task list artifact](references/templates/artifacts/task.md)
 
 ### FINAL OUTPUT
 
@@ -111,8 +113,7 @@ Plan file ready for execution.
 - **Transparent Artifacts:** Each phase PRODUCES EXPLICIT OUTPUT artifact for next phase
 - **Interaction Mode Propagation:** Once set, interaction_mode (detailed, smart, or autopilot) is read at the start of each subsequent phase and step and determines whether confirmation steps execute.
 
----
-
+<!--
 ## Error Handling & Recovery
 
 **See:** [references/error-handling.md](references/error-handling.md) for comprehensive error recovery workflows across all phases, including circular dependencies, tier ambiguity, missing directories, filename collisions, and resume operations.
@@ -132,4 +133,4 @@ Each plan includes (tier-dependent):
 
 - [references/planning-tiers.md](references/planning-tiers.md) — Tier definitions and decision criteria
 - [docs/guides/micro-skill-patterns.md](../docs/guides/micro-skill-patterns.md) — How to extend with new micro-skills
-- [docs/guides/architecture-refactoring.md](../docs/guides/architecture-refactoring.md) — Rationale for refactoring
+- [docs/guides/architecture-refactoring.md](../docs/guides/architecture-refactoring.md) — Rationale for refactoring -->

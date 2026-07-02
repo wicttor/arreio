@@ -1,6 +1,8 @@
 ---
-type: Documentation
 title: Scope
+type: Documentation
+version: 1.0
+date: 2026-07-01
 ---
 
 # Phase 1 - Scope & Context Gathering
@@ -11,9 +13,14 @@ title: Scope
 
 This is the Phase 1 pipeline for the Plan Skill. It orchestrates the following steps:
 
+### Step 0: Verification
+
+Before starting the **Scope** phase, verify that the Orchestrator skill has provided a valid **User Input Artifact**.
+If the artifact is missing or invalid, use the **Error Handling & Recovery workflow** to recover or terminate the plan.
+
 ### Step 1: Check for Existing Plan
 
-1. Search `docs/plans/` for existing plans related to the task.
+1. Search `docs/plans/index.md` for existing plans related to the task.
 2. **If an existing plan is found:**
    - Read the plan to understand its title and goal.
    - Ask the user via `ask_user_question` (multiple choice):
@@ -35,54 +42,27 @@ This is the Phase 1 pipeline for the Plan Skill. It orchestrates the following s
 
 3. **If no existing plan is found:**
    - Set `existing_plan.path: null`, `existing_plan.action: none`
-   - Proceed to Step 1.5
-
----
-
-### Step 1.5: Select Interaction Mode
-
-Ask the user to choose their engagement level for this workflow. Use the platform's `ask_user_question` extension (or equivalent) to present the following three options:
-
-**Question:** "How would you like to proceed with this workflow?"
-
-**Options:**
-
-- **Detailed (Step-by-Step)** — Review and confirm at each phase transition; inspect generated artifacts before proceeding; maximum control. Best for complex work, unfamiliar codebases, and learning.
-- **Smart (Risk-gated automation)** — Phases run automatically; pause only when the next phase produces a HIGH-risk operation. v1 simplifies this to a single confirmation prompt at workflow start.
-- **Yolo (Full Automation)** — Every phase runs automatically; only the final outcome is reported. Fastest. Best for straightforward, well-understood work and time-sensitive hotfixes.
-
-Store the selection in the scoped context (replacing the placeholder in the schema above):
-
-```yaml
-interactionMode: detailed | smart | yolo
-```
-
-**Propagation:** The `interactionMode` value flows into `research`, `design`, and `generate` artifacts. Each downstream phase reads the value and adjusts its confirmation behavior:
-
-- **Detailed:** Pause at every phase transition; show generated artifacts; require explicit approval.
-- **Smart:** Run phases automatically; pause only at HIGH-risk operations.
-- **Yolo:** Run every phase automatically; report only the final outcome.
+   - Proceed to Step 2
 
 ### Step 2: Domain Validation
 
-- Ask: "Is this a software/code planning task?"
-- **If yes:** Set `domain: software`
-- **If no:** Set `domain: non-software`
-  - Note: Non-software planning is outside plan's scope. Suggest a universal planning approach instead. The downstream skills (research, design, generate) only support software planning.
+- Check if the context provided is a software/code planning task.
+- This is important because the downstream skills (research, design, generate) are tailored for software planning.
+- If the task is non-software, suggest a universal planning approach instead.
 
 ### Step 3: Bootstrap Problem Context
 
-If no existing context was found (no plan, no brainstorms/requirements), bootstrap from the user:
+If the context provided by the Orchestrator is not rich enough, not relevant for the current project, or missing key information, ask the user to provide additional context. Use the following questions to gather the necessary information:
 
 1. **Problem Frame:** Ask "What problem are you trying to solve? Describe it in 1-2 sentences."
 2. **Intended Behavior:** Ask "What should happen after this is implemented? Describe the desired outcome."
 3. **Success Criteria:** Ask "How will we know this is complete? What specific outcomes define success?" Collect 1-3 criteria.
 
-If the user already provided rich context in the initial input, extract these from the input text and confirm with the user via `ask_user_question`.
+If the user already provided rich context in the initial input, extract these from the **User Input Artifact**.
 
 ### Step 4: Learnings Index Gate
 
-Search project learnings (in `docs/learnings/INDEX.md`) for entries matching the task description. For details on keyword matching, relevance rating, gap identification, and examples, see **[learnings-gate-logic.md](references/learnings-gate-logic.md)**. Add HIGH and MEDIUM relevance learnings to `Related Learnings`; identify and document any learning gaps.
+Always search for project learnings (in `docs/learnings/index.md`) for entries matching the task description. For details on keyword matching, relevance rating, gap identification, and examples, see **[learnings-gate-logic.md](references/learnings-gate-logic.md)**. Add HIGH and MEDIUM relevance learnings to `Related Learnings`; identify and document any learning gaps.
 
 ### Step 5: Requirements Search
 
@@ -96,51 +76,22 @@ Search project learnings (in `docs/learnings/INDEX.md`) for entries matching the
    - Add to `Requirements Found` list
 4. If no matches found, set `Requirements Found` to empty.
 
-### Step 6: Confirm and Return Scoped Context
+### Step 6: Generate the Scoped Context Artifact
 
-1. Present the assembled scoped context to the user via `ask_user_question` for confirmation.
+Produce a Scoped Context Artifact block (as markdown) with the schema defined in `references/templates/artifacts/scoped-context.md`.
+
+### Step 7: Confirm and Return Scoped Context Artifact
+
+1. Present the assembled Scoped Context Artifact to the user via `ask_user_question` for confirmation.
 2. Ask: "Is this context correct? Should I proceed to the research phase?"
-3. **If confirmed:** Return the scoped context (markdown block as defined above).
+3. **If confirmed:** Save the Scoped Context Artifact (markdown block as defined above) to `docs/plans/.scope/<scope-id>.md`.
 4. **If corrections needed:** Iterate through Steps 2-5 as needed based on user feedback.
-5. **Do not proceed to research/design/generation** — this skill only gathers context.
+5. **Do not proceed to Research Phase** — Stop here and return the negative confirmation to the Orchestrator skill. The Orchestrator will handle the next steps based on user input.
 
-## Output: Scoped Context
+## Output: Scoped Context Artifact
 
-After completing the workflow, produce a scoped context block (as markdown) with this schema:
+- Verify that the Scoped Context Artifact is complete and valid, containing all required fields, and it accurately reflects the user's input and any existing plans, learnings, or requirements found.
+- Verify that the `interactionMode` value is set correctly based on the user's selection in the Orchestrator skill.
+- Verify that the artifact is saved to `docs/plans/.scope/<scope-id>.md` for future reference or reuse.
 
-```yaml
-scope-id: YYYY-MM-DD-NNN-scope
-domain: software | non-software
-status: confirmed
-interactionMode: detailed | smart | yolo
-
-# Scoped Context
-
-## Problem
-[Clear statement of the problem frame]
-
-## Intended Behavior
-[Description of desired outcome]
-
-## Success Criteria
-- [Criterion 1]
-- [Criterion 2]
-
-## Existing Plan
-path: docs/plans/...md | null
-action: resume | review | archive | delete | create-new | none
-
-## Related Learnings
-- docs/learnings/XXX.md — [1-line applicability note]
-- (List from docs/learnings/INDEX.md; empty list if none)
-
-## Learning Gaps
-- [Gap name] — [Follow-up action via /learnings]
-
-## Requirements Found
-- docs/brainstorms/XXX.md — [relevant excerpt]
-- docs/requirements/XXX.md — [relevant excerpt]
-- (Empty list if none found)
-```
-
-> This context is passed to `research` (S3) for the research phase.
+> Pass the scoped context to `research` (Phase 2) for the research phase.
