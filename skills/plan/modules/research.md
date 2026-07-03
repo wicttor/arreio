@@ -26,6 +26,7 @@ Before starting the **Research** phase, verify that the Orchestrator skill has p
    - Check for: `package.json` (Node.js), `pyproject.toml` (Python), `go.mod` (Go), `Cargo.toml` (Rust), `Gemfile` (Ruby), `composer.json` (PHP), `pom.xml` (Java), `build.gradle` (Java/Kotlin)
    - Record detected tech stack and versions for Step 5
    - If multiple tech stacks detected, prioritize primary language
+   - **If NO config files match:** Record "Unknown/Multi-language" and proceed to Step 3 using generic search queries (e.g., "architecture", "pattern", "implementation") instead of tech-specific table. Note: This may result in broader matches and lower confidence.
 
 3. **Define tech-stack-specific search queries** based on detected stack and task domain:
 
@@ -43,12 +44,15 @@ Before starting the **Research** phase, verify that the Orchestrator skill has p
    - Search common directories: `src/`, `app/`, `lib/`, `services/`, `api/`, `controllers/`, `handlers/`
    - Use tech-stack-specific queries from table above
    - Also search for: `architecture.md`, `design.md`, `ARCHITECTURE.md`, `DESIGN.md` at repo root and in `docs/`, `design/`, `architecture/` subdirectories
-   - Record file paths and match counts
+   - **Collect all unique file paths found** (count across all Phase A searches; deduplicate)
+   - Record total count and note which queries yielded matches
 
-   **Phase B — Pattern gap detection (semantic_search, if Phase A < 3 matches):**
-   - If Phase A found fewer than 3 file matches, run semantic search with task description
+   **Phase B — Pattern gap detection (semantic_search, conditional):**
+   - **Decision rule:** If Phase A found fewer than 3 unique file paths, proceed to Phase B
+   - Run semantic search with task description
    - Example: "How is authentication implemented in this codebase?" or "Where are API endpoints defined?"
    - Captures conceptual patterns missed by grep
+   - **If Phase A found 3+ files:** Skip Phase B; proceed to Step 5 with existing matches
 
 5. **Count confidence levels** based on total unique file matches:
    - **HIGH:** 3 or more files with pattern examples

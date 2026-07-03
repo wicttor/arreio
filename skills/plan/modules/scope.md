@@ -32,7 +32,7 @@ Before starting the **Scope** phase, verify that the Orchestrator skill has prov
    - If the user selects "Yes," run `/arreio-init` to create the necessary structure, then run the Step 1 of the Scope phase again to check for existing plans.
 
 2. **If an existing plan is found:**
-   - Read the plan to understand its title and goal.
+   - Read the plan to understand its title and goal. Plan files are stored in `docs/plans/` with naming format: `YYYY-MM-DD-NNN-plan.md` (e.g., `docs/plans/2026-07-02-001-plan.md`)
    - Ask the user via `ask_user_question` (multiple choice):
      ```
      An existing plan was found: "[Plan Title]"
@@ -44,11 +44,11 @@ Before starting the **Scope** phase, verify that the Orchestrator skill has prov
      - Create New: Start fresh
      ```
    - Handle each choice:
-     - **Resume:** Use plan as-is; set `existing_plan.action: resume`
+     - **Resume:** Use plan as-is; set `existing_plan.action: resume`, `existing_plan.path: docs/plans/YYYY-MM-DD-NNN-plan.md`
      - **Review:** Show plan summary, then re-prompt with same options
-     - **Archive:** Move to archive; set `existing_plan.action: archive`
-     - **Delete:** Remove file; set `existing_plan.action: delete`
-     - **Create New:** Keep old plan; set `existing_plan.action: create-new`
+     - **Archive:** Move to archive; set `existing_plan.action: archive`, update `docs/plans/index.md` to mark as archived
+     - **Delete:** Remove file; set `existing_plan.action: delete`, update `docs/plans/index.md` to remove entry
+     - **Create New:** Keep old plan in archive; set `existing_plan.action: create-new`, `existing_plan.path: null`
 
 3. **If no existing plan is found:**
    - Set `existing_plan.path: null`, `existing_plan.action: none`
@@ -62,13 +62,21 @@ Before starting the **Scope** phase, verify that the Orchestrator skill has prov
 
 ### Step 3: Bootstrap Problem Context
 
-If the context provided by the Orchestrator is not rich enough, not relevant for the current project, or missing key information, ask the user to provide additional context. Use the following questions to gather the necessary information:
+Evaluate if context is "rich enough" by checking the **User Input Artifact** contains **all three** of:
+
+- Problem frame (clear problem statement)
+- Intended behavior (desired outcome or deliverable)
+- Success criteria (1-3 measurable criteria)
+
+**If any of these three are missing or vague:**
+Ask the user to provide additional context. Use the following questions to gather the necessary information:
 
 1. **Problem Frame:** Ask "What problem are you trying to solve? Describe it in 1-2 sentences."
 2. **Intended Behavior:** Ask "What should happen after this is implemented? Describe the desired outcome."
 3. **Success Criteria:** Ask "How will we know this is complete? What specific outcomes define success?" Collect 1-3 criteria.
 
-If the user already provided rich context in the initial input, extract these from the **User Input Artifact**.
+**If all three are present and concrete:**
+Extract these from the **User Input Artifact** and proceed to Step 4 without asking follow-up questions.
 
 ### Step 4: Learnings Index Gate
 
@@ -89,12 +97,15 @@ Always search for project learnings (in `docs/learnings/index.md`) for entries m
 
 1. **Generate a unique `scope-id`** using the following template:
    - Format: `YYYY-MM-DD-NNN-scope` where `NNN` is a zero-padded 3-digit counter
-   - **Algorithm:**
+   - **Algorithm (for new artifacts only):**
      - Get current date in UTC (e.g., 2026-07-02)
      - Check existing scoped context files in `docs/plans/.scope/` for today's date
      - Count existing files matching `2026-07-02-*.md`
      - Set `NNN = (count + 1)` formatted as zero-padded 3 digits (001, 002, 010, etc.)
      - Example: If two plans created today, next one gets `scope-id: 2026-07-02-003-scope`
+   - **If user selected "Edit & Retry" in Step 7:**
+     - Reuse the original `scope-id` from the previous artifact. Do NOT increment the counter.
+     - Overwrite the existing artifact file.
    - **Error handling:** If `docs/plans/.scope/` does not exist, create it; treat count as 0 and start from 001
 
 2. Produce a **Scoped Context Artifact** block (as markdown) with the schema defined in `../references/templates/artifacts/scoped-context.md`.
