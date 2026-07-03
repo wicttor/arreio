@@ -1,8 +1,9 @@
 ---
 title: Interaction Mode Propagation
-type: Reference
+description: Reference for how `interactionMode` propagates through the Plan pipeline (Scope → Research → Design → Generate → Tasks). Set at Orchestrator; each phase reads and applies mode-specific behavior.
+type: reference
 version: 1.0
-date: 2026-07-02
+timestamp: "2026-07-02"
 ---
 
 # Interaction Mode Propagation

@@ -1,6 +1,6 @@
 ---
 title: "Interaction mode propagation for multi-phase skill pipelines"
-date: 2026-07-02
+timestamp: "2026-07-02"
 category: pattern
 domain: skill-design
 tags: [pipeline-architecture, user-interaction, mode-propagation, orchestration]
@@ -20,21 +20,21 @@ Set `interactionMode` once at the orchestrator level. Each downstream phase read
 
 ### Mode Table
 
-| Mode         | Behavior                                              | Use Case                             |
-| ------------ | ----------------------------------------------------- | ------------------------------------ |
-| **Detailed** | Pause at each phase; show artifacts; require approval | Complex work, unfamiliar codebases   |
-| **Smart**    | Auto-proceed; pause only on HIGH-risk flags           | Familiar codebases with guardrails   |
-| **Autopilot**| Run all phases auto (except Tasks, which always asks) | Straightforward work, time-sensitive |
+| Mode          | Behavior                                              | Use Case                             |
+| ------------- | ----------------------------------------------------- | ------------------------------------ |
+| **Detailed**  | Pause at each phase; show artifacts; require approval | Complex work, unfamiliar codebases   |
+| **Smart**     | Auto-proceed; pause only on HIGH-risk flags           | Familiar codebases with guardrails   |
+| **Autopilot** | Run all phases auto (except Tasks, which always asks) | Straightforward work, time-sensitive |
 
 ### Phase Behavior by Mode
 
-| Phase        | Detailed                          | Smart                                      | Autopilot         |
-| ------------ | --------------------------------- | ------------------------------------------ | ----------------- |
-| **Scope**    | Present artifact; user confirms   | Auto-proceed; pause if ≥3 gaps or conflict | Auto-proceed      |
-| **Research** | Show findings; ask to proceed     | Auto-proceed; pause on HIGH-risk           | Auto-proceed      |
-| **Design**   | Show units; ask to proceed        | Auto-proceed; pause on VERY_HIGH complexity| Auto-proceed      |
-| **Generate** | Show plan; ask to generate tasks  | Auto-proceed; pause on DEEP tier           | Auto-proceed      |
-| **Tasks**    | Ask to create task files          | Ask to create task files                   | Ask (always)      |
+| Phase        | Detailed                         | Smart                                       | Autopilot    |
+| ------------ | -------------------------------- | ------------------------------------------- | ------------ |
+| **Scope**    | Present artifact; user confirms  | Auto-proceed; pause if ≥3 gaps or conflict  | Auto-proceed |
+| **Research** | Show findings; ask to proceed    | Auto-proceed; pause on HIGH-risk            | Auto-proceed |
+| **Design**   | Show units; ask to proceed       | Auto-proceed; pause on VERY_HIGH complexity | Auto-proceed |
+| **Generate** | Show plan; ask to generate tasks | Auto-proceed; pause on DEEP tier            | Auto-proceed |
+| **Tasks**    | Ask to create task files         | Ask to create task files                    | Ask (always) |
 
 ### Artifact Schema
 

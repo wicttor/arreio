@@ -1,6 +1,6 @@
 ---
 title: "User Input Artifact template for pipeline entry validation"
-date: 2026-07-02
+timestamp: "2026-07-02"
 category: pattern
 domain: template-design
 tags: [skill-design, input-validation, artifact-schema, pipeline-entry]
@@ -32,14 +32,14 @@ Define a YAML-frontmatter + markdown template as the contract between the orches
 
 ### Recovery Workflow
 
-| Field               | If Missing                                               |
-| ------------------- | -------------------------------------------------------- |
-| Task Description    | Ask: "What problem are you trying to solve?"             |
-| Intended Behavior   | Ask: "What should happen after this is implemented?"     |
-| Goals & Objectives  | Ask: "What specific outcomes define success?" (1-3)      |
-| Constraints         | Ask: "Are there any hard constraints?"                   |
-| Context Source      | Infer from origin; ask if ambiguous                      |
-| Additional Context  | Skip if empty                                            |
+| Field              | If Missing                                           |
+| ------------------ | ---------------------------------------------------- |
+| Task Description   | Ask: "What problem are you trying to solve?"         |
+| Intended Behavior  | Ask: "What should happen after this is implemented?" |
+| Goals & Objectives | Ask: "What specific outcomes define success?" (1-3)  |
+| Constraints        | Ask: "Are there any hard constraints?"               |
+| Context Source     | Infer from origin; ask if ambiguous                  |
+| Additional Context | Skip if empty                                        |
 
 ## Application
 

@@ -4,7 +4,7 @@ description: Create durable implementation plans that can be handed off for exec
 title: Plan
 type: Skill
 version: 1.0
-date: 2026-07-01
+timestamp: "2026-07-01"
 ---
 
 # Plan
@@ -63,27 +63,27 @@ Each phase is orchestrated sequentially: the orchestrator (this skill) calls the
   "What would you like to plan? Describe the task or project."
 - Output: [User Input Artifact](references/templates/artifacts/user-input.md)
 
-### Phase 1: [Scope](modules/1-scope/scope.md)
+### Phase 1: [Scope](modules/scope.md)
 
 - Gather context, validate domain, bootstrap requirements
 - Output: [Scoped context artifact](references/templates/artifacts/scoped-context.md)
 
-### Phase 2: [Research](modules/2-research/research.md)
+### Phase 2: [Research](modules/research.md)
 
 - Discover patterns, identify risks, recommend external research
 - Output: [Research findings artifact](references/templates/artifacts/research-findings.md)
 
-### Phase 3: [Design](modules/3-design/design.md)
+### Phase 3: [Design](modules/design.md)
 
 - Decompose into units, map dependencies, assess complexity
 - Output: [Design artifact with unit decomposition](references/templates/artifacts/design.md)
 
-### Phase 4: [Generate](modules/4-generate/generate.md)
+### Phase 4: [Generate](modules/generate.md)
 
 - Select tier, render plan, embed learnings, save to docs/plans/
 - Output: [Final plan document](references/templates/artifacts/final-plan.md) saved to a file
 
-### Phase 5: [Tasks](modules/5-tasks/tasks.md) (optional phase)
+### Phase 5: [Tasks](modules/tasks.md) (optional phase)
 
 - This phase is optional and can be skipped if the user prefers to slice tasks manually, ask it before continuing even in Autopilot mode.
 - Slice plan into executable tasks from the Unit Task List generated in the previous phases, and save to docs/tasks/PLAN_ID/
@@ -95,11 +95,11 @@ Plan file ready for execution.
 
 ## Modules References
 
-- [Scope](modules/1-scope/scope.md) — Context & scope gathering
-- [Research](modules/2-research/research.md) — Pattern discovery & risk identification
-- [Design](modules/3-design/design.md) — Unit decomposition & dependency mapping
-- [Generate](modules/4-generate/generate.md) — Plan rendering & file generation
-- [Tasks](modules/5-tasks/tasks.md) — Task slicing & execution planning
+- [Scope](modules/scope.md) — Context & scope gathering
+- [Research](modules/research.md) — Pattern discovery & risk identification
+- [Design](modules/design.md) — Unit decomposition & dependency mapping
+- [Generate](modules/generate.md) — Plan rendering & file generation
+- [Tasks](modules/tasks.md) — Task slicing & execution planning
 
 ## Core Principles
 

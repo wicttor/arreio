@@ -1,8 +1,9 @@
 ---
 title: Learnings Gate Logic
-type: Reference
+description: Reference for Scope Phase Step 4. Defines keyword matching, relevance scoring, gap identification, and inclusion criteria.
+type: reference
 version: 1.0
-date: 2026-07-02
+timestamp: "2026-07-02"
 ---
 
 # Learnings Gate Logic

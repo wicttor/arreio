@@ -1,8 +1,9 @@
 ---
 title: User Input Artifact
+description: Template for the User Input Artifact produced by the Orchestrator. Captures raw user input, task description, intended behavior, goals, constraints, and context for downstream phases.
 type: Template
 version: 1.0
-date: 2026-07-02
+timestamp: "2026-07-02"
 ---
 
 # User Input Artifact

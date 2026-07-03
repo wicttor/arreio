@@ -1,6 +1,6 @@
 ---
 title: "Remove dead commented-out documentation blocks"
-date: 2026-07-02
+timestamp: "2026-07-02"
 category: workflow
 domain: documentation
 tags: [maintenance, cleanup, markdown, skill-files]

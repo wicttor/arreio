@@ -1,9 +1,16 @@
 ---
 title: "Learnings gate logic with keyword matching and relevance scoring"
-date: 2026-07-02
+timestamp: "2026-07-02"
 category: pattern
 domain: information-retrieval
-tags: [keyword-matching, relevance-scoring, fuzzy-search, gap-identification, scope-phase]
+tags:
+  [
+    keyword-matching,
+    relevance-scoring,
+    fuzzy-search,
+    gap-identification,
+    scope-phase,
+  ]
 severity: recommended
 source: commit 3943146
 ---
@@ -42,11 +49,11 @@ A 5-step gate algorithm:
 
 ### Relevance Scoring Table
 
-| Level    | Criteria                                          | Example                                                  |
-| -------- | ------------------------------------------------- | -------------------------------------------------------- |
-| **HIGH** | Exact domain + DIRECT/CRITICAL applicability      | Task "Migrate REST→gRPC" + `grpc-tuning.md` → HIGH       |
-| **MEDIUM**| Related domain + RECOMMENDED/CONTEXTUAL          | Task "Reduce latency" + `caching-strategies.md` → MEDIUM |
-| **LOW**   | Distant domain or HISTORICAL → EXCLUDE            | Task "Dark mode UI" + `backend-balancing.md` → EXCLUDE   |
+| Level      | Criteria                                     | Example                                                  |
+| ---------- | -------------------------------------------- | -------------------------------------------------------- |
+| **HIGH**   | Exact domain + DIRECT/CRITICAL applicability | Task "Migrate REST→gRPC" + `grpc-tuning.md` → HIGH       |
+| **MEDIUM** | Related domain + RECOMMENDED/CONTEXTUAL      | Task "Reduce latency" + `caching-strategies.md` → MEDIUM |
+| **LOW**    | Distant domain or HISTORICAL → EXCLUDE       | Task "Dark mode UI" + `backend-balancing.md` → EXCLUDE   |
 
 ### Gap Format
 

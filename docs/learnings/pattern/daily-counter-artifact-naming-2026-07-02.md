@@ -1,6 +1,6 @@
 ---
 title: "Daily counter algorithm for unique artifact naming"
-date: 2026-07-02
+timestamp: "2026-07-02"
 category: pattern
 domain: artifact-naming
 tags: [id-generation, scoping, traceability, deterministic-naming]

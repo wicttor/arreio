@@ -1,8 +1,9 @@
 ---
 title: Scope
+description: Gather context, check existing plans and learnings, validate domain, and return a scoped context object for downstream modules (research, design, generate).
 type: Documentation
 version: 1.0
-date: 2026-07-01
+timestamp: "2026-07-01"
 ---
 
 # Phase 1 - Scope & Context Gathering
@@ -15,12 +16,21 @@ This is the Phase 1 pipeline for the Plan Skill. It orchestrates the following s
 
 ### Step 0: Verification
 
-Before starting the **Scope** phase, verify that the Orchestrator skill has provided a valid **User Input Artifact**.
-If the artifact is missing or invalid, use the **Error Handling & Recovery workflow** to recover or terminate the plan.
+Before starting the **Scope** phase, verify that the Orchestrator skill has provided a valid **User Input Artifact**. If the artifact is missing or invalid, use the **[Error Handling & Recovery workflow](../references/error-handling.md)** to recover or terminate the plan.
 
 ### Step 1: Check for Existing Plan
 
-1. Search `docs/plans/index.md` for existing plans related to the task.
+1. Search `docs/plans/index.md` for existing plans related (grep title and description) to the task.
+   - If the index file does not exist, assume no existing plans are present.
+   - Ask the user via `ask_user_question` (multiple choice):
+     ```
+     The Plans Index was not found. Do you want to run the /arreio-init to create all the necessary folders, files, and index for planning? (Recommended)
+     What would you like to do?
+      - Yes: Run /arreio-init to create the planning structure
+      - No: Skip and continue without creating the structure
+     ```
+   - If the user selects "Yes," run `/arreio-init` to create the necessary structure, then run the Step 1 of the Scope phase again to check for existing plans.
+
 2. **If an existing plan is found:**
    - Read the plan to understand its title and goal.
    - Ask the user via `ask_user_question` (multiple choice):
@@ -62,23 +72,22 @@ If the user already provided rich context in the initial input, extract these fr
 
 ### Step 4: Learnings Index Gate
 
-Always search for project learnings (in `docs/learnings/index.md`) for entries matching the task description. For details on keyword matching, relevance rating, gap identification, and examples, see **[learnings-gate-logic.md](references/learnings-gate-logic.md)**. Add HIGH and MEDIUM relevance learnings to `Related Learnings`; identify and document any learning gaps.
+Always search for project learnings (in `docs/learnings/index.md`) for entries matching the task description. For details on keyword matching, relevance rating, gap identification, and examples, see **[learnings-gate-logic.md](../references/learnings-gate-logic.md)**. Add HIGH and MEDIUM relevance learnings to `Related Learnings`; identify and document any learning gaps.
 
 ### Step 5: Requirements Search
 
-1. Search `docs/brainstorms/` for files whose names or content match the task description.
+1. Search `docs/` for files whose names or content match the task description.
    - Keywords: exact match on filename, grep content for relevant terms
    - If the directory does not exist, skip silently
-2. Search `docs/requirements/` for matching files.
-   - Same approach as brainstorms
-3. **For each match:**
+   - ignore files in `docs/archives/`,`docs/plans/`, and `docs/learn/` (already handled in previous steps)
+2. **For each match:**
    - Extract the title and a 1-2 sentence relevant excerpt
    - Add to `Requirements Found` list
-4. If no matches found, set `Requirements Found` to empty.
+3. If no matches found, set `Requirements Found` to empty.
 
 ### Step 6: Generate the Scoped Context Artifact
 
-1. **Generate a unique `scope-id`** using the daily counter algorithm:
+1. **Generate a unique `scope-id`** using the following template:
    - Format: `YYYY-MM-DD-NNN-scope` where `NNN` is a zero-padded 3-digit counter
    - **Algorithm:**
      - Get current date in UTC (e.g., 2026-07-02)
@@ -88,12 +97,12 @@ Always search for project learnings (in `docs/learnings/index.md`) for entries m
      - Example: If two plans created today, next one gets `scope-id: 2026-07-02-003-scope`
    - **Error handling:** If `docs/plans/.scope/` does not exist, create it; treat count as 0 and start from 001
 
-2. Produce a Scoped Context Artifact block (as markdown) with the schema defined in `references/templates/artifacts/scoped-context.md`.
+2. Produce a **Scoped Context Artifact** block (as markdown) with the schema defined in `../references/templates/artifacts/scoped-context.md`.
    - Include the generated `scope-id` in the artifact
 
-### Step 7: Confirm and Return Scoped Context Artifact
+### Step 7: Present and Confirm
 
-1. Read the `interactionMode` value from the context (set by Orchestrator; see **[interaction-mode-propagation.md](references/interaction-mode-propagation.md)** for details).
+1. Read the `interactionMode` value from the context (set by Orchestrator; see **[interaction-mode-propagation.md](../references/interaction-mode-propagation.md)** for details).
 
 2. **If `interactionMode = detailed`:**
    - Present the assembled Scoped Context Artifact to the user via `ask_user_question` for explicit confirmation

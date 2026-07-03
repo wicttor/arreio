@@ -1,8 +1,9 @@
 ---
 title: Scoped Context Artifact
+description: Template for the Scoped Context Artifact produced by the Scope phase. Captures problem frame, intended behavior, success criteria, and relevant learnings or requirements.
 type: Template
 version: 1.0
-date: 2026-07-01
+timestamp: "2026-07-01"
 ---
 
 # Scoped Context Artifact

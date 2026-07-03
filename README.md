@@ -13,7 +13,7 @@ By enforcing a **pragmatic**, guardrailed execution, Arreio brings structure to 
 
 **Arreio** orchestrates work through predictable skills that run in sequence:
 
-Use /arreio to orchestrates four micro-skills in sequence:
+Use /arreio-init to initialize a new project, to enable the project to follow the four phases of the Arreio workflows.
 
 ### Plan
 
@@ -60,3 +60,7 @@ We have designed a set of supporting skills to help you to manage your repositor
 #### /end-session
 
 Preserve session context with a well-documented commit capturing state, decisions, and next steps.
+
+#### /arreio-init
+
+Initialize a new project, enabling the project to follow the four phases of the Arreio workflows
