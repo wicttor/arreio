@@ -30,13 +30,13 @@ Every phase receives an artifact from the previous phase (or the Orchestrator, f
 
 ### Required Fields by Artifact Type
 
-| Artifact Type | Required Fields                                                                                         | Produced By  |
-| ------------- | ------------------------------------------------------------------------------------------------------- | ------------ |
-| `user-input`  | `type`, `timestamp`, `source`, `status`, Task Description, Intended Behavior                            | Orchestrator |
-| `scope`       | `type`, `scope-id`, `domain`, `status`, `interactionMode`, Problem, Intended Behavior, Success Criteria | Scope        |
-| `research`    | `research-id`, `status`, Patterns Found, High-Risk Detection, Tech Stack                                | Research     |
-| `design`      | `design-id`, `scope-id`, `status`, `interactionMode`, Approach, Implementation Units, Complexity        | Design       |
-| `plan`        | `plan-id`, `status`, `interactionMode`, High-Level Design, Implementation Units, Risk Analysis          | Generate     |
+| Artifact Type | Required Fields                                                                                                                                                                                                                            | Produced By  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| `user-input`  | `type`, `timestamp`, `source`, `status`, Task Description, Intended Behavior                                                                                                                                                               | Orchestrator |
+| `scope`       | `type`, `scope-id`, `domain`, `status`, `interactionMode`, Problem, Intended Behavior, Success Criteria                                                                                                                                    | Scope        |
+| `research`    | `research-id`, `scope-id`, `status`, `interactionMode`, Patterns Found, High-Risk Detection, Tech Stack                                                                                                                                    | Research     |
+| `design`      | `design-id`, `scope-id`, `research-id`, `status`, `interactionMode`, Approach, Implementation Units, Complexity                                                                                                                            | Design       |
+| `plan`        | `plan-id`, `type`, `title`, `status`, `tier`, `tier_recommended`, `complexity`, `risk`, `scope-id`, `research-id`, `design-id`, `interactionMode`, `created`, `updated`, `version`, High-Level Design, Implementation Units, Risk Analysis | Generate     |
 
 ## Error Categories
 

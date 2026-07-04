@@ -60,7 +60,7 @@ Between phases, the orchestrator validates the output artifact before passing it
 
 1. **Schema validation** — required fields present and well-formed (see [error-handling.md](references/error-handling.md) for the per-type field list).
 2. **Cross-phase consistency** — IDs (`scope-id`, `research-id`, `design-id`, `plan-id`) match the upstream artifacts; `interactionMode` is identical across artifacts.
-3. **Status check** — the artifact's `status` is `confirmed` (not `pending` or `failed`).
+3. **Status check** — the artifact's `status` is `complete` (not `pending` or `failed`).
 4. **Tier/complexity coherence** (after Design) — the `tier_recommendation` is consistent with `complexity` and `risk_level` per [plan-tier-selection.md](references/plan-tier-selection.md).
 
 If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).

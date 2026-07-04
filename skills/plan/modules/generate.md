@@ -56,7 +56,7 @@ Render the final plan from the [Final Plan template](../references/templates/art
    id: YYYY-MM-DD-NNN
    type: plan
    title: "[Plan title]"
-   status: ready
+   status: complete
    tier: fast | standard | deep
    tier_recommended: fast | standard | deep
    complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH

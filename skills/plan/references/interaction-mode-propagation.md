@@ -38,7 +38,7 @@ All phase artifacts (Scope 1-4) include:
 type: scope | research | design | plan
 scope-id: 2026-07-02-001-scope
 interactionMode: detailed | smart | autopilot # Passed from previous phase
-status: pending | confirmed | failed
+status: pending | complete | failed
 ```
 
 ## Implementation

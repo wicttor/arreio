@@ -12,9 +12,25 @@ This document contains the planning template supported by the Plan skill.
 ### Template
 
 ````markdown
-# [Title]
+---
+id: YYYY-MM-DD-NNN
+type: plan
+title: "[Plan title]"
+status: complete
+tier: fast | standard | deep
+tier_recommended: fast | standard | deep
+complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
+risk: Low | Medium | High
+scope-id: YYYY-MM-DD-NNN-scope
+research-id: YYYY-MM-DD-NNN-research
+design-id: YYYY-MM-DD-NNN-design
+interactionMode: detailed | smart | autopilot
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+version: 1.0
+---
 
-**Date:** [YYYY-MM-DD] | **Risk:** [High/Med]
+# [Title]
 
 ## High-Level Technical Design
 
@@ -118,15 +134,31 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
 
 ## Learning Gaps
 
-- [Any gap identified during planning that should be documented after implementation via `/pwrl-learnings`]
+- [Any gap identified during planning that should be documented after implementation via `/learn`]
 ````
 
 ### Example
 
 ```markdown
-# Migrate Session Storage from In-Memory to Redis
+---
+id: 2026-05-01-001
+type: plan
+title: "Migrate Session Storage from In-Memory to Redis"
+status: complete
+tier: standard
+tier_recommended: standard
+complexity: HIGH
+risk: High
+scope-id: 2026-05-01-001-scope
+research-id: 2026-05-01-001-research
+design-id: 2026-05-01-001-design
+interactionMode: smart
+created: 2026-05-01
+updated: 2026-05-01
+version: 1.0
+---
 
-**Date:** 2026-05-01 | **Risk:** High
+# Migrate Session Storage from In-Memory to Redis
 
 ## High-Level Technical Design
 

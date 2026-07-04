@@ -1,6 +1,6 @@
 ---
 title: Research
-description: Research the task and gather relevant information, requirements, and constraints. Produces a Scoped Context Artifact for downstream phases.
+description: Research the task and gather relevant information, requirements, and constraints. Produces a Research Findings Artifact for downstream phases.
 type: Documentation
 version: 1.0
 timestamp: "2026-07-02"
