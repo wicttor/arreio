@@ -172,9 +172,9 @@ If `docs/plans/index.md` does not exist, create it with a header row and the new
 
 ## Output: Final Plan Artifact
 
-- Verify that the Final Plan is complete and valid, containing all required frontmatter fields (`id`, `type`, `title`, `status`, `tier`, `complexity`, `risk`, `scope-id`, `research-id`, `design-id`, `interactionMode`, `created`, `updated`, `version`) and all tier-required sections.
+- Verify that the Final Plan is complete and valid, containing all required frontmatter fields (`plan-id`, `type`, `title`, `status`, `tier`, `complexity`, `risk`, `scope-id`, `research-id`, `design-id`, `interactionMode`, `created`, `updated`, `version`) and all tier-required sections.
 - Verify that all file paths in the plan are repository-relative (never absolute) and wrapped in backtick code formatting.
-- Verify that `## Related Learnings` is present and references `docs/learnings/INDEX.md` entries (or states "No relevant learnings found").
+- Verify that `## Related Learnings` is present and references `docs/learnings/index.md` entries (or states "No relevant learnings found").
 - Verify that `## Learning Gaps` is present (may be empty).
 - Verify that the plan is saved to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md` and registered in `docs/plans/index.md`.
 

@@ -23,7 +23,7 @@ Before starting the **Tasks** phase, verify that the Orchestrator skill has prov
 Specifically verify:
 
 1. The Final Plan exists at `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md` and is non-empty.
-2. The plan frontmatter contains `id` (the `plan-id`), `tier`, `complexity`, `risk`, and `interactionMode`.
+2. The plan frontmatter contains `plan-id`, `tier`, `complexity`, `risk`, and `interactionMode`.
 3. The plan body contains an `## Implementation Units (Phased)` section with at least one unit (`U1`).
 4. If the plan has no Implementation Units, abort and ask the user to re-run the Generate phase — the plan is incomplete.
 
@@ -135,7 +135,7 @@ For each ordered task, generate a task file using the [Task Artifact template](.
 
 ### Step 7: Update Tasks Index
 
-Append a section to `docs/tasks/index.md`:
+Append a section to `docs/tasks/<plan-id>/index.md`:
 
 ```markdown
 ## <plan-id> — [Plan Title]
@@ -147,7 +147,7 @@ Append a section to `docs/tasks/index.md`:
 
 Mark each task with `- [ ]` (unchecked). The Work skill will update these to `- [x]` as tasks complete.
 
-If `docs/tasks/index.md` does not exist, create it with a header and the new section. If it exists but is malformed, log a warning and append the section without reformatting existing content.
+If `docs/tasks/<plan-id>/index.md` does not exist, create it with a header and the new section. If it exists but is malformed, log a warning and append the section without reformatting existing content.
 
 ### Step 8: Present and Confirm
 
@@ -195,7 +195,7 @@ If `docs/tasks/index.md` does not exist, create it with a header and the new sec
 - Verify that each task file contains all required fields per the [task.md template](../references/templates/artifacts/task.md) validation rules.
 - Verify that task IDs are zero-padded 2 digits matching dependency order, with no gaps.
 - Verify that no task depends on a later task (dependency order is valid).
-- Verify that `docs/tasks/index.md` has been updated with an unchecked checklist for all tasks.
+- Verify that `docs/tasks/<plan-id>/index.md` has been updated with an unchecked checklist for all tasks.
 - Verify that the task manifest returned to the Orchestrator accurately reflects the saved files.
 
 > The Task Artifacts are the handoff to the Work skill. Each task must be self-contained enough to execute without re-reading the full plan.

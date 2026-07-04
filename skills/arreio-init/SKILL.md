@@ -63,11 +63,11 @@ Creates the organizational spine for Arreio artifacts:
 
 ### Step 4: Initialize Tasks Index
 
-**File:** `docs/tasks/index.md`
+**File:** `docs/tasks/<plan-id>/index.md`
 
 **Rationale:** Central task registry and execution log. The `work/SKILL.md` module tracks tasks here.
 
-**Action:** If `docs/tasks/index.md` doesn't exist, create it using the [Tasks Index Template](references/tasks-index-template.md).
+**Action:** If `docs/tasks/<plan-id>/index.md` doesn't exist, create it using the [Tasks Index Template](references/tasks-index-template.md).
 
 ### Step 5: Initialize Learning Index
 
@@ -85,6 +85,6 @@ After initialization, verify:
 - ✓ `ARCHITECTURE.md` exists at project root
 - ✓ All four index files exist:
   - `docs/plans/index.md`
-  - `docs/tasks/index.md`
+  - `docs/tasks/<plan-id>/index.md`
   - `docs/learn/index.md`
 - ✓ You can now run other Arreio skills without setup errors
