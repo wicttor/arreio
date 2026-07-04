@@ -61,13 +61,13 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** If `docs/plans/index.md` doesn't exist, create it using the [Plan Index Template](references/plan-index-template.md).
 
-### Step 4: Initialize Tasks Index
+### Step 4: Create Tasks Folder
 
-**File:** `docs/tasks/<plan-id>/index.md`
+**Folder:** `docs/tasks/`
 
-**Rationale:** Central task registry and execution log. The `work/SKILL.md` module tracks tasks here.
+**Rationale:** Root folder for task artifacts. The `plan/SKILL.md` Tasks phase will create per-plan subdirectories (`docs/tasks/<plan-id>/`) with their own indexes when tasks are generated.
 
-**Action:** If `docs/tasks/<plan-id>/index.md` doesn't exist, create it using the [Tasks Index Template](references/tasks-index-template.md).
+**Action:** Create the `docs/tasks/` folder if it doesn't exist.
 
 ### Step 5: Initialize Learning Index
 
@@ -77,14 +77,26 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** If `docs/learn/index.md` doesn't exist, create it using the [Learn Index Template](references/learn-index-template.md).
 
+### Step 6: Create Reports Folder
+
+**Folder:** `docs/reports/`
+
+**Rationale:** Stores review reports and analysis artifacts. The `review/SKILL.md` module generates reports here.
+
+**Action:** Create the `docs/reports/` folder if it doesn't exist.
+
 ## Success Criteria
 
 After initialization, verify:
 
-- ✓ All five core folders exist (`plans/`, `learn/`, `reports/`, `tasks/`, `archives/`)
+- ✓ All five core folders exist: `docs/plans/`, `docs/learn/`, `docs/reports/`, `docs/tasks/`, `docs/archives/`
 - ✓ `ARCHITECTURE.md` exists at project root
-- ✓ All four index files exist:
-  - `docs/plans/index.md`
-  - `docs/tasks/<plan-id>/index.md`
-  - `docs/learn/index.md`
+- ✓ Root-level index files exist:
+  - `docs/plans/index.md` (registry of all plans)
+  - `docs/learn/index.md` (central knowledge base)
+- ✓ Per-plan task indexes created on-demand by plan skill: `docs/tasks/<plan-id>/index.md` (created when Tasks phase runs)
 - ✓ You can now run other Arreio skills without setup errors
+
+## Self-Healing Behavior
+
+Downstream skills (plan, learn, work, review) automatically create missing folders and indexes if arreio-init wasn't explicitly run. However, running arreio-init upfront ensures consistent project structure and is recommended for new projects.

@@ -41,6 +41,15 @@ Each phase runs sequentially: the orchestrator calls the module, receives the ou
 - **If no context is provided**, ask: "What would you like to plan? Describe the task or project."
 - Output: [User Input Artifact](references/templates/artifacts/user-input.md)
 
+### Pre-Flight Check
+
+Before starting the planning pipeline, the orchestrator verifies that required folders exist:
+
+- `docs/plans/` — must exist for saving final plan
+- `docs/tasks/` — must exist if task generation is enabled
+
+**Self-Healing:** If missing, the orchestrator automatically creates these folders. This allows the plan skill to run even if `arreio-init` wasn't explicitly run.
+
 ### Phases
 
 | Phase | Module                                 | Output Artifact                                                                    |
@@ -64,10 +73,27 @@ Between phases, the orchestrator validates the output artifact before passing it
 
 If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).
 
+### Index Registration
+
+Each skill module is responsible for registering its own outputs:
+
+| Module   | Registers To                    | Artifact Format                                  |
+| -------- | ------------------------------- | ------------------------------------------------ |
+| Generate | `docs/plans/index.md`           | Link + brief summary to final plan file          |
+| Tasks    | `docs/tasks/<plan-id>/index.md` | Folder creation + task links (created on-demand) |
+
+**Who updates what:**
+
+- **Generate phase:** Creates `docs/plans/index.md` if missing; appends new plan entry with timestamp and link
+- **Tasks phase:** Creates `docs/tasks/<plan-id>/` folder and `docs/tasks/<plan-id>/index.md` if missing; populates with task file links and metadata
+
 ### FINAL OUTPUT
 
-- Plan file saved to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md` and registered in `docs/plans/index.md`.
-- (Optional) Task files saved to `docs/tasks/<plan-id>/` and registered in `docs/tasks/<plan-id>/index.md`, ready for the Work skill.
+- **Plan file:** Saved to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md`
+  - **Registration:** Generate phase appends an entry to `docs/plans/index.md` linking the new plan
+- **Task files (optional):** Saved to `docs/tasks/<plan-id>/TASK-NNN-<kebab-case-name>.md`
+  - **Registration:** Tasks phase creates `docs/tasks/<plan-id>/index.md` and registers task file links there
+  - Ready for the Work skill to consume via `docs/tasks/<plan-id>/index.md`
 
 ## References
 
