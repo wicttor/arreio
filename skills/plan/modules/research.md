@@ -1,7 +1,7 @@
 ---
 title: Research
 description: Research the task and gather relevant information, requirements, and constraints. Produces a Research Findings Artifact for downstream phases.
-type: Documentation
+type: module
 version: 1.0
 timestamp: "2026-07-02"
 ---
@@ -95,7 +95,7 @@ For query templates, formatting guidance, and examples for each high-risk area, 
    - Deployment constraints (e.g., "must run on AWS Lambda")
    - Integration constraints (e.g., "must use existing logging framework")
 
-### Generate the Research Findings Artifact
+### Step 6: Generate the Research Findings Artifact
 
 1. **Generate a unique `research-id`** using the daily counter algorithm:
    - Format: `YYYY-MM-DD-NNN-research` where `NNN` is a zero-padded 3-digit counter
@@ -110,7 +110,7 @@ For query templates, formatting guidance, and examples for each high-risk area, 
 2. Produce a **Research Findings Artifact** block (as markdown) with the schema defined in `../references/templates/artifacts/research-findings.md`.
    - Include the generated `research-id` in the artifact
 
-### Step 6: Present and Confirm
+### Step 7: Present and Confirm
 
 1. Read the `interactionMode` value from the context (set by Orchestrator; see **[interaction-mode-propagation.md](../references/interaction-mode-propagation.md)** for details).
 

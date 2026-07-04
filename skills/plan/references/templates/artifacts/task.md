@@ -1,7 +1,7 @@
 ---
 title: Task Artifact
 description: Template for the Task Artifact produced by the Tasks phase. Defines the schema for a single executable task file, including goal, steps, dependencies, files, test scenarios, and acceptance criteria.
-type: Template
+type: template
 version: 1.0
 timestamp: "2026-07-03"
 ---

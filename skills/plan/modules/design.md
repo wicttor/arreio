@@ -1,7 +1,7 @@
 ---
 title: Design
 description: Design the solution based on the scoped context and research findings. Decomposes the approach into phased implementation units, assesses complexity, and produces a Design Artifact for the Generate phase.
-type: Documentation
+type: module
 version: 1.0
 timestamp: "2026-07-03"
 ---

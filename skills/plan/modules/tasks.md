@@ -1,7 +1,7 @@
 ---
 title: Tasks
 description: Slice the finalized plan into granular, executable task files saved to docs/tasks/. Decomposes implementation units per sizing rules, orders by dependencies, and registers tasks in the index. Optional Phase 5 of the Plan pipeline.
-type: Documentation
+type: module
 version: 1.0
 timestamp: "2026-07-03"
 ---

@@ -1,11 +1,6 @@
 ---
 name: plan
 description: "Create durable implementation plans that can be handed off for execution. Orchestrates a deterministic pipeline of micro-skills: Scope -> Research -> Design -> Generate -> Tasks. No agent dependency, no fallback paths."
-title: Plan
-type: Skill
-version: 1.2
-timestamp: "2026-07-04"
-user-invocable: true
 disable-model-invocation: true
 ---
 

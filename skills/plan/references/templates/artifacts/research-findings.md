@@ -1,7 +1,7 @@
 ---
 title: Research Findings Artifact
 description: Template for the Research Findings Artifact produced by the Research phase. Captures research findings, insights, and relevant information for downstream phases.
-type: Template
+type: template
 version: 1.0
 timestamp: "2026-07-01"
 ---

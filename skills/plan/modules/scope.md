@@ -1,7 +1,7 @@
 ---
 title: Scope
 description: Gather context, check existing plans and learnings, validate domain, and return a scoped context object for downstream modules (research, design, generate).
-type: Documentation
+type: module
 version: 1.0
 timestamp: "2026-07-01"
 ---
@@ -121,7 +121,7 @@ Always search for project learnings (in `docs/learnings/index.md`) for entries m
    - Options: (1) Proceed to Research, (2) Edit & Retry, (3) Abort
    - If user selects "Edit & Retry," iterate through Steps 2-5 as needed
    - If user selects "Abort," stop and inform Orchestrator of abort
-   - If user selects "Proceed," continue to Step 3 below
+   - If user selects "Proceed," continue to save and return
 
 3. **If `interactionMode = smart`:**
    - Check for HIGH-risk flags in the Scoped Context:

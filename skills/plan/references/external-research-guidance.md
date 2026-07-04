@@ -30,12 +30,12 @@ Generate specific, actionable queries that include:
 
 | Area           | Template                                  | Example                                        |
 | -------------- | ----------------------------------------- | ---------------------------------------------- |
-| Security       | `[area] patterns [tech-stack] [year]`     | `JWT authentication patterns Node.js 2024`     |
+| Security       | `[area] patterns [tech-stack] [year]`     | `JWT authentication patterns Node.js 2026`     |
 | Payments       | `[provider] integration [tech-stack]`     | `Stripe integration Node.js best practices`    |
-| API Design     | `[type] design patterns [year]`           | `REST API versioning strategies 2024`          |
+| API Design     | `[type] design patterns [year]`           | `REST API versioning strategies 2026`          |
 | Migrations     | `[type] migration guide [tech-stack]`     | `Database migration PostgreSQL best practices` |
 | Complex Logic  | `[algorithm] implementation [tech-stack]` | `Search optimization patterns Node.js`         |
-| Infrastructure | `[tech] [deployment] patterns [year]`     | `Kubernetes deployment best practices 2024`    |
+| Infrastructure | `[tech] [deployment] patterns [year]`     | `Kubernetes deployment best practices 2026`    |
 
 ## Executing External Research
 
