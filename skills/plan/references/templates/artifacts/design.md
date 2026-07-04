@@ -19,7 +19,7 @@ type: design
 design-id: YYYY-MM-DD-NNN-design
 scope-id: YYYY-MM-DD-NNN-scope        # Inherited from Scope phase; traceability link
 research-id: YYYY-MM-DD-NNN-research  # Inherited from Research phase
-status: confirmed
+status: complete
 interactionMode: detailed | smart | autopilot
 complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
 tier_recommendation: fast | standard | deep
@@ -109,7 +109,7 @@ type: design
 design-id: 2026-07-03-001-design
 scope-id: 2026-07-03-001-scope
 research-id: 2026-07-03-001-research
-status: confirmed
+status: complete
 interactionMode: smart
 complexity: HIGH
 tier_recommendation: standard

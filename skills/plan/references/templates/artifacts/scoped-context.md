@@ -17,8 +17,9 @@ title: [plan title]
 type: scope
 scope-id: YYYY-MM-DD-NNN-scope
 domain: software | non-software
-status: confirmed
+status: complete
 interactionMode: detailed | smart | autopilot
+timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 
 # Scoped Context
 

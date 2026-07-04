@@ -11,8 +11,11 @@ timestamp: "2026-07-01"
 After completing the workflow, produce a research findings block (in memory or as markdown):
 
 ```yaml
+type: research
 research-id: YYYY-MM-DD-NNN-research
+scope-id: YYYY-MM-DD-NNN-scope        # Inherited from Scope phase; traceability link
 status: complete
+interactionMode: detailed | smart | autopilot
 
 # Research Findings
 
@@ -43,4 +46,4 @@ status: complete
 [2-3 sentence overview of all findings]
 ```
 
-This findings object is passed to `pwrl-plan-design` (S4) for the design phase.
+This findings object is passed to `design` (Phase 3) for the design phase.
