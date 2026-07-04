@@ -6,7 +6,14 @@ All documented learnings from project work.
 
 ## By Category
 
-### Pattern (7)
+### Gotcha (2)
+
+| File | Title | Domain | Applicability |
+|------|-------|--------|---------------|
+| [inconsistent-status-terminology-artifact-schemas-2026-07-04.md](gotcha/2026-07-04-inconsistent-status-terminology-artifact-schemas.md) | Inconsistent status terminology across artifact schemas causes confusion | process | DIRECT |
+| [stale-cross-references-survive-renames-2026-07-04.md](gotcha/2026-07-04-stale-cross-references-survive-renames.md) | Stale cross-references survive renames unless systematically audited | process | DIRECT |
+
+### Pattern (9)
 
 | File | Title | Domain | Applicability |
 |------|-------|--------|---------------|
@@ -17,6 +24,8 @@ All documented learnings from project work.
 | [pipeline-phase-module-template-2026-07-04.md](pattern/pipeline-phase-module-template-2026-07-04.md) | Pipeline phase module template with verification, processing, and confirmation | skill-design | DIRECT |
 | [quality-gates-pipeline-orchestration-2026-07-04.md](pattern/quality-gates-pipeline-orchestration-2026-07-04.md) | Quality gates between pipeline phases with schema validation and error recovery | skill-design | DIRECT |
 | [cross-phase-id-chaining-2026-07-04.md](pattern/cross-phase-id-chaining-2026-07-04.md) | Cross-phase ID chaining for pipeline traceability | skill-design | DIRECT |
+| [templates-self-documenting-front-matter-2026-07-04.md](pattern/2026-07-04-templates-self-documenting-front-matter.md) | Templates should include their own full front-matter as self-documentation | process | DIRECT |
+| [error-handling-tables-enumerate-required-fields-2026-07-04.md](pattern/2026-07-04-error-handling-tables-enumerate-required-fields.md) | Error-handling reference tables should enumerate all required fields per artifact type | process | DIRECT |
 
 ### Decision (2)
 
@@ -40,4 +49,5 @@ All documented learnings from project work.
 - **planning:** [complexity-assessment-framework-2026-07-04.md](decision/complexity-assessment-framework-2026-07-04.md), [plan-tier-selection-algorithm-2026-07-04.md](decision/plan-tier-selection-algorithm-2026-07-04.md)
 - **skill-design:** [interaction-mode-propagation-2026-07-02.md](pattern/interaction-mode-propagation-2026-07-02.md), [pipeline-phase-module-template-2026-07-04.md](pattern/pipeline-phase-module-template-2026-07-04.md), [quality-gates-pipeline-orchestration-2026-07-04.md](pattern/quality-gates-pipeline-orchestration-2026-07-04.md), [cross-phase-id-chaining-2026-07-04.md](pattern/cross-phase-id-chaining-2026-07-04.md)
 - **task-management:** [task-slicing-heuristics-2026-07-04.md](workflow/task-slicing-heuristics-2026-07-04.md)
+- **process:** [inconsistent-status-terminology-artifact-schemas-2026-07-04.md](gotcha/2026-07-04-inconsistent-status-terminology-artifact-schemas.md), [stale-cross-references-survive-renames-2026-07-04.md](gotcha/2026-07-04-stale-cross-references-survive-renames.md), [templates-self-documenting-front-matter-2026-07-04.md](pattern/2026-07-04-templates-self-documenting-front-matter.md), [error-handling-tables-enumerate-required-fields-2026-07-04.md](pattern/2026-07-04-error-handling-tables-enumerate-required-fields.md)
 - **template-design:** [user-input-artifact-template-2026-07-02.md](pattern/user-input-artifact-template-2026-07-02.md)
