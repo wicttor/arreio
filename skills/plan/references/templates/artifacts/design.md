@@ -1,7 +1,7 @@
 ---
 title: Design Artifact
 description: Template for the Design Artifact produced by the Design phase. Captures the chosen approach, implementation units, complexity assessment, and alternatives considered for downstream generation.
-type: Template
+type: template
 version: 1.0
 timestamp: "2026-07-03"
 ---

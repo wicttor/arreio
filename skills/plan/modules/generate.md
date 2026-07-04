@@ -1,7 +1,7 @@
 ---
 title: Generate
 description: Render the final plan from the Design Artifact by selecting a tier, filling the plan template, and saving it to docs/plans/. Produces a Final Plan Artifact for the optional Tasks phase.
-type: Documentation
+type: module
 version: 1.0
 timestamp: "2026-07-03"
 ---
@@ -53,14 +53,14 @@ Render the final plan from the [Final Plan template](../references/templates/art
 1. **Assemble frontmatter:**
 
    ```yaml
-   id: YYYY-MM-DD-NNN
+   plan-id: YYYY-MM-DD-NNN
    type: plan
    title: "[Plan title]"
    status: complete
    tier: fast | standard | deep
    tier_recommended: fast | standard | deep
    complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
-   risk: Low | Medium | High
+   risk: Low | Medium | High | Critical
    scope-id: YYYY-MM-DD-NNN-scope
    research-id: YYYY-MM-DD-NNN-research
    design-id: YYYY-MM-DD-NNN-design
@@ -128,7 +128,7 @@ Render the final plan from the [Final Plan template](../references/templates/art
 ### Step 4: Assemble and Save
 
 1. **Assemble the complete plan document** by combining the frontmatter (Step 2.1) with the rendered sections (Step 2.2–2.6).
-2. **Set the `id` field** in the frontmatter to the generated `plan-id`.
+2. **Set the `plan-id` field** in the frontmatter to the generated `plan-id`.
 3. **Save the plan** to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md`.
 
 ### Step 5: Update Plans Index

@@ -1,6 +1,6 @@
 ---
 title: Final Plan Artifact
-type: Template
+type: template
 version: 1.0
 timestamp: "2026-07-02"
 ---
@@ -13,14 +13,14 @@ This document contains the planning template supported by the Plan skill.
 
 ````markdown
 ---
-id: YYYY-MM-DD-NNN
+plan-id: YYYY-MM-DD-NNN
 type: plan
 title: "[Plan title]"
 status: complete
 tier: fast | standard | deep
 tier_recommended: fast | standard | deep
 complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
-risk: Low | Medium | High
+risk: Low | Medium | High | Critical
 scope-id: YYYY-MM-DD-NNN-scope
 research-id: YYYY-MM-DD-NNN-research
 design-id: YYYY-MM-DD-NNN-design
@@ -29,6 +29,10 @@ created: YYYY-MM-DD
 updated: YYYY-MM-DD
 version: 1.0
 ---
+
+## Overview
+
+[1-2 sentence summary: what the plan delivers and why it matters]
 
 # [Title]
 
@@ -141,7 +145,7 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
 
 ```markdown
 ---
-id: 2026-05-01-001
+plan-id: 2026-05-01-001
 type: plan
 title: "Migrate Session Storage from In-Memory to Redis"
 status: complete
@@ -255,4 +259,4 @@ Plans guide complex projects through structured phases. Include technical design
 
 - Plan files: `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md`
 - U-ID format: `U1`, `U2`, ... `UX` (never renumber)
-- Frontmatter: `id`,`type`,`title`,`status`, `tier`, `created`, `updated`,`version` fields required
+- Frontmatter: `plan-id`,`type`,`title`,`status`, `tier`, `created`, `updated`,`version` fields required
