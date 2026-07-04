@@ -29,6 +29,7 @@ files:
   modify: [path/to/file, ...]
   test: [path/to/test, ...]
 estimated-effort: "<hours or days>"
+timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 ---
 
 # [Task Title]
@@ -149,12 +150,12 @@ docs/tasks/2026-07-03-001/
 
 1. **Tasks Phase** reads the Final Plan's Implementation Units and slices them into tasks per [task-slicing-rules.md](../../task-slicing-rules.md)
 2. Each task file is saved to `docs/tasks/<plan-id>/T<NN>-<name>.md`
-3. **Tasks Phase** updates `docs/tasks/index.md` with a checklist of all tasks for the plan
+3. **Tasks Phase** updates `docs/tasks/<plan-id>/index.md` with a checklist of all tasks for the plan
 4. **Work skill** (`work/SKILL.md`) reads task files, executes them in dependency order, and updates `status` and the index checklist
 
 ## Index Entry Format
 
-After saving all task files, append a section to `docs/tasks/index.md`:
+After saving all task files, append a section to `docs/tasks/<plan-id>/index.md`:
 
 ```markdown
 ## 2026-07-03-001 — Migrate Session Storage to Redis

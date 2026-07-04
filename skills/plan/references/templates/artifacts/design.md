@@ -21,6 +21,7 @@ scope-id: YYYY-MM-DD-NNN-scope        # Inherited from Scope phase; traceability
 research-id: YYYY-MM-DD-NNN-research  # Inherited from Research phase
 status: complete
 interactionMode: detailed | smart | autopilot
+timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
 tier_recommendation: fast | standard | deep
 
@@ -101,98 +102,6 @@ Also save the design artifact to `docs/plans/.design/<design-id>.md` for future 
 - **Related Learnings:** Required (may be empty list). Must reference `docs/learnings/index.md`.
 - **Learning Gaps:** Required (may be empty list). Inherited from Scope phase; updated if design reveals new gaps.
 - **scope-id / research-id:** Required. Must match the upstream artifacts for cross-phase consistency (see [error-handling.md](../../error-handling.md)).
-
-## Example
-
-```yaml
-type: design
-design-id: 2026-07-03-001-design
-scope-id: 2026-07-03-001-scope
-research-id: 2026-07-03-001-research
-status: complete
-interactionMode: smart
-complexity: HIGH
-tier_recommendation: standard
-
-# Design
-
-## Approach
-Introduce a Redis-backed session store behind the existing session interface, then swap the in-memory implementation for the Redis one in middleware. This reuses the existing session abstraction (HIGH-confidence pattern) and isolates the new dependency to a single client module.
-
-## High-Level Technical Design
-
-**Session Lifecycle:**
-
-1. Request arrives with session cookie (JWT)
-2. Middleware validates JWT signature and expiration
-3. Extract session ID, fetch from Redis
-4. Attach session object to request context
-
-## Implementation Units (Phased)
-
-### Phase 1: Foundation
-- U1. **Redis Client and Session Store Interface**
-  - Goal: Create Redis client wrapper and session storage interface
-  - Dependencies: None
-  - Files:
-    - Create: `src/lib/redis-client.ts`
-    - Create: `src/lib/session-store.ts`
-    - Test: `src/lib/redis-client.test.ts`
-  - Test Scenarios:
-    - Store/retrieve session: store {id, data} -> retrieve returns same
-    - TTL expiration: store with 1s TTL -> after 1s, get returns null
-    - Connection error: drop connection -> get throws with retryable error
-
-- U2. **Redis Session Store Implementation**
-  - Goal: Implement the session-store interface against Redis
-  - Dependencies: U1
-  - Files:
-    - Create: `src/lib/redis-session-store.ts`
-    - Test: `src/lib/redis-session-store.test.ts`
-  - Test Scenarios:
-    - Save session: save(session) -> get(id) returns session
-    - Delete session: delete(id) -> get(id) returns null
-
-### Phase 2: Integration
-- U3. **Session Middleware Refactor**
-  - Goal: Integrate Redis session store into existing middleware
-  - Dependencies: U1, U2
-  - Files:
-    - Modify: `src/middleware/session.ts`
-    - Test: `src/middleware/session.test.ts`
-  - Test Scenarios:
-    - Valid JWT loads session: valid token -> request.session populated
-    - Invalid JWT rejected: expired token -> 401 response
-
-### Phase 3: Rollout
-- U4. **Dual-Write and Cutover**
-  - Goal: Ship behind feature flags with dual-write validation
-  - Dependencies: U3
-  - Files:
-    - Modify: `src/middleware/session.ts`
-    - Modify: `src/config/flags.ts`
-
-## Complexity Assessment
-- scope_breadth: 2
-- integration_surface: 2
-- risk_level: HIGH
-- novelty: 1
-- data_migration: 1
-- total: 8
-- complexity: HIGH
-
-## Alternative Approaches Considered
-- **PostgreSQL**: Rejected — slower latency for session reads on critical path
-- **Stateless JWT-Only**: Rejected — cannot revoke sessions, increases cookie size
-- **Sticky Sessions**: Rejected — limits horizontal scaling, poor failover
-
-## Related Learnings
-- docs/learnings/pattern/daily-counter-artifact-naming-2026-07-02.md — ID generation for this design artifact
-- docs/learnings/pattern/interaction-mode-propagation-2026-07-02.md — Smart mode pause logic for HIGH complexity
-
-## Learning Gaps
-- Redis failover patterns in production — document post-implementation via /learn
-```
 
 ## Usage in Workflow
 

@@ -12,7 +12,7 @@ This file documents the rules for decomposing a finalized plan into individual t
 
 ## When to Apply
 
-Task slicing runs after the Generate phase has produced a validated Final Plan. The Tasks phase reads the plan's Implementation Units and produces one task file per slice, saved to `docs/tasks/<plan-id>/` and registered in `docs/tasks/index.md`.
+Task slicing runs after the Generate phase has produced a validated Final Plan. The Tasks phase reads the plan's Implementation Units and produces one task file per slice, saved to `docs/tasks/<plan-id>/` and registered in `docs/tasks/<plan-id>/index.md`.
 
 ## Core Slicing Heuristics
 
@@ -171,7 +171,7 @@ Default: foundation phase units → P0; integration phase units → P1; rollout/
 
 ## Index Registration
 
-After saving all task files, update `docs/tasks/index.md`:
+After saving all task files, update `docs/tasks/<plan-id>/index.md`:
 
 ```markdown
 ## <plan-id> — [Plan Title]
@@ -184,14 +184,14 @@ Mark each task with `- [ ]` (unchecked). The Work skill will check them off as t
 
 ## Error Handling
 
-| Scenario                              | Recovery                                        |
-| ------------------------------------- | ----------------------------------------------- |
-| `docs/tasks/` directory missing       | Create it; create `<plan-id>/` subdirectory     |
-| `docs/tasks/index.md` missing         | Create empty index; append the plan's section   |
-| Dependency cycle detected among units | Surface cycle to user; ask to break or abort    |
-| Unit has no `Files` field             | Log warning; produce task with empty file lists |
-| Plan has no Implementation Units      | Abort; ask user to re-run Generate phase        |
-| Task count exceeds tier target        | Log warning; proceed (targets are guidance)     |
+| Scenario                                | Recovery                                        |
+| --------------------------------------- | ----------------------------------------------- |
+| `docs/tasks/` directory missing         | Create it; create `<plan-id>/` subdirectory     |
+| `docs/tasks/<plan-id>/index.md` missing | Create empty index; append the plan's section   |
+| Dependency cycle detected among units   | Surface cycle to user; ask to break or abort    |
+| Unit has no `Files` field               | Log warning; produce task with empty file lists |
+| Plan has no Implementation Units        | Abort; ask user to re-run Generate phase        |
+| Task count exceeds tier target          | Log warning; proceed (targets are guidance)     |
 
 ## Interaction Mode Behavior
 

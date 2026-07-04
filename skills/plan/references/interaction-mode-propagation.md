@@ -23,7 +23,7 @@ Reference for how `interactionMode` propagates through the Plan pipeline (Scope 
 | Phase        | Detailed                                         | Smart                                                | Autopilot                         |
 | ------------ | ------------------------------------------------ | ---------------------------------------------------- | --------------------------------- |
 | **Scope**    | Present artifact; 3 options (proceed/edit/abort) | Auto-proceed; pause if 3+ gaps or conflicts detected | Auto-proceed                      |
-| **Research** | Show findings; ask "Proceed to Design?"          | Auto-proceed; pause if HIGH-risk detected            | Auto-proceed                      |
+| **Research** | Show findings; ask "Proceed to Design?"          | Auto-proceed; pause if 3+ gaps, non-software domain, or conflicting requirements | Auto-proceed                      |
 | **Design**   | Show units; ask "Proceed to Generate?"           | Auto-proceed; pause if VERY_HIGH complexity          | Auto-proceed                      |
 | **Generate** | Show plan; ask "Generate tasks?"                 | Auto-proceed; pause if DEEP tier or conflicts        | Auto-proceed                      |
 | **Tasks**    | Ask "Create task files?"                         | Ask "Create task files?"                             | Ask "Create task files?" (always) |

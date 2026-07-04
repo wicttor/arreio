@@ -120,7 +120,7 @@ For query templates, formatting guidance, and examples for each high-risk area, 
    - Options: (1) Proceed to Design, (2) Edit & Retry, (3) Abort
    - If user selects "Edit & Retry," iterate through Steps 1-5 as needed
    - If user selects "Abort," stop and inform Orchestrator of abort
-   - If user selects "Proceed," continue to Step 3 below
+   - If user selects "Proceed," continue to save and return
 
 3. **If `interactionMode = smart`:**
    - Check for HIGH-risk flags in the Research Findings:

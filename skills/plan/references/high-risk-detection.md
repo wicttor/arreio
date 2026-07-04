@@ -80,12 +80,12 @@ After identifying which areas the task touches, assign a risk level using this l
 ```
 risk_level = determine_risk(areas_detected, high_risk_count)
 
-if high_risk_count >= 2:
+if any_area_is_security_or_payments:
+  risk_level = CRITICAL
+  reason = "Critical area detected: " + critical_area
+elif high_risk_count >= 2:
   risk_level = HIGH
   reason = "Multiple high-risk areas: " + areas_detected.join(", ")
-elif any_area_is_security_or_payments:
-  risk_level = HIGH
-  reason = "Critical area detected: " + critical_area
 elif any_area_is_api_migration_logic_infra:
   risk_level = MEDIUM
   reason = "High-risk area detected: " + area_name
@@ -100,6 +100,8 @@ Use risk level to determine if external research should be recommended:
 
 | Risk Level | Patterns Found | Decision           | Notes                                        |
 | ---------- | -------------- | ------------------ | -------------------------------------------- |
+| CRITICAL   | 0-2            | Recommend external | Insufficient local patterns; must research   |
+| CRITICAL   | 3+             | Recommend external | Critical area; external research required    |
 | HIGH       | 0-2            | Recommend external | Insufficient local patterns; must research   |
 | HIGH       | 3+             | Optional external  | Strong local patterns; external optional     |
 | MEDIUM     | 0-1            | Recommend external | Limited local examples; external recommended |

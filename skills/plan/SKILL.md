@@ -8,6 +8,10 @@ disable-model-invocation: true
 
 Orchestrates a deterministic pipeline of micro-skills: `Scope -> Research -> Design -> Generate -> Tasks`. No agent dependency, no fallback paths.
 
+## Skill Invocation
+
+This skill is invoked by prompting `/plan <task description>`. This skill will run the planning pipeline, producing a final plan artifact and optionally a set of task artifacts, acting as the Orchestrator.
+
 ## Interaction Method
 
 - Use the platform's `ask_user_question` extension for all user-facing decisions; ask one question at a time.
@@ -45,9 +49,9 @@ Each phase runs sequentially: the orchestrator calls the module, receives the ou
 | 2     | [Research](modules/research.md)        | [Research findings](references/templates/artifacts/research-findings.md)           |
 | 3     | [Design](modules/design.md)            | [Design with unit decomposition](references/templates/artifacts/design.md)         |
 | 4     | [Generate](modules/generate.md)        | [Final plan](references/templates/artifacts/final-plan.md) saved to `docs/plans/`  |
-| 5     | [Tasks](modules/tasks.md) _(optional)_ | [Task list](references/templates/artifacts/task.md) saved to `docs/tasks/PLAN_ID/` |
+| 5     | [Tasks](modules/tasks.md) _(optional)_ | [Task list](references/templates/artifacts/task.md) saved to `docs/tasks/plan-id/` |
 
-**Phase 5** is optional; ask the user before continuing even in Autopilot mode (they may prefer to slice tasks manually).
+**Phase 5** is optional; ask the user 'Generate individual task files?' before running, even in Autopilot. If user declines, planning is complete.
 
 ### Quality Gates
 
@@ -63,7 +67,7 @@ If a gate fails, the orchestrator returns to the producing phase with the error 
 ### FINAL OUTPUT
 
 - Plan file saved to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md` and registered in `docs/plans/index.md`.
-- (Optional) Task files saved to `docs/tasks/<plan-id>/` and registered in `docs/tasks/index.md`, ready for the Work skill.
+- (Optional) Task files saved to `docs/tasks/<plan-id>/` and registered in `docs/tasks/<plan-id>/index.md`, ready for the Work skill.
 
 ## References
 

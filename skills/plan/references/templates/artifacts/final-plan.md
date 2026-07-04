@@ -134,7 +134,7 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
 ## Related Learnings
 
 - **[Learning Title]** — `docs/learnings/XXX.md` — [1-line applicability note]
-- (List relevant entries from `docs/learnings/INDEX.md`; if none apply, state "No relevant learnings found")
+- (List relevant entries from `docs/learnings/index.md`; if none apply, state "No relevant learnings found")
 
 ## Learning Gaps
 
@@ -210,7 +210,7 @@ version: 1.0
 
 ## Related Learnings
 
-(List relevant entries from `docs/learnings/INDEX.md`)
+(List relevant entries from `docs/learnings/index.md`)
 
 ## Learning Gaps
 
@@ -249,7 +249,7 @@ Plans guide complex projects through structured phases. Include technical design
 ### Learnings Embedding Rules
 
 - Every plan **must** include a `## Related Learnings` section
-- Scan `docs/learnings/INDEX.md` for relevant entries
+- Scan `docs/learnings/index.md` for relevant entries
 - Include file path and a 1-line applicability rationale per learning
 - If no relevant learnings exist, state: "No relevant learnings found"
 - Add a `## Learning Gaps` section for areas where knowledge is missing but needed
