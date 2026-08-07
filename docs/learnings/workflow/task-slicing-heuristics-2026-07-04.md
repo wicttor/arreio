@@ -1,61 +1,54 @@
 ---
-title: "Task slicing heuristics for decomposing implementation units into executable tasks"
+title: "Task slicing heuristics: one Acceptance Criterion per task, test-driven"
 timestamp: "2026-07-04"
+updated: "2026-08-07"
 category: workflow
 domain: task-management
-tags: [task-slicing, decomposition, estimation, work-breakdown, implementation-units]
+tags: [task-slicing, tdd, acceptance-criteria, decomposition, work-breakdown, implementation-units]
 severity: recommended
 source: commit 3c17d20
+revised_in: commit 40b4808
 ---
 
-# Task Slicing Heuristics
+# Task Slicing Heuristics (Acceptance-Criterion-driven, Test-Driven)
+
+> Revised 2026-08-07 (commit `40b4808`). The original heuristic — "one unit → one task, merge trivial units, split by files/effort/scenario" — is superseded by an Acceptance-Criterion-driven, test-driven model.
 
 ## Problem
 
-Implementation units from the Design phase are coarse chunks of work. Turning them directly into task files results in oversized tasks that are hard to estimate, execute, and review. A systematic slicing approach is needed to break units into granular, executable tasks.
+Implementation units from the Design phase are coarse chunks of work. The prior model sliced by files/effort/scenario-count, which produced tasks of variable size and intent, and its "merge adjacent trivial units" rule bundled unrelated outcomes into one task. There was no guaranteed invariant between what a task tests and what it delivers.
 
 ## Solution
 
-A set of heuristics that transform implementation units into task files:
+A fixed invariant plus a small set of heuristics.
 
-### Default Rule
+### Invariant (always)
 
-**One unit → one task.** Each unit becomes a task file inheriting its goal, dependencies, files, and test scenarios. This is the starting point; slicing only happens when a unit exceeds thresholds.
+- **One task per Acceptance Criterion.** Each criterion on an implementation unit becomes exactly one task.
+- **One test per task.** The task's `files.test` holds exactly one test file asserting that single criterion.
+- **Test-Driven Steps** — Red → Green → Refactor:
+  1. Red — write the failing test for this AC; run it and confirm it fails for the right reason.
+  2. Green — implement the minimum code to pass.
+  3. Refactor — clean up naming/duplication with the test green.
 
-### Split Triggers
+### Slicing rules
 
-Split a unit into sub-tasks (using letter suffixes: `U2a`, `U2b`) when:
+- Never split within an Acceptance Criterion. If a criterion would need > 5 files or > 1 day, split the **criterion** into finer sub-criteria first, then one task each.
+- Never merge across criteria. A task always carries exactly one AC (+ its one test). (Adjacent units that genuinely share a single criterion are already one criterion — hence one task.)
+- Never renumber units or criteria. Sub-IDs use letters: `U2a`, `U2b`.
 
-| Trigger | Threshold | Split Method |
-|---------|-----------|--------------|
-| **File count** | > 5 files touched | Split by file grouping (e.g., models vs. routes) |
-| **Effort** | > 1 day estimated | Split by sub-goal (milestone within the unit) |
-| **Test scenarios** | > 5 distinct scenarios | Split by scenario cluster |
-| **Separable outcomes** | 2+ independent deliverables | Split by outcome |
+### What changed from the prior model
 
-### Merge Rules
-
-Merge adjacent units into one task when ALL of:
-- Each unit touches only 1 file
-- Combined files ≤ 3
-- Shared dependency (or both have no dependencies)
-- Neither unit has its own test scenario
-
-The merged task lists all source units in the `unit` field (e.g., `U3, U4`).
-
-### Ordering
-
-After slicing, order tasks by dependency so the Work skill can execute them sequentially. Tasks with no dependencies go first; tasks depending on U1 go after U1, etc.
+- Removed the "merge adjacent trivial units" rule — it bundled multiple outcomes into one task, breaking the one-AC invariant.
+- Split triggers are now AC-anchored (split the criterion, not the task).
+- Files / effort / scenario thresholds became tier-sizing guidance, not slicing triggers.
 
 ## Application
 
-- Run during Tasks phase (Phase 5) after reading implementation units
-- Never renumber original units — use letter suffixes for splits
-- Record slicing decisions for traceability (which units were split/merged and why)
-- Reference: `skills/plan/references/task-slicing-rules.md`
+- Run during the Tasks phase after reading implementation units. Implementation Units now carry Acceptance Criteria (authored in the Design phase, carried by the design and final-plan templates).
+- Reference: `skills/plan/references/task-slicing-rules.md`, `skills/plan/references/templates/artifacts/task.md`
 
 ## Source
 
-- `skills/plan/modules/tasks.md` — Step 2: Apply Slicing Heuristics
-- `skills/plan/references/task-slicing-rules.md`
-- Commit `3c17d20`
+- Original heuristic: commit `3c17d20`
+- Revised to AC-driven TDD: commit `40b4808`
