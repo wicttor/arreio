@@ -2,8 +2,8 @@
 title: Learnings Gate Logic
 description: Reference for Scope Phase Step 4. Defines keyword matching, relevance scoring, gap identification, and inclusion criteria.
 type: reference
-version: 1.0
-timestamp: "2026-07-02"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Learnings Gate Logic
@@ -65,7 +65,7 @@ A **learning gap** is a task domain with no HIGH/MEDIUM relevance learning.
 Learnings must include:
 
 ```yaml
-filename: docs/learnings/xxx.md
+filename: docs/learn/xxx.md
 domain: [primary domain]
 tags: [related_domain_1, related_domain_2]
 applicability: DIRECT | RECOMMENDED | CONTEXTUAL | HISTORICAL | INFORMATIONAL
@@ -77,7 +77,7 @@ summary: [1-2 sentence summary]
 **Scope Step 4** executes:
 
 1. Extract keywords from task + intended behavior
-2. Keyword match against `docs/learnings/index.md` (exact + fuzzy)
+2. Keyword match against `docs/learn/index.md` (exact + fuzzy)
 3. Score matches: HIGH/MEDIUM/LOW per table above
 4. Filter: keep HIGH/MEDIUM only
 5. Identify gaps: domains not covered

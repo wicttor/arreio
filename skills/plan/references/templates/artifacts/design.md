@@ -2,8 +2,8 @@
 title: Design Artifact
 description: Template for the Design Artifact produced by the Design phase. Captures the chosen approach, implementation units, complexity assessment, and alternatives considered for downstream generation.
 type: template
-version: 1.0
-timestamp: "2026-07-03"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Design Artifact
@@ -23,7 +23,7 @@ status: complete
 interactionMode: detailed | smart | autopilot
 timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
-tier_recommendation: fast | standard | deep
+tier_recommended: fast | standard | deep
 
 # Design
 
@@ -42,6 +42,8 @@ tier_recommendation: fast | standard | deep
   - Files:
     - Create: `path/to/file`
     - Test: `path/to/test`
+  - Acceptance Criteria:
+    - [Single, verifiable criterion — each criterion later becomes exactly one task and one test]
   - Test Scenarios:
     - [Scenario]: [Input -> Expected Outcome]
 
@@ -50,6 +52,8 @@ tier_recommendation: fast | standard | deep
   - Dependencies: U1
   - Files:
     - Create: `path/to/file`
+  - Acceptance Criteria:
+    - [Single, verifiable criterion]
   - Test Scenarios:
     - [Scenario]: [Input -> Expected Outcome]
 
@@ -59,6 +63,8 @@ tier_recommendation: fast | standard | deep
   - Dependencies: U1, U2
   - Files:
     - Modify: `path/to/file`
+  - Acceptance Criteria:
+    - [Single, verifiable criterion]
   - Test Scenarios:
     - [Scenario]: [Input -> Expected Outcome]
 
@@ -68,6 +74,8 @@ tier_recommendation: fast | standard | deep
   - Dependencies: U3
   - Files:
     - Modify: `path/to/file`
+  - Acceptance Criteria:
+    - [Single, verifiable criterion]
 
 ## Complexity Assessment
 - scope_breadth: 0-3
@@ -83,8 +91,8 @@ tier_recommendation: fast | standard | deep
 - **[Approach Name]**: [Description] → **Rejected because:** [Rationale]
 
 ## Related Learnings
-- docs/learnings/XXX.md — [1-line applicability note]
-- (List from docs/learnings/index.md; empty list if none)
+- docs/learn/XXX.md — [1-line applicability note]
+- (List from docs/learn/index.md; empty list if none)
 
 ## Learning Gaps
 - [Gap name] — [Follow-up action via /learn]
@@ -96,10 +104,10 @@ Also save the design artifact to `docs/plans/.design/<design-id>.md` for future 
 
 - **Approach:** Required. Must reference the scoped context and research findings (not invented in isolation).
 - **High-Level Technical Design:** Required. Must be ONE of: Mermaid diagram, pseudo-code sketch, or data-flow map. Directional only — not an implementation specification.
-- **Implementation Units:** Required. At least one unit (U1). Each unit must have a Goal, Dependencies, and Files. Test Scenarios required for units in phases 1–2; optional for rollout-only units.
+- **Implementation Units:** Required. At least one unit (U1). Each unit must have a Goal, Dependencies, Files, and **Acceptance Criteria** (at least one; each criterion becomes exactly one task and one test in the Tasks phase). Test Scenarios required for units in phases 1–2; optional for rollout-only units.
 - **Complexity Assessment:** Required. All five dimensions scored 0–3; `total` must equal the sum; `complexity` must match the threshold mapping.
 - **Alternative Approaches:** Required for MEDIUM+ complexity; at least 1 alternative. For HIGH/VERY_HIGH, at least 2 alternatives. For TRIVIAL/LOW, may be empty.
-- **Related Learnings:** Required (may be empty list). Must reference `docs/learnings/index.md`.
+- **Related Learnings:** Required (may be empty list). Must reference `docs/learn/index.md`.
 - **Learning Gaps:** Required (may be empty list). Inherited from Scope phase; updated if design reveals new gaps.
 - **scope-id / research-id:** Required. Must match the upstream artifacts for cross-phase consistency (see [error-handling.md](../../error-handling.md)).
 
@@ -107,7 +115,7 @@ Also save the design artifact to `docs/plans/.design/<design-id>.md` for future 
 
 1. **Design Phase** produces this artifact from the Scoped Context and Research Findings
 2. **Design Phase Step 0** validates the incoming Scoped Context and Research Findings (see [error-handling.md](../../error-handling.md))
-3. **Generate Phase** reads the `complexity` and `tier_recommendation` fields to select the plan tier (see [plan-tier-selection.md](../../plan-tier-selection.md))
+3. **Generate Phase** reads the `complexity` and `tier_recommended` fields to select the plan tier (see [plan-tier-selection.md](../../plan-tier-selection.md))
 4. **Generate Phase** renders the final plan from the units and alternatives captured here
 
 ## Missing Field Recovery

@@ -2,8 +2,8 @@
 title: External Research Guidance
 description: Guidance for generating targeted external research queries when high-risk areas are detected and external research is recommended.
 type: reference
-version: 1.0
-timestamp: "2026-07-02"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # External Research Guidance

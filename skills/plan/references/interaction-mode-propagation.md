@@ -2,8 +2,8 @@
 title: Interaction Mode Propagation
 description: Reference for how `interactionMode` propagates through the Plan pipeline (Scope → Research → Design → Generate → Tasks). Set at Orchestrator; each phase reads and applies mode-specific behavior.
 type: reference
-version: 1.0
-timestamp: "2026-07-02"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Interaction Mode Propagation
@@ -20,15 +20,15 @@ Reference for how `interactionMode` propagates through the Plan pipeline (Scope 
 
 ## Phase Behavior by Mode
 
-| Phase        | Detailed                                         | Smart                                                | Autopilot                         |
-| ------------ | ------------------------------------------------ | ---------------------------------------------------- | --------------------------------- |
-| **Scope**    | Present artifact; 3 options (proceed/edit/abort) | Auto-proceed; pause if 3+ gaps or conflicts detected | Auto-proceed                      |
-| **Research** | Show findings; ask "Proceed to Design?"          | Auto-proceed; pause if 3+ gaps, non-software domain, or conflicting requirements | Auto-proceed                      |
-| **Design**   | Show units; ask "Proceed to Generate?"           | Auto-proceed; pause if VERY_HIGH complexity          | Auto-proceed                      |
-| **Generate** | Show plan; ask "Generate tasks?"                 | Auto-proceed; pause if DEEP tier or conflicts        | Auto-proceed                      |
-| **Tasks**    | Ask "Create task files?"                         | Ask "Create task files?"                             | Ask "Create task files?" (always) |
+| Phase        | Detailed                                         | Smart                                                                                                  | Autopilot                         |
+| ------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| **Scope**    | Present artifact; ask Proceed/Edit/Abort         | Auto-proceed; pause if 3+ learning gaps, non-software domain, or conflicting requirements              | Auto-proceed                      |
+| **Research** | Show findings; ask Proceed/Edit/Abort           | Auto-proceed; pause if HIGH/CRITICAL risk with <3 patterns, or zero patterns found                    | Auto-proceed                      |
+| **Design**   | Show units; ask Proceed/Edit/Abort              | Auto-proceed; pause if VERY_HIGH complexity, HIGH risk + <3 patterns, 3+ scope gaps, or Novelty=3      | Auto-proceed                      |
+| **Generate** | Show plan; ask Proceed/Edit/Skip/Abort          | Auto-proceed; pause if tier=Deep, tier preference conflicts with risk floor, or CRITICAL risk          | Auto-proceed                      |
+| **Tasks**    | Ask Create/Review/No (full file content shown)  | Ask Create/Review/No (summary shown)                                                                   | Ask Create/Review/No (always asks) |
 
-**Smart mode pauses on:** Learning gaps ≥3, HIGH-risk factors, VERY_HIGH complexity, DEEP tier, recent learning conflicts.
+**Smart mode pauses only on each phase's documented triggers above** (the canonical list lives in each module's confirmation step; this table is a summary).
 
 ## Artifact Schema
 

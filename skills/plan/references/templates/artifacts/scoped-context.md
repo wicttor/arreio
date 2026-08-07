@@ -2,8 +2,8 @@
 title: Scoped Context Artifact
 description: Template for the Scoped Context Artifact produced by the Scope phase. Captures problem frame, intended behavior, success criteria, and relevant learnings or requirements.
 type: template
-version: 1.0
-timestamp: "2026-07-01"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Scoped Context Artifact
@@ -38,8 +38,8 @@ path: docs/plans/...md | null
 action: resume | review | archive | delete | create-new | none
 
 ## Related Learnings
-- docs/learnings/XXX.md — [1-line applicability note]
-- (List from docs/learnings/index.md; empty list if none)
+- docs/learn/XXX.md — [1-line applicability note]
+- (List from docs/learn/index.md; empty list if none)
 
 ## Learning Gaps
 - [Gap name] — [Follow-up action via /learnings]

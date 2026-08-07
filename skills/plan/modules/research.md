@@ -2,8 +2,8 @@
 title: Research
 description: Research the task and gather relevant information, requirements, and constraints. Produces a Research Findings Artifact for downstream phases.
 type: module
-version: 1.0
-timestamp: "2026-07-02"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Phase 2 - Research
@@ -16,7 +16,7 @@ This is the Phase 2 pipeline for the Plan Skill. It orchestrates the following s
 
 ### Step 0: Verification
 
-Before starting the **Research** phase, verify that the Orchestrator skill has provided a valid **Scoped Context Artifact** from the previous phase, **Scope**. If the artifact is missing or invalid, use the **Error Handling & Recovery workflow** to recover or terminate the plan.
+Run the **[Step 0 verification](../references/error-handling.md)**. Required input: a valid **Scoped Context Artifact** from Scope carrying `scope-id`, `domain`, `Problem`, `Intended Behavior`, `Success Criteria`, and `interactionMode`.
 
 ### Step 1: Local Pattern Discovery
 
@@ -40,18 +40,18 @@ Before starting the **Research** phase, verify that the Orchestrator skill has p
 
 4. **Search in two phases** (hybrid approach):
 
-   **Phase A — Quick pattern match (grep_search):**
+   **Phase A — Pattern search (literal):**
    - Search common directories: `src/`, `app/`, `lib/`, `services/`, `api/`, `controllers/`, `handlers/`
    - Use tech-stack-specific queries from table above
    - Also search for: `architecture.md`, `design.md`, `ARCHITECTURE.md`, `DESIGN.md` at repo root and in `docs/`, `design/`, `architecture/` subdirectories
    - **Collect all unique file paths found** (count across all Phase A searches; deduplicate)
    - Record total count and note which queries yielded matches
 
-   **Phase B — Pattern gap detection (semantic_search, conditional):**
+   **Phase B — Pattern gap detection (meaning-based, conditional):**
    - **Decision rule:** If Phase A found fewer than 3 unique file paths, proceed to Phase B
-   - Run semantic search with task description
+   - Run a meaning-based search using the task description as the query
    - Example: "How is authentication implemented in this codebase?" or "Where are API endpoints defined?"
-   - Captures conceptual patterns missed by grep
+   - Captures conceptual patterns missed by literal pattern search
    - **If Phase A found 3+ files:** Skip Phase B; proceed to Step 5 with existing matches
 
 5. **Count confidence levels** based on total unique file matches:
@@ -74,12 +74,9 @@ Before starting the **Research** phase, verify that the Orchestrator skill has p
 
 ### Step 3: External Research Decision
 
-1. Apply the decision rule:
-   ```
-   should_run_external_research = high_risk_detected AND patterns_found_count < 3
-   ```
-2. If `should_run_external_research` is true:
-   - Provide specific web search guidance with query.
+1. Look up the external-research decision in the **risk × patterns matrix** in [high-risk-detection.md](../references/high-risk-detection.md) ("Mapping to Research Decision") using the detected **risk level** (Step 2) and the **patterns found count** (Step 1).
+2. If the matrix returns "Recommend external": provide specific web search guidance (Step 4). If it returns "Skip external", record `External Research: skipped` and proceed to Step 5.
+3. If it returns "Optional external": provide guidance only when interaction is detailed/smart or risk is HIGH/CRITICAL.
 
 ### Step 4: External Research Guidance (if needed)
 
@@ -97,49 +94,24 @@ For query templates, formatting guidance, and examples for each high-risk area, 
 
 ### Step 6: Generate the Research Findings Artifact
 
-1. **Generate a unique `research-id`** using the daily counter algorithm:
-   - Format: `YYYY-MM-DD-NNN-research` where `NNN` is a zero-padded 3-digit counter
-   - **Algorithm:**
-     - Get current date in UTC (e.g., 2026-07-02)
-     - Check existing research files in `docs/plans/.research/` for today's date
-     - Count existing files matching `2026-07-02-*.md`
-     - Set `NNN = (count + 1)` formatted as zero-padded 3 digits (001, 002, 010, etc.)
-     - Example: If two plans created today, next one gets `research-id: 2026-07-02-003-research`
-   - **Error handling:** If `docs/plans/.research/` does not exist, create it; treat count as 0 and start from 001
+1. **Assign a `research-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-research`, saved to `docs/plans/.research/`). Reuse it if the user later picks **Edit & Retry**.
 
-2. Produce a **Research Findings Artifact** block (as markdown) with the schema defined in `../references/templates/artifacts/research-findings.md`.
-   - Include the generated `research-id` in the artifact
+2. Produce a **Research Findings Artifact** block (as markdown) following the schema in [research-findings.md](../references/templates/artifacts/research-findings.md):
+   - Include the generated `research-id` and the inherited `scope-id`.
+   - Write a 2–3 sentence **Findings Summary** overview of the Patterns Found, risk level, and constraints.
 
-### Step 7: Present and Confirm
+### Step 7: Present, Confirm, and Save
 
-1. Read the `interactionMode` value from the context (set by Orchestrator; see **[interaction-mode-propagation.md](../references/interaction-mode-propagation.md)** for details).
+Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these research-specific **Smart pause triggers**:
 
-2. **If `interactionMode = detailed`:**
-   - Present the assembled Research Findings Artifact to the user via `ask_user_question` for explicit confirmation
-   - Ask: "Are these research findings sufficient to proceed to design?"
-   - Options: (1) Proceed to Design, (2) Edit & Retry, (3) Abort
-   - If user selects "Edit & Retry," iterate through Steps 1-5 as needed
-   - If user selects "Abort," stop and inform Orchestrator of abort
-   - If user selects "Proceed," continue to save and return
+- Risk level is HIGH or CRITICAL **and** fewer than 3 patterns found (external research recommended), or
+- Zero patterns found in the codebase.
 
-3. **If `interactionMode = smart`:**
-   - Check for HIGH-risk flags in the Research Findings:
-     - Are there 3+ learning gaps?
-     - Did domain validation flag non-software task?
-     - Are requirements conflicting?
-   - If HIGH-risk flag present: Pause and show artifact with risk description; ask "Should I proceed anyway?"
-   - If no HIGH-risk flag: Auto-proceed (no confirmation)
+- **Detailed:** present the Research Findings Artifact and ask one question with options *(1) Proceed to Design, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–6 reusing the `research-id`. On **Abort**, stop and inform the Orchestrator.
+- **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
+- **Autopilot:** auto-proceed (no confirmation).
 
-4. **If `interactionMode = autopilot`:**
-   - Auto-proceed immediately to save and return (no confirmation needed)
-
-5. **Save the artifact:**
-   - Save the Research Findings Artifact (markdown block) to `docs/plans/.research/<research-id>.md`
-   - Verify that `interactionMode` is included in the saved artifact (for downstream phases to read)
-
-6. **Return to Orchestrator:**
-   - Return the Research Findings Artifact and `interactionMode` value to the Orchestrator skill
-   - Orchestrator will handle transition to Phase 3 (Design) or abort based on confirmation result
+On any proceed/skip path: save the artifact to `docs/plans/.research/<research-id>.md` (ensure `interactionMode` is included), then return the artifact and `interactionMode` to the Orchestrator for the transition to Phase 3 (Design).
 
 ## Output: Research Findings Artifact
 

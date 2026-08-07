@@ -2,8 +2,8 @@
 title: Plan Tier Selection
 description: Reference for the Generate phase. Defines the Fast/Standard/Deep tier model, the selection algorithm that combines complexity, risk, and user preference, and the template sections each tier requires.
 type: reference
-version: 1.0
-timestamp: "2026-07-03"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Plan Tier Selection
@@ -125,7 +125,7 @@ Required sections (all Standard sections, plus):
 
 ## Asking the User for Preference
 
-In Detailed mode (or when Smart mode pauses), ask via `ask_user_question`:
+In Detailed mode (or when Smart mode pauses), ask the user one question:
 
 ```
 Based on the design complexity (HIGH) and risk level (HIGH), I recommend the Standard tier.
@@ -136,7 +136,7 @@ Which tier would you like for the plan?
   - Auto: Let the algorithm decide (result: Standard)
 ```
 
-Record the user's choice in the Design Artifact as `tier_preference` for traceability.
+Record the user's choice as the selected **`tier`** in the final plan frontmatter; preserve the algorithm's suggestion as **`tier_recommended`** so an override is auditable.
 
 ## Worked Examples
 
