@@ -2,8 +2,8 @@
 title: Error Handling & Recovery
 description: Reference for error handling and recovery strategies in the Plan Skill phases. Provides guidance on how to handle missing or malformed artifacts, invalid user input, and other common errors.
 type: reference
-version: 1.1
-timestamp: "2026-07-03"
+version: 1.2
+timestamp: "2026-08-07"
 ---
 
 # Error Handling & Recovery
@@ -35,7 +35,7 @@ Every phase receives an artifact from the previous phase (or the Orchestrator, f
 | `user-input`  | `type`, `timestamp`, `source`, `status`, Task Description, Intended Behavior                                                                                                                                                               | Orchestrator |
 | `scope`       | `type`, `scope-id`, `domain`, `status`, `interactionMode`, Problem, Intended Behavior, Success Criteria                                                                                                                                    | Scope        |
 | `research`    | `research-id`, `scope-id`, `status`, `interactionMode`, Patterns Found, High-Risk Detection, Tech Stack                                                                                                                                    | Research     |
-| `design`      | `design-id`, `scope-id`, `research-id`, `status`, `interactionMode`, Approach, Implementation Units, Complexity                                                                                                                            | Design       |
+| `design`      | `design-id`, `scope-id`, `research-id`, `status`, `interactionMode`, `complexity`, `tier_recommended`, Approach, High-Level Technical Design, Implementation Units (each with Acceptance Criteria), Alternative Approaches, Complexity | Design       |
 | `plan`        | `plan-id`, `type`, `title`, `status`, `tier`, `tier_recommended`, `complexity`, `risk`, `scope-id`, `research-id`, `design-id`, `interactionMode`, `created`, `updated`, `version`, High-Level Design, Implementation Units, Risk Analysis | Generate     |
 
 ## Error Categories
@@ -104,7 +104,7 @@ When a verification failure is detected in Step 0, apply this workflow:
 1. Identify the error category (1-5) from the tables above
 2. Look up the specific trigger to find the recovery action
 3. Execute the recovery action:
-   - If recovery is "ask user": use ask_user_question with clear options
+   - If recovery is "ask user": ask one question with clear options (2–4 concrete choices)
    - If recovery is "re-run previous phase": return to Orchestrator with error context
    - If recovery is "default and continue": apply default, log warning, proceed
 4. If terminate = Yes: stop and inform Orchestrator with:
@@ -151,4 +151,5 @@ In addition to per-phase verification, the Orchestrator should verify consistenc
 - All errors and warnings should be logged with a timestamp for debugging
 - When a phase terminates, its saved artifact (if any) should be marked `status: failed`
 - The Orchestrator is responsible for deciding whether to retry the entire workflow or resume from the last successful phase
+- ID assignment and re-use (including recycle-on-edit) is defined in [id-generation.md](id-generation.md); this reference covers only verification and recovery
 - This reference is shared by all five phases; phase-specific error handling (e.g., research's "no patterns found") is documented inline in the respective module

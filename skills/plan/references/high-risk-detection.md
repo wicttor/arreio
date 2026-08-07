@@ -2,8 +2,8 @@
 title: High-Risk Area Detection
 description: "Scan the task description and scoped context for high-risk keywords across six areas: Security, Payments, APIs, Migrations, Complex Logic, and Infrastructure."
 type: reference
-version: 1.0
-timestamp: "2026-07-02"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # High-Risk Area Detection
@@ -95,6 +95,8 @@ else:
 ```
 
 ## Mapping to Research Decision
+
+> **Authoritative.** The Research phase (Step 3) looks up its external-research decision directly in the matrix below, using the detected **risk level** and the **patterns found count**. Do not apply a separate formula — this matrix is the single source of truth.
 
 Use risk level to determine if external research should be recommended:
 

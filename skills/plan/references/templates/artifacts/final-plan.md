@@ -1,8 +1,8 @@
 ---
 title: Final Plan Artifact
 type: template
-version: 1.0
-timestamp: "2026-07-02"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Plan Templates
@@ -80,6 +80,8 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
   - **Files:**
     - Create: `path/to/file`
     - Test: `path/to/test`
+  - **Acceptance Criteria:**
+    - [Single, verifiable criterion — each criterion later becomes exactly one task and one test]
   - **Test Scenarios:**
     - [Scenario]: [Input -> Expected Outcome]
 
@@ -88,6 +90,8 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
   - **Dependencies:** U1
   - **Files:**
     - Create: `path/to/file`
+  - **Acceptance Criteria:**
+    - [Single, verifiable criterion]
   - **Test Scenarios:**
     - [Scenario]: [Input -> Expected Outcome]
 
@@ -98,6 +102,8 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
   - **Dependencies:** U1, U2
   - **Files:**
     - Modify: `path/to/file`
+  - **Acceptance Criteria:**
+    - [Single, verifiable criterion]
   - **Test Scenarios:**
     - [Scenario]: [Input -> Expected Outcome]
 
@@ -108,6 +114,8 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
   - **Dependencies:** U3
   - **Files:**
     - Modify: `path/to/file`
+  - **Acceptance Criteria:**
+    - [Single, verifiable criterion]
 
 ## Alternative Approaches Considered
 
@@ -133,8 +141,8 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
 
 ## Related Learnings
 
-- **[Learning Title]** — `docs/learnings/XXX.md` — [1-line applicability note]
-- (List relevant entries from `docs/learnings/index.md`; if none apply, state "No relevant learnings found")
+- **[Learning Title]** — `docs/learn/XXX.md` — [1-line applicability note]
+- (List relevant entries from `docs/learn/index.md`; if none apply, state "No relevant learnings found")
 
 ## Learning Gaps
 
@@ -179,14 +187,18 @@ version: 1.0
 
 - U1. **Redis Client and Session Store Interface**
   - **Goal:** Create Redis client wrapper and session storage interface
-  - **Files:** `src/lib/redis-client.ts`, `src/lib/session-store.ts`
+  - **Files:** `src/lib/redis-client.ts` · test: `src/lib/redis-client.test.ts`
+  - **Acceptance Criteria:**
+    - `SessionStore` interface with `get`/`save`/`delete` backs a Redis client that connects from `REDIS_URL` and retries on failure
   - **Test Scenarios:** Store/retrieve session, TTL expiration, connection errors
 
 ### Phase 2: Integration
 
 - U2. **Session Middleware Refactor**
   - **Goal:** Integrate Redis session store into middleware
-  - **Files:** `src/middleware/session.ts`
+  - **Files:** `src/middleware/session.ts` · test: `src/middleware/session.test.ts`
+  - **Acceptance Criteria:**
+    - Middleware loads a valid JWT-backed session from Redis and rejects invalid/expired sessions
   - **Test Scenarios:** Valid JWT loading, invalid JWT rejection, store errors
 
 ## Alternative Approaches Considered
@@ -210,7 +222,7 @@ version: 1.0
 
 ## Related Learnings
 
-(List relevant entries from `docs/learnings/index.md`)
+(List relevant entries from `docs/learn/index.md`)
 
 ## Learning Gaps
 
@@ -229,16 +241,7 @@ Plans guide complex projects through structured phases. Include technical design
 
 ### Required Sections
 
-| Section                       | Required |
-| ----------------------------- | :------: |
-| Overview                      |    ✅    |
-| High-Level Technical Design   |    ✅    |
-| Implementation Units (Phased) |    ✅    |
-| Alternative Approaches        |    ✅    |
-| Risk Analysis & Mitigation    |    ✅    |
-| Operational / Rollout Notes   |    ✅    |
-| Related Learnings             |    ✅    |
-| Learning Gaps                 |    ✅    |
+Which sections a plan includes is **tier-driven**, not fixed. See [plan-tier-selection.md](../../plan-tier-selection.md) and the Generate phase ([generate.md](../../../modules/generate.md)) for the Fast/Standard/Deep section matrix (Fast omits Alternative Approaches, Operational Notes, and Learning Gaps; Standard and Deep add them). Do not render a section the tier marks optional and empty.
 
 ### File Path Requirements
 
@@ -249,7 +252,7 @@ Plans guide complex projects through structured phases. Include technical design
 ### Learnings Embedding Rules
 
 - Every plan **must** include a `## Related Learnings` section
-- Scan `docs/learnings/index.md` for relevant entries
+- Scan `docs/learn/index.md` for relevant entries
 - Include file path and a 1-line applicability rationale per learning
 - If no relevant learnings exist, state: "No relevant learnings found"
 - Add a `## Learning Gaps` section for areas where knowledge is missing but needed
@@ -259,4 +262,4 @@ Plans guide complex projects through structured phases. Include technical design
 
 - Plan files: `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md`
 - U-ID format: `U1`, `U2`, ... `UX` (never renumber)
-- Frontmatter: `plan-id`,`type`,`title`,`status`, `tier`, `created`, `updated`,`version` fields required
+- Frontmatter required fields: see the Final Plan frontmatter in the template above and [error-handling.md](../../error-handling.md) — `plan-id`, `type`, `title`, `status`, `tier`, `tier_recommended`, `complexity`, `risk`, `scope-id`, `research-id`, `design-id`, `interactionMode`, `created`, `updated`, `version`

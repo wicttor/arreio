@@ -14,7 +14,7 @@ This skill is invoked by prompting `/plan <task description>`. This skill will r
 
 ## Interaction Method
 
-- Use the platform's `ask_user_question` extension for all user-facing decisions; ask one question at a time.
+- Ask the user one structured question at a time (2–4 concrete options) using the agent's interactive question capability; never hardcode a specific tool name.
 - If input is empty, ask: "What would you like to plan? Describe the task or project."
 
 Before starting the workflow, ask the user to choose an interaction mode:
@@ -69,7 +69,7 @@ Between phases, the orchestrator validates the output artifact before passing it
 1. **Schema validation** — required fields present and well-formed (see [error-handling.md](references/error-handling.md) for the per-type field list).
 2. **Cross-phase consistency** — IDs (`scope-id`, `research-id`, `design-id`, `plan-id`) match the upstream artifacts; `interactionMode` is identical across artifacts.
 3. **Status check** — the artifact's `status` is `complete` (not `pending` or `failed`).
-4. **Tier/complexity coherence** (after Design) — the `tier_recommendation` is consistent with `complexity` and `risk_level` per [plan-tier-selection.md](references/plan-tier-selection.md).
+4. **Tier/complexity coherence** (after Design) — the `tier_recommended` is consistent with `complexity` and `risk_level` per [plan-tier-selection.md](references/plan-tier-selection.md).
 
 If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).
 
@@ -102,6 +102,7 @@ The orchestrator and modules share these reference files:
 | Reference                                                                     | Used By                          |
 | ----------------------------------------------------------------------------- | -------------------------------- |
 | [error-handling.md](references/error-handling.md)                             | All phases (Step 0 verification) |
+| [id-generation.md](references/id-generation.md)                             | Scope, Research, Design, Generate (ID assignment) |
 | [interaction-mode-propagation.md](references/interaction-mode-propagation.md) | All phases (Step N confirmation) |
 | [learnings-gate-logic.md](references/learnings-gate-logic.md)                 | Scope (Step 4)                   |
 | [high-risk-detection.md](references/high-risk-detection.md)                   | Research (Step 2)                |
@@ -123,3 +124,6 @@ Artifact templates live in [references/templates/artifacts/](references/template
 - **Stay Portable:** Use repository-relative paths only.
 - **Transparent Artifacts:** Each phase produces an explicit output artifact for the next phase.
 - **Interaction Mode Propagation:** `interactionMode` is read at the start of each subsequent phase and determines whether confirmation steps execute.
+- **Single Source of Truth:** This skill defines all its own rules; it does not depend on any external agent rule file.
+- **Behavior-Described, Tool-Agnostic:** Steps describe required capabilities ("search the codebase", "ask the user one question"), not specific tool names; each agent maps to its native tools.
+- **Test-Driven Tasks:** One Acceptance Criterion per task; one test per AC; each task's Steps follow Red → Green → Refactor (write the failing test first and confirm it fails, implement the minimum code to pass, then refactor with the test green).

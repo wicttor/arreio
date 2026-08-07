@@ -1,16 +1,20 @@
 ---
 title: Task Artifact
-description: Template for the Task Artifact produced by the Tasks phase. Defines the schema for a single executable task file, including goal, steps, dependencies, files, test scenarios, and acceptance criteria.
+description: Template for the Task Artifact produced by the Tasks phase. One task per Acceptance Criterion; one test per task; Red→Green→Refactor Steps. Defines the schema for a single executable, test-driven task file.
 type: template
-version: 1.0
-timestamp: "2026-07-03"
+version: 2.0
+timestamp: "2026-08-07"
 ---
 
 # Task Artifact
 
-The product of the **Tasks** phase (Phase 5) is a set of granular, executable task files — one per slice of the finalized plan. Each task file is self-contained enough to execute without re-reading the full plan, and serves as the handoff point to the Work skill (`work/SKILL.md`).
+The product of the **Tasks** phase (Phase 5) is a set of granular, executable, **test-driven** task files — **one per Acceptance Criterion**. Each task carries exactly one Acceptance Criterion and exactly one test file, follows Red→Green→Refactor, and is self-contained enough to execute without re-reading the full plan. It is the handoff point to the Work skill (`work/SKILL.md`).
 
-When the **Tasks** phase completes, it produces one task file per slice, saved to `docs/tasks/<plan-id>/`, with this schema:
+## Core rule
+
+- **One Acceptance Criterion per task.**
+- **One test per task** (in `files.test`, exactly one entry) — that test asserts this task's single Acceptance Criterion.
+- **Test-Driven:** `## Steps` run **Red → Green → Refactor** (write the failing test first and confirm it fails, implement the minimum code to pass, then refactor with the test green).
 
 ## Schema
 
@@ -27,29 +31,29 @@ dependencies: [<task-id>, ...]
 files:
   create: [path/to/file, ...]
   modify: [path/to/file, ...]
-  test: [path/to/test, ...]
+  test: [path/to/test]          # exactly one — the test for this task's AC
 estimated-effort: "<hours or days>"
-timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
+timestamp: ISO-8601 timestamp (e.g., 2026-08-07T14:30:00Z)
 ---
 
 # [Task Title]
 
 ## Goal
-[What this task accomplishes, inherited from the implementation unit. 1-2 sentences.]
+[What this task accomplishes, inherited from the implementation unit and scoped to this one criterion. 1-2 sentences.]
+
+## Acceptance Criterion
+[Exactly one, single, verifiable criterion this task delivers.]
 
 ## Steps
-1. [Concrete, actionable step]
-2. [Concrete, actionable step]
-3. [Concrete, actionable step]
+1. **Red — Write the failing test:** add the test at `files.test[0]` asserting this Acceptance Criterion. Run it and confirm it fails for the right reason (not a setup/import error).
+2. **Green — Implement:** add the minimum code in `files.create`/`files.modify` to make the test pass.
+3. **Refactor:** clean up naming, duplication, and structure while keeping the test green.
 
 ## Test Scenarios
-- [Scenario]: [Input -> Expected Outcome]
-- [Scenario]: [Input -> Expected Outcome]
+- [Scenario]: [Input -> Expected Outcome]   # the assertion(s) for this criterion (may be a single scenario)
 
 ## Acceptance Criteria
-- [ ] [Verifiable criterion 1]
-- [ ] [Verifiable criterion 2]
-- [ ] [Verifiable criterion 3]
+- [ ] [This task's single Acceptance Criterion, restated as a checkable box]
 
 ## Dependencies
 - [task-id]: [why this task must complete first, or "None"]
@@ -60,20 +64,21 @@ timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 
 ## Validation Rules
 
-- **id:** Required. Format `<plan-id>-T<NN>` where `NN` is zero-padded 2 digits matching dependency order.
+- **id:** Required. Format `<plan-id>-T<NN>` where `NN` is zero-padded 2 digits matching dependency order. Sub-IDs use letters (e.g., `T02a`).
 - **title:** Required. Short, action-oriented (e.g., "Set up Redis client and session store interface").
 - **plan-id:** Required. Must match the Final Plan's `plan-id` for traceability.
-- **unit:** Required. The originating implementation unit ID (e.g., `U1`, `U2a`). If a task merges units, list all (e.g., `U3, U4`).
+- **unit:** Required. The originating implementation unit (e.g., `U1`, `U2a`). A task never spans more than one Acceptance Criterion, so it records exactly one unit (or one sub-id).
 - **tier:** Required. Inherited from the Final Plan (`fast | standard | deep`).
 - **status:** Required. Initial value `not-started`. The Work skill updates this to `in-progress`, `completed`, or `blocked`.
 - **priority:** Required. `P0` (blocks all), `P1` (critical path), `P2` (deferrable).
 - **dependencies:** Required (may be empty list). Must reference task IDs that appear earlier in dependency order.
-- **files:** Required. At least one of `create`, `modify`, or `test` must be non-empty. All paths must be repository-relative.
-- **estimated-effort:** Required. Rough estimate in hours or days (e.g., "2 hours", "1 day"). Used by the Work phase for sequencing.
-- **Goal:** Required. 1–2 sentences, inherited from the unit.
-- **Steps:** Required. At least 1 concrete step. Each step must be actionable (not "implement the feature" — break it down).
-- **Test Scenarios:** Required for foundation and integration tasks (phases 1–2). Optional for rollout-only tasks. Format: `[Scenario]: [Input -> Expected Outcome]`.
-- **Acceptance Criteria:** Required. At least 1 verifiable criterion. Must be checkable without subjective judgment.
+- **files:** Required. `test` must contain **exactly one** path — the test for this task's single Acceptance Criterion. At least one of `create`, `modify`, or `test` must be non-empty. All paths must be repository-relative.
+- **estimated-effort:** Required. Rough estimate in hours or days. Used by the Work phase for sequencing.
+- **Goal:** Required. 1–2 sentences, inherited from the unit and scoped to this criterion.
+- **Acceptance Criterion:** Required. **Exactly one** verifiable criterion. Single, not bundled.
+- **Steps:** Required. Exactly three, in **Red → Green → Refactor** order, with the failing test written and confirmed **before** implementation.
+- **Test Scenarios:** Required for foundation/integration tasks (phases 1–2). Optional for rollout-only tasks. Format: `[Scenario]: [Input -> Expected Outcome]`. May be a single scenario (one task = one criterion = one test).
+- **Acceptance Criteria (checkbox):** Required. Exactly one checkable item restating the criterion above.
 - **Notes:** Optional. May reference learnings, gotchas, or related tasks.
 
 ## Example
@@ -81,7 +86,7 @@ timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 ```yaml
 ---
 id: 2026-07-03-001-T01
-title: "Set up Redis client and session store interface"
+title: "Redis client connects and backs the SessionStore interface"
 plan-id: 2026-07-03-001
 unit: U1
 tier: standard
@@ -95,18 +100,21 @@ files:
   test:
     - src/lib/redis-client.test.ts
 estimated-effort: "4 hours"
+timestamp: 2026-07-03T09:00:00Z
 ---
 
-# Set up Redis client and session store interface
+# Redis client connects and backs the SessionStore interface
 
 ## Goal
-Create a Redis client wrapper and define the session storage interface that the Redis-backed implementation will satisfy. This is the foundation unit — all later session work depends on it.
+Create a Redis client wrapper that connects from `REDIS_URL` with retry-on-failure, and define the `SessionStore` interface it satisfies. This is the foundation for all later session work.
+
+## Acceptance Criterion
+The Redis client connects using `REDIS_URL` with retry on failure, and `SessionStore` exports `get`, `save`, and `delete` — verified by a failing-then-passing test.
 
 ## Steps
-1. Add `ioredis` dependency to `package.json`
-2. Create `src/lib/redis-client.ts` exporting a configured Redis client with connection retry logic
-3. Define `SessionStore` interface in `src/lib/session-store.ts` with `get`, `save`, `delete` methods
-4. Write `src/lib/redis-client.test.ts` covering connection, TTL, and error scenarios
+1. **Red — Write the failing test:** add `src/lib/redis-client.test.ts` asserting: store `{id, data}` → retrieve returns the same data; a 1s TTL session returns null after expiry; dropping the connection makes `get` throw a retryable error. Run it and confirm it fails (interface/client not yet implemented).
+2. **Green — Implement:** add `ioredis` to `package.json`; create `src/lib/redis-client.ts` (configured client with connection retry) and `src/lib/session-store.ts` (`get`, `save`, `delete`) until the test passes.
+3. **Refactor:** keep the client wrapper thin (business logic belongs in the store implementation — T02); ensure all three test scenarios stay green.
 
 ## Test Scenarios
 - Store/retrieve session: store {id, data} -> retrieve returns same data
@@ -114,18 +122,15 @@ Create a Redis client wrapper and define the session storage interface that the 
 - Connection error: drop connection -> get throws retryable error
 
 ## Acceptance Criteria
-- [ ] `SessionStore` interface exported with `get`, `save`, `delete` methods
-- [ ] Redis client connects using `REDIS_URL` env var with retry on failure
-- [ ] All test scenarios pass
-- [ ] No existing tests broken
+- [ ] Redis client connects from `REDIS_URL` with retry on failure and `SessionStore` exposes `get`/`save`/`delete` (all three test scenarios pass)
 
 ## Dependencies
 - None
 
 ## Notes
-- Reuse the connection retry pattern from `docs/learnings/pattern/redis-retry-2026-07-02.md` if it exists
-- Keep the client wrapper thin — business logic belongs in the session store implementation (T02)
-- Feature flag `feature.redis_sessions` should be added in T04, not here
+- Reuse the connection retry pattern from `docs/learn/pattern/redis-retry-2026-07-02.md` if it exists.
+- Feature flag `feature.redis_sessions` is added in T04, not here.
+- T02 implements the Redis-backed `SessionStore`; keep this task limited to the client + interface + its own test.
 ```
 
 ## File-Naming Convention
@@ -140,18 +145,18 @@ docs/tasks/<plan-id>/T<NN>-<kebab-case-name>.md
 
 ```
 docs/tasks/2026-07-03-001/
-  T01-redis-client-setup.md
-  T02-redis-session-store.md
-  T03-session-middleware-refactor.md
+  T01-redis-client-and-session-store-interface.md
+  T02a-redis-session-store-implementation.md
+  T02b-session-middleware-refactor.md
   T04-dual-write-cutover.md
 ```
 
 ## Usage in Workflow
 
-1. **Tasks Phase** reads the Final Plan's Implementation Units and slices them into tasks per [task-slicing-rules.md](../../task-slicing-rules.md)
-2. Each task file is saved to `docs/tasks/<plan-id>/T<NN>-<name>.md`
-3. **Tasks Phase** updates `docs/tasks/<plan-id>/index.md` with a checklist of all tasks for the plan
-4. **Work skill** (`work/SKILL.md`) reads task files, executes them in dependency order, and updates `status` and the index checklist
+1. **Tasks Phase** reads the Final Plan's Implementation Units and slices them into tasks per [task-slicing-rules.md](../../task-slicing-rules.md) — **one task per Acceptance Criterion**.
+2. Each task file is saved to `docs/tasks/<plan-id>/T<NN>-<name>.md`.
+3. **Tasks Phase** updates `docs/tasks/<plan-id>/index.md` with a checklist of all tasks for the plan.
+4. **Work skill** (`work/SKILL.md`) reads task files, runs each task's Red→Green→Refactor cycle, and updates `status` and the index checklist.
 
 ## Index Entry Format
 
@@ -160,10 +165,10 @@ After saving all task files, append a section to `docs/tasks/<plan-id>/index.md`
 ```markdown
 ## 2026-07-03-001 — Migrate Session Storage to Redis
 
-- [ ] T01 — Set up Redis client and session store interface — `docs/tasks/2026-07-03-001/T01-redis-client-setup.md`
-- [ ] T02 — Redis session store implementation — `docs/tasks/2026-07-03-001/T02-redis-session-store.md`
-- [ ] T03 — Session middleware refactor — `docs/tasks/2026-07-03-001/T03-session-middleware-refactor.md`
-- [ ] T04 — Dual-write and cutover — `docs/tasks/2026-07-03-001/T04-dual-write-cutover.md`
+- [ ] T01 — Redis client connects and backs the SessionStore interface (`U1`, AC: client connects with retry + SessionStore get/save/delete) — `docs/tasks/2026-07-03-001/T01-redis-client-and-session-store-interface.md`
+- [ ] T02a — Redis-backed SessionStore implementation (`U2a`, AC: get/save/delete persist sessions to Redis with TTL) — `docs/tasks/2026-07-03-001/T02a-redis-session-store-implementation.md`
+- [ ] T02b — Session middleware refactor (`U2b`, AC: middleware loads valid sessions and rejects invalid/expired JWTs) — `docs/tasks/2026-07-03-001/T02b-session-middleware-refactor.md`
+- [ ] T04 — Dual-write and cutover (`U4`, AC: dual-write to Redis with feature-flagged cutover) — `docs/tasks/2026-07-03-001/T04-dual-write-cutover.md`
 ```
 
 The `- [ ]` (unchecked) markers are updated to `- [x]` by the Work skill as tasks complete.
@@ -172,15 +177,16 @@ The `- [ ]` (unchecked) markers are updated to `- [x]` by the Work skill as task
 
 If a task file is incomplete at validation, use this recovery workflow:
 
-| Field               | Validation                  | Recovery                               |
-| ------------------- | --------------------------- | -------------------------------------- |
-| id                  | Matches `<plan-id>-T<NN>`   | Regenerate from dependency order       |
-| unit                | References a plan unit      | Ask user to map the task to a unit     |
-| files               | At least one path non-empty | Ask user which files the task touches  |
-| Goal                | Non-empty, from unit        | Inherit from the originating unit      |
-| Steps               | At least 1 actionable step  | Ask user to break down the unit's goal |
-| Test Scenarios      | Present for phases 1–2      | Inherit from the unit's test scenarios |
-| Acceptance Criteria | At least 1 checkable item   | Derive from test scenarios             |
-| dependencies        | References earlier task IDs | Re-run dependency ordering algorithm   |
+| Field               | Validation                           | Recovery                                            |
+| ------------------- | ------------------------------------ | --------------------------------------------------- |
+| id                  | Matches `<plan-id>-T<NN>`            | Regenerate from dependency order                    |
+| unit                | References a single plan unit        | Ask user to map the task to one unit                |
+| files.test          | Exactly one path                     | Ask user for the single test file for this criterion |
+| files (create/modify) | At least one path non-empty        | Ask user which files the task touches               |
+| Acceptance Criterion | Exactly one, verifiable             | Ask user to state the single criterion              |
+| Steps               | Red → Green → Refactor ordering     | Re-sequence; ensure test is written and run first    |
+| Test Scenarios      | Present for phases 1–2              | Inherit from the unit's test scenarios              |
+| Acceptance Criteria | Exactly one checkable item          | Derive from the single Acceptance Criterion         |
+| dependencies        | References earlier task IDs         | Re-run dependency ordering algorithm                 |
 
-**Note:** If a task cannot be produced because the plan has no Implementation Units, abort the Tasks phase and ask the user to re-run the Generate phase — the plan is incomplete.
+**Note:** If a task cannot be produced because the plan has no Implementation Units (or a unit has no Acceptance Criteria), abort the Tasks phase and ask the user to re-run the Design/Generate phases — the plan is incomplete.

@@ -2,8 +2,8 @@
 title: Design Complexity Assessment
 description: Reference for the Design phase. Defines the complexity scoring algorithm across five dimensions, the heuristics for assigning complexity levels, and how complexity maps to interaction-mode pause behavior.
 type: reference
-version: 1.0
-timestamp: "2026-07-03"
+version: 1.1
+timestamp: "2026-08-07"
 ---
 
 # Design Complexity Assessment
