@@ -41,4 +41,5 @@ When a convention change is intentional (e.g., adopting arreio's `docs/learn/`),
 ## Source
 
 - `skills/plan/**` — learnings path unified to `docs/learn/` (arreio convention, per session decision)
+- `skills/work/**` — Work skill (Triage learnings gate) reads `docs/learn/index.md` per the same arreio convention; new skills authored against the canonical `docs/learn/` path, not the legacy `docs/learnings/` storage (session decision, 2026-08-07)
 - Commit `40b4808`
