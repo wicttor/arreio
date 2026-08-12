@@ -13,7 +13,7 @@ Orchestrates a deterministic pipeline of micro-skills: `Scope -> Prepare -> Anal
 This skill is invoked by prompting:
 
 - `/review <change-set>` — review a git change set: `git diff <base>..<head>`, a PR's commits, a commit range (`A..B`), `HEAD` (uncommitted), staged changes, a branch-vs-base diff, or a set of paths/globs.
-- `/review <work-id>` — review the changes a `/work` run produced (resolves `work-id` → the task files' `files.create` / `files.modify`, optionally bounded by the Work Report's scope). Also accepts a Work `review-id` to scope to that run.
+- `/review <work-id>` — review the changes a `/work` run produced. Scope discovers `status: for-review` tasks (see below); if found, reviews those task changes and gates approval. Also accepts a Work `review-id` to scope to that run.
 - `/review <target description>` — ad-hoc review of a described target (e.g. "review the auth module", "review `src/lib/redis-client.ts`"). Scope resolves the description into a concrete change boundary.
 
 This skill runs the review pipeline, analyzing changes and producing a report, acting as the Orchestrator.
@@ -44,13 +44,14 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 ### INPUT
 
 - Receives a context object from the user, a saved prompt, a document, or a combination.
-- **Three input shapes:**
+- **Four input shapes:**
   1. **Change-set** — a git change set spec: a diff range (`<base>..<head>`), a commit range (`A..B`), `HEAD` (uncommitted working tree), staged changes, a branch-vs-base diff, or a set of paths/globs. Scope resolves it to a concrete file + hunk boundary.
   2. **Work-linked** — a `work-id` (e.g. `2026-07-10-001`) or a Work `review-id`. Scope resolves it to the changes that `/work` run touched: the union of every task file's `files.create` / `files.modify` (filtered by the `completed`/`blocked`/`skipped` outcomes in the Work Report), bounded to commits attributable to that run if discoverable.
-  3. **Ad-hoc** — a free-form target description. Scope maps it to a concrete change boundary by locating matching files/paths and, where applicable, the commits that most recently touched them.
+  3. **Task-in-review** — ✅ **NEW**: a `work-id` where one or more tasks have `status: for-review` (gated by Work Review Phase 4). Scope resolves it to files touched by those tasks. After Analyze, Report updates task file frontmatter: `status: completed` (if approved) or `status: blocked` (if changes-requested). This is the approval gate for tasks awaiting review.
+  4. **Ad-hoc** — a free-form target description. Scope maps it to a concrete change boundary by locating matching files/paths and, where applicable, the commits that most recently touched them.
 - **Optional requirements:** any review is sharper when there is a reference spec to test against. Accept an optional requirements ref — a `/plan` plan-id, a task's `## Acceptance Criterion`, a markdown spec, or a referenced doc. If provided, scope-creep detection runs against it; if absent, Scope marks `requirements-source: none` and Analyze skips the scope-creep-vs-requirements category (noting it).
 - **If no context is provided**, ask: "What would you like to review? Provide a git ref/range, a work-id, or describe a target."
-- **Unified key:** downstream phases key off a `review-id` (`YYYY-MM-DD-NNN`), allocated by Scope per [id-generation.md](references/id-generation.md). For work-linked input, the `review-id` is **distinct** from the Work `review-id` (the two skills produce independent artifacts) — the work-id is carried alongside for traceability and optional index cross-linking.
+- **Unified key:** downstream phases key off a `review-id` (`YYYY-MM-DD-NNN`), allocated by Scope per [id-generation.md](references/id-generation.md). For work-linked and task-in-review input, the `review-id` is **distinct** from the Work `review-id` (the two skills produce independent artifacts) — the work-id is carried alongside for traceability and optional index cross-linking. For task-in-review input specifically, Report's approval verdict updates the task files' frontmatter `status:` field (new behavior).
 - Output: [Review Input Artifact](references/templates/artifacts/review-input.md)
 
 ### Pre-Flight Check
@@ -66,14 +67,16 @@ For **change-set** input, verify the repo is a git working tree and the spec par
 
 For **work-linked** input, verify the `work-id` exists (`docs/tasks/<work-id>/index.md`) and is non-empty; if given a Work `review-id`, verify `docs/plans/.work/.review/<review-id>.md` exists. If missing, ask the user to run `/work <work-id>` first or switch to a change-set spec.
 
+For **task-in-review** input, verify the `work-id` exists and contains at least one task with `status: for-review` (read task files' frontmatter or check the Work Report's task-outcome-rollup `for-review` count). If none found, inform the user: "No tasks in for-review status for this work-id. Did you run `/work <work-id>` first?" or offer to review the work-linked changes instead.
+
 ### Phases
 
-| Phase | Phase Module                         | Output Artifact                                                              | Saved to                               |
-| ----- | ------------------------------------ | ---------------------------------------------------------------------------- | -------------------------------------- |
-| 1     | [Scope](modules/scope.md)            | [Review scope](references/templates/artifacts/review-scope.md)               | `docs/plans/.review/.scope/<id>.md`    |
-| 2     | [Prepare](modules/prepare.md)        | [Review kit](references/templates/artifacts/review-kit.md)                    | `docs/plans/.review/.prepare/<id>.md`  |
-| 3     | [Analyze](modules/analyze.md)        | [Findings](references/templates/artifacts/findings.md)                       | `docs/plans/.review/.analyze/<id>.md`  |
-| 4     | [Report](modules/report.md)          | [Review report](references/templates/artifacts/review-report.md)             | `docs/plans/.review/.report/<id>.md`   |
+| Phase | Phase Module                  | Output Artifact                                                  | Saved to                              |
+| ----- | ----------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
+| 1     | [Scope](modules/scope.md)     | [Review scope](references/templates/artifacts/review-scope.md)   | `docs/plans/.review/.scope/<id>.md`   |
+| 2     | [Prepare](modules/prepare.md) | [Review kit](references/templates/artifacts/review-kit.md)       | `docs/plans/.review/.prepare/<id>.md` |
+| 3     | [Analyze](modules/analyze.md) | [Findings](references/templates/artifacts/findings.md)           | `docs/plans/.review/.analyze/<id>.md` |
+| 4     | [Report](modules/report.md)   | [Review report](references/templates/artifacts/review-report.md) | `docs/plans/.review/.report/<id>.md`  |
 
 ### Quality Gates
 
@@ -91,13 +94,14 @@ If a gate fails, the orchestrator returns to the producing phase with the error 
 
 Each phase is responsible for its own index updates:
 
-| Phase    | Registers To                          | Update                                                                                                |
-| -------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Scope    | _(none — produces artifact only)_     | Allocates the `review-id`; no index write.                                                            |
-| Prepare  | _(none)_                              | Gathers the review kit; no index write.                                                              |
-| Analyze  | _(none)_                              | Produces findings; no index write.                                                                   |
-| Report   | `docs/plans/.review/index.md`         | Append a registry row: `<report-id>`, review target summary, approval status, link to the report file. |
-| Report   | `docs/tasks/<work-id>/index.md` _(work-linked only)_ | Append a distinct `## Review Report — <report-id>` block (separate from Work's own `## Work Report` block). |
+| Phase   | Registers To                                                           | Update                                                                                                                         |
+| ------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Scope   | _(none — produces artifact only)_                                      | Allocates the `review-id`; no index write.                                                                                     |
+| Prepare | _(none)_                                                               | Gathers the review kit; no index write.                                                                                        |
+| Analyze | _(none)_                                                               | Produces findings; no index write.                                                                                             |
+| Report  | `docs/plans/.review/index.md`                                          | Append a registry row: `<report-id>`, review target summary, approval status, link to the report file.                         |
+| Report  | `docs/tasks/<work-id>/index.md` _(work-linked or task-in-review only)_ | Append a distinct `## Review Report — <report-id>` block (separate from Work's own `## Work Report` block).                    |
+| Report  | Task frontmatter _(task-in-review only)_                               | Update task file `status:` field to `completed` (if approved) or `blocked` (if changes-requested, with reason in frontmatter). |
 
 **Idempotency rule:** re-running Review over the same target re-derives findings fresh (reviews are not resume-safe like execution — the change set may have evolved). The registry row and any work-index block are **idempotent on `report-id`**: a re-run overwrites the row/block with the same id, never duplicates it.
 
@@ -105,7 +109,11 @@ Each phase is responsible for its own index updates:
 
 - **Review Report:** Saved to `docs/plans/.review/.report/<report-id>.md`, with: the change boundary, the approval status (`approved` / `changes-requested` / `rejected`), the graded findings rollup, recommendations, and (when requirements were available) the scope-creep summary.
 - **Registry row:** `docs/plans/.review/index.md` updated with the new review.
-- **(Work-linked only) Index cross-link:** `docs/tasks/<work-id>/index.md` gets a `## Review Report — <report-id>` block so a future glance at the work index shows that an external Review ran over it.
+- **(Work-linked or task-in-review only) Index cross-link:** `docs/tasks/<work-id>/index.md` gets a `## Review Report — <report-id>` block so a future glance at the work index shows that an external Review ran over it.
+- **(Task-in-review only) Task Status Update:** ✅ **NEW**: For each task with `status: for-review`:
+  - If approval status = `approved` → update task file's frontmatter `status: completed`
+  - If approval status = `changes-requested` → update task file's frontmatter `status: blocked` (with reason in `block-reason:` field)
+  - Idempotent on `report-id` (re-running overwrites, never duplicates)
 - **No GitHub sync:** This skill does not post comments, formal reviews, or labels to GitHub. Findings live on disk only — the user wires outbound posting as a separate step if desired.
 - **(Optional) Learnings:** Recurring traps or confirmed patterns surfaced during Analyze are handed to the Learn skill (`/learn`) to persist — Review does not write `docs/learn/` directly.
 
@@ -113,32 +121,35 @@ Each phase is responsible for its own index updates:
 
 The orchestrator and phase modules share these reference files:
 
-| Reference                                                                       | Used By                                  |
-| ------------------------------------------------------------------------------- | ---------------------------------------- |
-| [error-handling.md](references/error-handling.md)                               | All phases (Step 0 verification)         |
-| [id-generation.md](references/id-generation.md)                                 | Scope, Prepare, Analyze, Report (ID assignment, including `review-id` allocation) |
-| [interaction-mode-propagation.md](references/interaction-mode-propagation.md)   | All phases (Step N confirmation)        |
-| [change-set-resolution.md](references/change-set-resolution.md)                 | Scope (resolve change-set / work-id / ad-hoc into a change boundary) |
-| [scope-creep-detection.md](references/scope-creep-detection.md)                 | Scope (pre-check) + Analyze (final) detect creep vs requirements |
-| [review-categories.md](references/review-categories.md)                         | Analyze (quality / security / tests / documentation / integration / scope-creep) |
-| [severity-rubric.md](references/severity-rubric.md)                             | Analyze + Report (severity assignment) |
-| [approval-criteria.md](references/approval-criteria.md)                         | Report (final approval status derivation) |
-| [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md)          | Scope (pull related learnings from `docs/learn/index.md`) — reused from `/plan` |
+| Reference                                                                     | Used By                                                                           |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [error-handling.md](references/error-handling.md)                             | All phases (Step 0 verification)                                                  |
+| [id-generation.md](references/id-generation.md)                               | Scope, Prepare, Analyze, Report (ID assignment, including `review-id` allocation) |
+| [interaction-mode-propagation.md](references/interaction-mode-propagation.md) | All phases (Step N confirmation)                                                  |
+| [change-set-resolution.md](references/change-set-resolution.md)               | Scope (resolve change-set / work-id / ad-hoc into a change boundary)              |
+| [scope-creep-detection.md](references/scope-creep-detection.md)               | Scope (pre-check) + Analyze (final) detect creep vs requirements                  |
+| [review-categories.md](references/review-categories.md)                       | Analyze (quality / security / tests / documentation / integration / scope-creep)  |
+| [severity-rubric.md](references/severity-rubric.md)                           | Analyze + Report (severity assignment)                                            |
+| [approval-criteria.md](references/approval-criteria.md)                       | Report (final approval status derivation)                                         |
+| [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md)         | Scope (pull related learnings from `docs/learn/index.md`) — reused from `/plan`   |
 
 Artifact templates live in [references/templates/artifacts/](references/templates/artifacts/):
 
-| Template                                                                      | Produced By |
-| ----------------------------------------------------------------------------- | ----------- |
-| [review-input.md](references/templates/artifacts/review-input.md)             | Orchestrator |
-| [review-scope.md](references/templates/artifacts/review-scope.md)             | Scope    |
-| [review-kit.md](references/templates/artifacts/review-kit.md)                 | Prepare   |
-| [findings.md](references/templates/artifacts/findings.md)                     | Analyze   |
-| [review-report.md](references/templates/artifacts/review-report.md)           | Report    |
+| Template                                                            | Produced By  |
+| ------------------------------------------------------------------- | ------------ |
+| [review-input.md](references/templates/artifacts/review-input.md)   | Orchestrator |
+| [review-scope.md](references/templates/artifacts/review-scope.md)   | Scope        |
+| [review-kit.md](references/templates/artifacts/review-kit.md)       | Prepare      |
+| [findings.md](references/templates/artifacts/findings.md)           | Analyze      |
+| [review-report.md](references/templates/artifacts/review-report.md) | Report       |
 
 ## Core Principles
 
 - **Deterministic Pipeline:** Phases always execute in sequence (no agent switching, no fallback paths).
-- **Review ≠ Work's Review phase:** This is a heavyweight code review of arbitrary changes against standards (quality / security / tests / docs / integration / scope-creep) with an explicit approval status. Work's built-in Phase-4 Review is a narrow, behavior-preserving cleanup of the tasks it just executed. The two are complementary, not overlapping — Review can point at a `/work` run's changes but analyzes them, it does not modify them.
+- **Review ≠ Work's Review phase:** This is a heavyweight code review of arbitrary changes against standards (quality / security / tests / docs / integration / scope-creep) with an explicit approval status. Work's built-in Phase-4 Review is a lightweight, behavior-preserving cleanup + gate of the tasks it just executed. The two are **complementary, not overlapping**:
+  - **Work Review** (Phase 4 of `/work`): Pre-check gate. Simplify, consolidate, run regression check, detect scope-creep. If any regression/scope-creep found → tasks enter `for-review` status (not `completed`).
+  - **Standalone Review** (this skill): Comprehensive audit. Full quality/security/tests/docs analysis. Can accept `/review <work-id>` → finds `status: for-review` tasks (task-in-review input shape) → audits them with full severity rubric → approval verdict updates task status to `completed` or `blocked`.
+  - **Sequential**, not parallel: `/work` executes and gates to `for-review`; user runs `/review` next to approve or reject. No overlap in purpose.
 - **Cascade Graded Findings:** Every finding has a severity (`blocker` / `major` / `minor` / `nit`) that drives the final approval status. Severity criteria are authoritative in [severity-rubric.md](references/severity-rubric.md); Analyze assigns, Report aggregates and never re-encodes the rubric.
 - **Scope-Creep Requires Requirements:** Scope-creep detection runs only when a reference spec is available; without one, Analyze skips that category and records `requirements-source: none`. The logic is authoritative in [scope-creep-detection.md](references/scope-creep-detection.md).
 - **Test the Tests:** Reviewing changes includes evaluating the tests that accompany them — coverage, correctness of assertions, and whether they assert the intended Acceptance Criterion — not just production code.

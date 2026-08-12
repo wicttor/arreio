@@ -27,8 +27,11 @@ timestamp: ISO-8601 timestamp
 task-outcome-rollup:
   total: <N>
   completed: <N>
+  for-review: <N>
   blocked: <N>
   skipped: <N>
+
+gate-decision: "[summary of gate outcome; e.g., 'Gate passed: clean regression check, no scope creep' OR 'Gate blocked: regressions-found (3 new failures) + scope-creep in 2 files']"
 
 simplification-summary: "[what was simplified/clipped across completed tasks' changed files]"
 consolidations: "[shared logic extracted / abstractions introduced, or 'none']"
@@ -52,7 +55,7 @@ learning-gaps:
     domain: [primary domain]
     suggested_action: "Research external resource" | "Document post-implementation"
 
-work-state: complete | partial | nothing-done
+work-state: for-review | complete | partial | nothing-done
 
 index-block-appended: true   # the ## Work Report — <review-id> block was appended to docs/tasks/<work-id>/index.md (idempotent on review-id)
 ```
@@ -64,8 +67,9 @@ Also save the Work Report to `docs/plans/.work/.review/<review-id>.md`.
 ```markdown
 ## Work Report — <review-id>
 
-- **Status:** complete | partial | nothing-done
-- **Tasks:** <completed>/<total> completed, <blocked> blocked, <skipped> skipped
+- **Status:** complete | partial | for-review | nothing-done
+- **Tasks:** <completed>/<total> completed, <for-review> for-review, <blocked> blocked, <skipped> skipped
+- **Gate decision:** [summary of regression/scope-creep gate outcome]
 - **Regression check:** clean | regressions-found (<N>)
 - **Scope creep:** none | <count> finding(s)
 - **Learnings to capture:** <count> (run `/learn` to persist)
@@ -79,13 +83,14 @@ The block is **append-only** and **idempotent on `review-id`**: a re-run overwri
 - **review-id:** Required. Format `YYYY-MM-DD-NNN-review`.
 - **execute-id, prepare-id, triage-id, work-id, input-shape:** Required, inherited (cross-phase consistency).
 - **interactionMode, executionMode:** Both required, identical across Prepare/Execute/Review (orchestrator quality gate #2).
-- **task-outcome-rollup:** Required. Matches the Execution Log's aggregator counts.
+- **task-outcome-rollup:** Required. Matches the Execution Log's aggregator counts. Now includes `for-review` count (new status).
+- **gate-decision:** Required. Brief summary of the gate outcome (e.g., "Gate passed: clean regression check, no scope creep" OR "Gate blocked: regressions-found (3 failures) + scope-creep in 2 files").
 - **simplification-summary, consolidations:** Required (consolidations may be `none`).
-- **regression-check.state:** Required. `clean` or `regressions-found`; `failing-tests` present only when `regressions-found`.
-- **scope-creep:** Required. `none` or a list of per-task findings.
+- **regression-check.state:** Required. `clean` or `regressions-found`; `failing-tests` present only when `regressions-found`. **Binary threshold**: any test failure = gate blocks.
+- **scope-creep:** Required. `none` or a list of per-task findings. Any scope-creep = gate blocks.
 - **learnings-to-capture:** Required (may be empty). Each candidate has title/domain/source/summary/type. Work does not write `docs/learn/` directly — these are handed to `/learn`.
 - **learning-gaps:** Required (may be empty). Carries forward the Work Manifest's gaps plus any Review revealed.
-- **work-state:** Required. `complete` (all completed + regression-clean) | `partial` (some blocked/skipped, progress made) | `nothing-done` (empty run or all blocked early).
+- **work-state:** Required. `for-review` (gate blocked by regressions/scope-creep; tasks await Standalone Review approval) | `complete` (all tasks completed + gate passed) | `partial` (some blocked/skipped, gate passed for non-blocked) | `nothing-done` (empty run or all blocked early).
 - **index-block-appended:** Required, must be `true`.
 - **status:** Required. `complete`.
 
