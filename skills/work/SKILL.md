@@ -37,7 +37,7 @@ interactionMode: detailed | smart | autopilot
 
 **Propagation:** `interactionMode` flows into the `triage`, `prepare`, `execute`, and `review` artifacts; each downstream phase reads it to adjust confirmation behaviour (detailed = pause every transition; autopilot = run all; smart = pause only on HIGH-risk).
 
-> **Interaction mode is distinct from execution mode.** `interactionMode` governs *when to pause for the user* (the same three modes as the `/plan` skill). **Execution mode** (inline / serial / parallel) governs *how multiple tasks are run* and is selected in the Prepare phase. The two are carried independently through the pipeline.
+> **Interaction mode is distinct from execution mode.** `interactionMode` governs _when to pause for the user_ (the same three modes as the `/plan` skill). **Execution mode** (inline / serial / parallel) governs _how multiple tasks are run_ and is selected in the Prepare phase. The two are carried independently through the pipeline.
 
 ## Orchestration Implementation
 
@@ -69,12 +69,12 @@ For task-file input, verify the task file exists and parses with valid task fron
 
 ### Phases
 
-| Phase | Phase Module                         | Output Artifact                                                                              | Saved to                              |
-| ----- | ------------------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 1     | [Triage](modules/triage.md)           | [Work manifest](references/templates/artifacts/work-manifest.md)                             | `docs/plans/.work/.triage/<id>.md`    |
-| 2     | [Prepare](modules/prepare.md)         | [Execution plan](references/templates/artifacts/execution-plan.md)                           | `docs/plans/.work/.prepare/<id>.md`   |
-| 3     | [Execute](modules/execute.md)         | [Execution log](references/templates/artifacts/execution-log.md)                             | `docs/plans/.work/.execute/<id>.md`   |
-| 4     | [Review](modules/review.md)           | [Work report](references/templates/artifacts/work-report.md)                                 | `docs/plans/.work/.review/<id>.md`    |
+| Phase | Phase Module                  | Output Artifact                                                    | Saved to                            |
+| ----- | ----------------------------- | ------------------------------------------------------------------ | ----------------------------------- |
+| 1     | [Triage](modules/triage.md)   | [Work manifest](references/templates/artifacts/work-manifest.md)   | `docs/plans/.work/.triage/<id>.md`  |
+| 2     | [Prepare](modules/prepare.md) | [Execution plan](references/templates/artifacts/execution-plan.md) | `docs/plans/.work/.prepare/<id>.md` |
+| 3     | [Execute](modules/execute.md) | [Execution log](references/templates/artifacts/execution-log.md)   | `docs/plans/.work/.execute/<id>.md` |
+| 4     | [Review](modules/review.md)   | [Work report](references/templates/artifacts/work-report.md)       | `docs/plans/.work/.review/<id>.md`  |
 
 ### Quality Gates
 
@@ -91,11 +91,11 @@ If a gate fails, the orchestrator returns to the producing phase with the error 
 
 Each phase is responsible for its own index updates:
 
-| Phase    | Registers To                       | Update                                                                                                       |
-| -------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Triage   | `docs/tasks/<work-id>/index.md`    | Ad-hoc only: create folder + index with the resolved task checklist (`- [ ]`). Plan-based: read only.        |
-| Execute  | `docs/tasks/<work-id>/index.md` + each task file | Flip frontmatter `status` and the task file's `## Acceptance Criteria` checkbox; tick the index checklist (`- [ ]` → `- [x]`) as tasks complete. Idempotent on retry. |
-| Review   | `docs/tasks/<work-id>/index.md`     | Append a closing `## Work Report — <review-id>` status block; optionally note learnings to capture via `/learn`. |
+| Phase   | Registers To                                     | Update                                                                                                                                                                |
+| ------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Triage  | `docs/tasks/<work-id>/index.md`                  | Ad-hoc only: create folder + index with the resolved task checklist (`- [ ]`). Plan-based: read only.                                                                 |
+| Execute | `docs/tasks/<work-id>/index.md` + each task file | Flip frontmatter `status` and the task file's `## Acceptance Criteria` checkbox; tick the index checklist (`- [ ]` → `- [x]`) as tasks complete. Idempotent on retry. |
+| Review  | `docs/tasks/<work-id>/index.md`                  | Append a closing `## Work Report — <review-id>` status block; optionally note learnings to capture via `/learn`.                                                      |
 
 **Idempotency rule:** re-running Work resumes from incomplete tasks. The orchestrator reads each task file's `status`; a `completed` task is never re-opened, and index checkboxes are only ticked forward, never reset.
 
@@ -110,25 +110,25 @@ Each phase is responsible for its own index updates:
 
 The orchestrator and phase modules share these reference files:
 
-| Reference                                                                       | Used By                                  |
-| ------------------------------------------------------------------------------- | ---------------------------------------- |
-| [error-handling.md](references/error-handling.md)                               | All phases (Step 0 verification)         |
-| [id-generation.md](references/id-generation.md)                                 | Triage, Prepare, Execute, Review (ID assignment, including `work-id` allocation) |
-| [interaction-mode-propagation.md](references/interaction-mode-propagation.md)   | All phases (Step N confirmation)        |
-| [execution-mode-selection.md](references/execution-mode-selection.md)           | Prepare (choose inline / serial / parallel) |
-| [ad-hoc-input-resolution.md](references/ad-hoc-input-resolution.md)             | Triage (resolve raw work into task-shaped work) |
-| [task-execution-rules.md](references/task-execution-rules.md)                   | Execute (Red → Green → Refactor enforcement, per-task gates, blocked-task handling) |
-| [review-checklist.md](references/review-checklist.md)                           | Review (simplification, consolidation, learnings capture) |
+| Reference                                                                     | Used By                                                                             |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [error-handling.md](references/error-handling.md)                             | All phases (Step 0 verification)                                                    |
+| [id-generation.md](references/id-generation.md)                               | Triage, Prepare, Execute, Review (ID assignment, including `work-id` allocation)    |
+| [interaction-mode-propagation.md](references/interaction-mode-propagation.md) | All phases (Step N confirmation)                                                    |
+| [execution-mode-selection.md](references/execution-mode-selection.md)         | Prepare (choose inline / serial / parallel)                                         |
+| [ad-hoc-input-resolution.md](references/ad-hoc-input-resolution.md)           | Triage (resolve raw work into task-shaped work)                                     |
+| [task-execution-rules.md](references/task-execution-rules.md)                 | Execute (Red → Green → Refactor enforcement, per-task gates, blocked-task handling) |
+| [review-checklist.md](references/review-checklist.md)                         | Review (simplification, consolidation, learnings capture)                           |
 
 Artifact templates live in [references/templates/artifacts/](references/templates/artifacts/):
 
-| Template                                                                      | Produced By |
-| ----------------------------------------------------------------------------- | ----------- |
-| [work-input.md](references/templates/artifacts/work-input.md)                 | Orchestrator |
-| [work-manifest.md](references/templates/artifacts/work-manifest.md)           | Triage    |
-| [execution-plan.md](references/templates/artifacts/execution-plan.md)         | Prepare   |
-| [execution-log.md](references/templates/artifacts/execution-log.md)          | Execute   |
-| [work-report.md](references/templates/artifacts/work-report.md)              | Review    |
+| Template                                                              | Produced By  |
+| --------------------------------------------------------------------- | ------------ |
+| [work-input.md](references/templates/artifacts/work-input.md)         | Orchestrator |
+| [work-manifest.md](references/templates/artifacts/work-manifest.md)   | Triage       |
+| [execution-plan.md](references/templates/artifacts/execution-plan.md) | Prepare      |
+| [execution-log.md](references/templates/artifacts/execution-log.md)   | Execute      |
+| [work-report.md](references/templates/artifacts/work-report.md)       | Review       |
 
 ## Core Principles
 
@@ -136,7 +136,9 @@ Artifact templates live in [references/templates/artifacts/](references/template
 - **Test-First Execution:** Every task runs Red → Green → Refactor — the failing test is written/confirmed **before** implementation. A task is not `completed` until its single test is green.
 - **One Acceptance Criterion per Task:** Preserve the `/plan` invariant — one AC → one task → one test. Ad-hoc work is resolved to the same shape by Triage; never bundle criteria during execution.
 - **Separate Execution from Planning:** Execute the plan as sliced; do not re-plan during execution. Surface scope changes to the user instead of silently expanding a task.
-- **Idempotent Status Updates:** Resume-safe — re-running Work picks up at the first non-`completed` task; completed tasks and their index checkboxes are never reverted.
+- **Quality Gates (Work Review Phase 4):** After Execute completes, Phase 4 Review runs a lightweight pre-check: simplify/consolidate, run regression test (binary: any failure = gate), detect scope-creep (binary: any finding = gate). If gate fails → tasks enter `status: for-review` (not `completed`) and await Standalone Review approval. If gate passes → tasks move to `status: completed`. This decouples execution quality from final approval authority.
+- **Learnings Orthogonal to Approval:** Work Report surfaces `learnings-to-capture` candidates (from Execute + Review phases) for later `/learn` invocation. Learnings are separate from approval gates; the Learn skill is the single authoritative source for durable knowledge.
+- **Idempotent Status Updates:** Resume-safe — re-running Work picks up at the first non-`completed` task; `completed` and `for-review` tasks are never reverted (their status is idempotent on `review-id` in Review Phase 4).
 - **Error Handling:** Fail explicitly, not silently; each phase has clear error handling with recovery suggestions.
 - **Be Concrete:** Use specific files, components, and dependencies from the task artifacts.
 - **Stay Portable:** Use repository-relative paths only.
@@ -144,4 +146,4 @@ Artifact templates live in [references/templates/artifacts/](references/template
 - **Interaction Mode Propagation:** `interactionMode` is read at the start of each subsequent phase and determines whether confirmation steps execute.
 - **Single Source of Truth:** This skill defines all its own rules; it does not depend on any external agent rule file.
 - **Behavior-Described, Tool-Agnostic:** Steps describe required capabilities ("run the test", "update the task file"), not specific tool names; each agent maps to its native tools.
-- **Optional GitHub Sync:** When GitHub integration is enabled, task status may be mirrored to GitHub Issues (via the sync-status micro-skill); this is integration-gated and never required to run Work.
+- **Next Workflow Step (Task-in-Review):** If Work Report's `work-state: for-review`, user runs `/review <work-id>` next. Review discovers `status: for-review` tasks (task-in-review input shape) and gates their approval: approved → `status: completed`, changes-requested → `status: blocked`. Optional GitHub Sync:\*\* When GitHub integration is enabled, task status may be mirrored to GitHub Issues (via the sync-status micro-skill); this is integration-gated and never required to run Work.
