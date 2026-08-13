@@ -68,7 +68,9 @@ graph LR
 | **Plan**              | Scope → Research → Design → Generate → Tasks               | `docs/plans/<plan-id>.md`, `docs/tasks/<plan-id>/`                                                   |
 | **Work**              | Triage → Prepare → Execute → Review (with for-review gate) | Updated task files, code changes; tasks in `completed`, `for-review`, `blocked`, or `skipped` status |
 | **Standalone Review** | Scope → Prepare → Analyze → Report                         | `docs/plans/.review/.report/<review-id>.md`; task status updates (task-in-review input)              |
-| **Learn**             | Capture → Refine → Index                                   | `docs/learn/<category>/<learning>.md`                                                                |
+| **Learn**             | Capture → Refine → Index (+ Maintain on-demand)¹           | `docs/learn/<category>/<learning>.md`                                                                |
+
+¹ **Learn phases:** Capture → Refine → Index for normal authoring. Maintain (Phase 4) runs on-demand for dedup, refresh, prune, and legacy migration.
 
 ## 5. Codebase Map
 
@@ -101,7 +103,7 @@ graph LR
 │   │   └── index.md         # Central knowledge base
 │   ├── reports/             # Review reports
 │   └── archives/            # Historical artifacts
-├── old_docs/                # Legacy documentation (pre-Arreio)
+├── ARCHITECTURE.md          # System design and architecture documentation
 └── README.md                # Project overview
 ```
 
