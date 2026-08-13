@@ -45,22 +45,21 @@ Use /arreio-init to initialize a new project, to enable the project to follow th
 
 ### Learn
 
-| Phase | Module Name   | Purpose                    |
-| ----- | ------------- | -------------------------- |
-| 1     | **extract**   | Extract patterns from work |
-| 2     | **classify**  | Categorize learning type   |
-| 3     | **dedup**     | Check for duplicates       |
-| 4     | **save**      | Save to persistent storage |
-| 5     | **structure** | Update learnings INDEX     |
+| Phase | Module Name  | Purpose                             |
+| ----- | ------------ | ----------------------------------- |
+| 1     | **capture**  | Extract and capture knowledge entry |
+| 2     | **refine**   | Curate and refine the entry         |
+| 3     | **index**    | Catalog and index the entry         |
+| 4     | **maintain** | Dedup, refresh, and prune entries   |
 
 ### Supporting Skills
 
 We have designed a set of supporting skills to help you to manage your repository and work.
 
-#### /end-session
-
-Preserve session context with a well-documented commit capturing state, decisions, and next steps.
-
 #### /arreio-init
 
 Initialize a new project, enabling the project to follow the four phases of the Arreio workflows
+
+#### /end-session
+
+Preserve session context with a well-documented commit capturing state, decisions, and next steps.
