@@ -8,7 +8,7 @@ timestamp: "2026-08-07"
 
 # Phase 1 - Triage & Work Input Resolution
 
-**Purpose:** Entry point to the Work workflow. Classifies the incoming work input (a plan-id, a single task file, or an ad-hoc description), resolves it into a unified, dependency-ordered **Work Manifest** — one task per Acceptance Criterion, each carrying its own Red → Green → Refactor test — and returns it for the Prepare phase to sequence and select an execution mode.
+**Purpose:** Entry point to the Work workflow. Classifies the incoming work input (a plan-id, a single task file, or an ad-hoc description), resolves it into a unified, dependency-ordered **Work Manifest** — one task per Acceptance Criterion, each carrying its own Red → Green → Refactor test — establishes the git work branch (`work/<short-description>`) for the run, and returns it for the Prepare phase to sequence and select an execution mode.
 
 ## Workflow
 
@@ -76,12 +76,42 @@ Resolve the classified input into a unified **Work Manifest** — a single task 
    - For each task: assign a dedicated test file, populate `files.create`/`files.modify` from the description, and draft Red → Green → Refactor steps.
    - Order tasks by dependency; assign priorities (`P0` / `P1` / `P2`).
 
-3. Materialize the resolved tasks as task files under `docs/tasks/<work-id>/`:
+Do **not** write any files in this step — task-file materialization is deferred to Step 2e, so the work branch exists before anything is written (Step 2d).
+
+#### 2d. Work Branch Creation
+
+Every new feature or plan runs on its own git branch. This step runs for all input shapes, after the shape-specific resolution (2a/2b/2c) and **before any file is written** (the dirty-tree check must see the pre-work state).
+
+1. **Verify git repository:** confirm the working directory is inside a git repository (e.g., `git rev-parse --is-inside-work-tree`). If not, record `work-branch: null` with `work-branch-state: not-a-git-repo`, log one explicit warning, and skip the remaining sub-steps — the pipeline continues without a branch.
+
+2. **Derive the branch slug** for `work/<slug>`:
+   - plan-based / task-file: from the plan's kebab-case name suffix — `docs/plans/<plan-id>-<slug>.md` or the plan title registered in `docs/plans/index.md`.
+   - ad-hoc: from the resolved description — a 2–5 word kebab-case slug naming the work's subject (e.g., "fix login timeout" → `work/fix-login-timeout`).
+   - Sanitize: lowercase; replace every character outside `[a-z0-9]` with `-`; collapse repeated `-`; trim leading/trailing `-`; cap at 50 characters. If the result is empty, fall back to the `work-id`.
+   - If no slug can be confidently derived (vague ad-hoc description), ask the user one question: "What short name should the work branch use?" (accept the raw text and sanitize it). This is a Smart pause trigger.
+
+3. **Dirty working tree check:** the tree must be clean (`git status --porcelain` empty). If there are uncommitted changes, **fail branch creation with an explicit error** (Category 7 in [error-handling.md](../references/error-handling.md)) and ask the user one question: (a) I've committed/stashed — retry, (b) proceed without a work branch (`work-branch-state: skipped-by-user`), or (c) abort. Never stash, commit, or carry changes silently.
+
+4. **Determine the base branch:** detect the repository's default branch (e.g., resolve `origin/HEAD` → `main`); fall back to an existing `main`, then `master`, then the current HEAD.
+
+5. **Select or create the branch** (idempotent — resume-safe):
+   - Already on `work/<slug>` → no-op; `work-branch-state: already-on`.
+   - `work/<slug>` exists but is not checked out → check it out; `work-branch-state: checked-out`.
+   - Otherwise create it from the base branch (`git checkout -b work/<slug> <base>`); `work-branch-state: created`.
+   - When creating and the current HEAD is not the default branch: Smart pause trigger — ask one question: (a) create from the default branch, (b) create from the current HEAD, (c) abort. Autopilot: create from the default branch and log a warning.
+
+6. **Record** `work-branch` (branch name or `null`), `work-branch-base` (base used, or `null`), and `work-branch-state` (`created` | `checked-out` | `already-on` | `skipped-by-user` | `not-a-git-repo`) in the manifest (Step 6).
+
+#### 2e. Materialize Ad-Hoc Task Files
+
+Ad-hoc shape only (for plan-based/task-file, task files already exist — no-op):
+
+1. Materialize the resolved tasks as task files under `docs/tasks/<work-id>/`:
    - Filename: `T<NN>-<kebab-case-name>.md` (`<NN>` zero-padded, matching dependency order).
    - Schema: the [Task Artifact template](../../plan/references/templates/artifacts/task.md) — set `plan-id` to `work-id`, `status: not-started`; infer `tier` from task count per the `/plan` Fast/Standard/Deep sizing (Fast ≤ 3; Standard 4–8; Deep 8–15), defaulting to `fast`.
    - Create `docs/tasks/<work-id>/index.md` with the `- [ ]` checklist for all tasks (same format as the `/plan` Tasks phase index).
 
-4. Build the manifest by reading the newly created task files back (confirming shape parity with plan-based tasks).
+2. Build the manifest by reading the newly created task files back (confirming shape parity with plan-based tasks).
 
 ### Step 3: Task Artifact Validation
 
@@ -115,7 +145,7 @@ Search `docs/learn/index.md` for entries relevant to the task domains in the man
 1. **Assign a `triage-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-triage`, saved to `docs/plans/.work/.triage/`). Reuse it if the user later picks **Edit & Retry**.
 
 2. Produce a **Work Manifest Artifact** block (as markdown) following the schema in [work-manifest.md](../references/templates/artifacts/work-manifest.md). Include:
-   - `triage-id`, `work-id`, `input-shape`, `interactionMode`
+   - `triage-id`, `work-id`, `input-shape`, `interactionMode`, `work-branch` (plus `work-branch-base` and `work-branch-state` from Step 2d)
    - the resolved task list (one row per task: `task-id`, `title`, `unit`, `acceptance-criterion`, `priority`, `dependencies`, `status`, `ready?`)
    - `ready-tasks` and `already-complete-tasks`
    - `Related Learnings` (per task) and `Learning Gaps`
@@ -128,7 +158,9 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 
 - `input-shape` is `ad-hoc` (the resolved task list was **inferred**, not user-authored — confirm it matches intent), or
 - Task-file input has an unmet upstream dependency (Step 2b warning case), or
-- One or more task artifacts failed validation (Step 3) and required recovery.
+- One or more task artifacts failed validation (Step 3) and required recovery, or
+- The work branch slug could not be derived automatically and was supplied by the user (Step 2d.2), or
+- The current HEAD was not the default branch when the work branch was created (Step 2d.5).
 
 - **Detailed:** present the Work Manifest Artifact and ask one question with options *(1) Proceed to Prepare, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–6 reusing the `triage-id`. On **Abort**, stop and inform the Orchestrator.
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
@@ -142,6 +174,7 @@ Then save the artifact to `docs/plans/.work/.triage/<triage-id>.md` (ensure `int
 - Verify that every task in the manifest carries **exactly one Acceptance Criterion**, **exactly one `files.test`**, and **Red → Green → Refactor** steps (Step 3 passed).
 - Verify that the manifest is in **dependency order** — no task appears before its dependencies.
 - Verify that `work-id` is correct for the shape (inherited `plan-id` for plan-based/task-file; freshly allocated for ad-hoc).
+- Verify that `work-branch` is recorded in the manifest and, unless `null`, the repository is checked out on that branch.
 - Verify that for `ad-hoc` input, the task files and `docs/tasks/<work-id>/index.md` were created.
 - Verify that the artifact is saved to `docs/plans/.work/.triage/<triage-id>.md`.
 

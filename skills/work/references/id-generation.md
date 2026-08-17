@@ -33,6 +33,8 @@ The `work-id` is the key that ties all four phase artifacts together and locates
 
 **Format:** `YYYY-MM-DD-NNN` (date + zero-padded 3-digit daily counter), identical to the `/plan` `plan-id`.
 
+> **Work branch name:** the git branch for a run is `work/<short-description>` — a kebab-case slug derived from the plan name or work description (Triage Step 2d), **not** the `work-id` itself. The Work Manifest records the `work-branch` ↔ `work-id` pairing; see `skills/work/modules/triage.md` Step 2d.
+
 ## Algorithm (new phase artifact)
 
 ```

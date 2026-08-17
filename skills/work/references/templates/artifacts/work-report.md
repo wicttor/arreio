@@ -18,6 +18,7 @@ execute-id: YYYY-MM-DD-NNN-execute
 prepare-id: YYYY-MM-DD-NNN-prepare
 triage-id: YYYY-MM-DD-NNN-triage
 work-id: YYYY-MM-DD-NNN
+work-branch: work/<short-description> | null   # inherited from the Work Manifest
 input-shape: plan-based | task-file | ad-hoc
 interactionMode: detailed | smart | autopilot
 executionMode: inline | serial | parallel
@@ -68,6 +69,7 @@ Also save the Work Report to `docs/plans/.work/.review/<review-id>.md`.
 ## Work Report — <review-id>
 
 - **Status:** complete | partial | for-review | nothing-done
+- **Work branch:** work/<short-description> | null
 - **Tasks:** <completed>/<total> completed, <for-review> for-review, <blocked> blocked, <skipped> skipped
 - **Gate decision:** [summary of regression/scope-creep gate outcome]
 - **Regression check:** clean | regressions-found (<N>)
@@ -81,7 +83,7 @@ The block is **append-only** and **idempotent on `review-id`**: a re-run overwri
 ## Validation Rules
 
 - **review-id:** Required. Format `YYYY-MM-DD-NNN-review`.
-- **execute-id, prepare-id, triage-id, work-id, input-shape:** Required, inherited (cross-phase consistency).
+- **execute-id, prepare-id, triage-id, work-id, work-branch, input-shape:** Required, inherited (cross-phase consistency).
 - **interactionMode, executionMode:** Both required, identical across Prepare/Execute/Review (orchestrator quality gate #2).
 - **task-outcome-rollup:** Required. Matches the Execution Log's aggregator counts. Now includes `for-review` count (new status).
 - **gate-decision:** Required. Brief summary of the gate outcome (e.g., "Gate passed: clean regression check, no scope creep" OR "Gate blocked: regressions-found (3 failures) + scope-creep in 2 files").
@@ -102,6 +104,7 @@ execute-id: 2026-08-07-003-execute
 prepare-id: 2026-08-07-002-prepare
 triage-id: 2026-08-07-001-triage
 work-id: 2026-07-10-001
+work-branch: work/redis-session-store
 input-shape: plan-based
 interactionMode: smart
 executionMode: serial

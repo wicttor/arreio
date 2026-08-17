@@ -15,6 +15,9 @@ The product of the **Triage** phase is a resolved, dependency-ordered Work Manif
 ```yaml
 triage-id: YYYY-MM-DD-NNN-triage
 work-id: YYYY-MM-DD-NNN
+work-branch: work/<short-description> | null      # git branch for this run (Triage Step 2d)
+work-branch-base: <branch-name> | null            # base used when the branch was created
+work-branch-state: created | checked-out | already-on | skipped-by-user | not-a-git-repo
 input-shape: plan-based | task-file | ad-hoc
 interactionMode: detailed | smart | autopilot
 status: complete
@@ -59,6 +62,9 @@ Also save the manifest to `docs/plans/.work/.triage/<triage-id>.md` for future r
 
 - **triage-id:** Required. Format `YYYY-MM-DD-NNN-triage`.
 - **work-id:** Required. For plan-based/task-file, equals the `plan-id` (inherited). For ad-hoc, a freshly allocated `YYYY-MM-DD-NNN` (per [id-generation.md](../../id-generation.md)). The `docs/tasks/<work-id>/` directory must exist (ad-hoc creates it; plan-based already has it).
+- **work-branch:** Required. Format `work/<slug>` (kebab-case, ≤ 50 chars); `null` only when `work-branch-state` is `skipped-by-user` or `not-a-git-repo`. Must be consistent with `work-branch-state` (`created`/`checked-out`/`already-on` require a branch).
+- **work-branch-base:** Required. The base branch used at creation (Triage Step 2d.4); `null` when no branch was created.
+- **work-branch-state:** Required. One of `created`, `checked-out`, `already-on`, `skipped-by-user`, `not-a-git-repo`.
 - **input-shape:** Required. One of `plan-based`, `task-file`, `ad-hoc`.
 - **interactionMode:** Required, propagated from the Work Input Artifact.
 - **status:** Required. `complete`.
@@ -77,6 +83,9 @@ Also save the manifest to `docs/plans/.work/.triage/<triage-id>.md` for future r
 ```yaml
 triage-id: 2026-08-07-001-triage
 work-id: 2026-07-10-001
+work-branch: work/redis-session-store
+work-branch-base: main
+work-branch-state: created
 input-shape: plan-based
 interactionMode: smart
 status: complete
@@ -105,5 +114,6 @@ work-state: ready
 ## Notes
 
 - The manifest is in **dependency order**: no task appears before its dependencies (topological, stable by unit number).
+- The work branch is created in Triage Step 2d, before any task file or index is written; branch setup is idempotent, so a re-run resumes on the same branch. The orchestrator's quality gate verifies branch coherence before Execute.
 - Resume-safe: Prepare/Execute read each task's current `status` from its task file, not from the manifest alone — the manifest is the resolved plan, the task files are the live state.
 - For `task-file` input with the "Proceed anyway" choice, the manifest contains only the single task and `dependency-warning: proceeded-without-upstream`; for "Run upstream first", it contains the unmet upstream tasks plus this task and `dependency-warning: expanded-to-upstream`. Downstream dependents are never included.

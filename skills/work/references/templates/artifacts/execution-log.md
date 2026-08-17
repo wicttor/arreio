@@ -17,6 +17,7 @@ execute-id: YYYY-MM-DD-NNN-execute
 prepare-id: YYYY-MM-DD-NNN-prepare
 triage-id: YYYY-MM-DD-NNN-triage
 work-id: YYYY-MM-DD-NNN
+work-branch: work/<short-description> | null   # inherited from the Work Manifest
 input-shape: plan-based | task-file | ad-hoc
 interactionMode: detailed | smart | autopilot
 executionMode: inline | serial | parallel
@@ -56,7 +57,7 @@ Also save the Execution Log to `docs/plans/.work/.execute/<execute-id>.md`.
 ## Validation Rules
 
 - **execute-id:** Required. Format `YYYY-MM-DD-NNN-execute`.
-- **prepare-id, triage-id, work-id, input-shape:** Required, inherited (cross-phase consistency).
+- **prepare-id, triage-id, work-id, work-branch, input-shape:** Required, inherited (cross-phase consistency).
 - **interactionMode, executionMode:** Both required, identical to the Prepare artifact.
 - **results:** Required. One row per task in `execution-list`. Each row:
   - `outcome` one of `completed`, `blocked`, `skipped`
@@ -75,6 +76,7 @@ execute-id: 2026-08-07-003-execute
 prepare-id: 2026-08-07-002-prepare
 triage-id: 2026-08-07-001-triage
 work-id: 2026-07-10-001
+work-branch: work/redis-session-store
 input-shape: plan-based
 interactionMode: smart
 executionMode: serial
