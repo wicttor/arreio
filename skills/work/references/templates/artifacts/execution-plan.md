@@ -16,6 +16,7 @@ The product of the **Prepare** phase is an Execution Plan: an ordered `execution
 prepare-id: YYYY-MM-DD-NNN-prepare
 triage-id: YYYY-MM-DD-NNN-triage
 work-id: YYYY-MM-DD-NNN
+work-branch: work/<short-description> | null   # inherited from the Work Manifest
 input-shape: plan-based | task-file | ad-hoc
 interactionMode: detailed | smart | autopilot
 executionMode: inline | serial | parallel
@@ -59,7 +60,7 @@ Also save the Execution Plan to `docs/plans/.work/.prepare/<prepare-id>.md`.
 ## Validation Rules
 
 - **prepare-id:** Required. Format `YYYY-MM-DD-NNN-prepare`.
-- **triage-id, work-id, input-shape:** Required, inherited from Triage (cross-phase consistency).
+- **triage-id, work-id, work-branch, input-shape:** Required, inherited from Triage (cross-phase consistency).
 - **interactionMode, executionMode:** Both required. `executionMode` must respect the risk floor in [execution-mode-selection.md](../../execution-mode-selection.md) (any HIGH-risk task → `inline`).
 - **test-environment.runner:** Required; `unknown` only allowed when the user was asked to supply the command (Prepare should normally resolve it).
 - **test-environment.packageManager:** Required for Node.js (`npm` | `pnpm`), else `null`.
@@ -74,6 +75,7 @@ Also save the Execution Plan to `docs/plans/.work/.prepare/<prepare-id>.md`.
 prepare-id: 2026-08-07-002-prepare
 triage-id: 2026-08-07-001-triage
 work-id: 2026-07-10-001
+work-branch: work/redis-session-store
 input-shape: plan-based
 interactionMode: smart
 executionMode: serial

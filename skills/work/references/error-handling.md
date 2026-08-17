@@ -33,10 +33,10 @@ Every phase receives an artifact from the previous phase (or the Orchestrator, f
 | Artifact Type   | Required Fields                                                                                                                                                                                                    | Produced By  |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | `work-input`    | `type`, `timestamp`, `source`, `status`, input shape (`plan-id` **or** `task-file` **or** `ad-hoc` description), `interactionMode`                                                                                | Orchestrator |
-| `work-manifest` | `triage-id`, `work-id`, `input-shape`, `status`, `interactionMode`, resolved task list, `ready-tasks`                                                                                                              | Triage       |
-| `execution-plan`| `prepare-id`, `triage-id`, `work-id`, `input-shape`, `status`, `interactionMode`, `executionMode`, `execution-list`, `runner`, `baseline`, `applicable-gates`                                                      | Prepare      |
-| `execution-log` | `execute-id`, `prepare-id`, `triage-id`, `work-id`, `input-shape`, `status`, `interactionMode`, `executionMode`, per-task result table, aggregator counts                                                          | Execute      |
-| `work-report`   | `review-id`, `execute-id`, `prepare-id`, `triage-id`, `work-id`, `input-shape`, `status`, `interactionMode`, `executionMode`, task-outcome rollup, `regression-check`, `scope-creep`                               | Review       |
+| `work-manifest` | `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, resolved task list, `ready-tasks` | Triage       |
+| `execution-plan`| `prepare-id`, `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, `executionMode`, `execution-list`, `runner`, `baseline`, `applicable-gates`                                                      | Prepare      |
+| `execution-log` | `execute-id`, `prepare-id`, `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, `executionMode`, per-task result table, aggregator counts                                                          | Execute      |
+| `work-report`   | `review-id`, `execute-id`, `prepare-id`, `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, `executionMode`, task-outcome rollup, `regression-check`, `scope-creep`                               | Review       |
 
 ## Error Categories
 
@@ -108,12 +108,24 @@ Errors related to `interactionMode` propagation.
 
 Initial values: a task starts `not-started`; Execute sets `in-progress` mid-task, then transitions to `completed`, `blocked`, or `skipped`. Only `completed` ticks the index checkbox.
 
+### Category 7: Git / Branch Errors
+
+Errors from Work Branch Creation (Triage Step 2d).
+
+| Trigger                                                      | Recovery Action                                                                                                       | Terminate?                |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Working directory is not a git repository                    | Log one explicit warning; record `work-branch: null`, `work-branch-state: not-a-git-repo`; continue without a branch  | No                        |
+| Dirty working tree (uncommitted changes)                      | Fail branch creation with an explicit error; ask the user: commit/stash & retry, proceed without a work branch, or abort | Yes (unless user picks proceed) |
+| Branch slug cannot be derived (vague ad-hoc description)      | Ask the user for a short kebab-case slug for `work/<slug>`                                                             | No                        |
+| Current HEAD is not the default branch at creation            | Smart pause; ask which base to branch from (default branch / current HEAD / abort); autopilot: default branch + warning | No                        |
+| Branch checkout/create fails (permissions, lock, etc.)        | Log error; retry once; then terminate with a suggestion                                                                 | Yes, after 1 retry        |
+
 ## Recovery Workflow
 
 When a verification failure is detected in Step 0, apply this workflow:
 
 ```
-1. Identify the error category (1-6) from the tables above
+1. Identify the error category (1-7) from the tables above
 2. Look up the specific trigger to find the recovery action
 3. Execute the recovery action:
    - If recovery is "ask user": ask one question with clear options (2-4 concrete choices)
@@ -160,6 +172,7 @@ The Orchestrator should verify consistency between phases:
 | `execute-id` in Review matches Execute output                        | Reject Review; re-run from Execute          |
 | `interactionMode` is identical across all artifacts                   | Log warning; use earliest non-default value |
 | `executionMode` is identical across Prepare/Execute/Review artifacts | Log warning; re-run Prepare                 |
+| `work-branch` in downstream artifacts matches the Triage manifest     | Reject; re-run from Triage                  |
 
 ## Notes
 

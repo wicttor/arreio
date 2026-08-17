@@ -67,11 +67,22 @@ For plan-based input, additionally verify that `docs/tasks/<plan-id>/index.md` e
 
 For task-file input, verify the task file exists and parses with valid task frontmatter (`id`, `plan-id`, `status`, `files.test`); infer `plan-id` from its folder. If missing or malformed, ask the user to locate the file or re-run the relevant `/plan` Tasks phase.
 
+### Work Branch
+
+Every new feature or plan runs on its own git branch:
+
+- **Name:** `work/<short-description>` — a kebab-case slug derived from the plan name (plan-based/task-file) or the work description (ad-hoc), capped at 50 characters.
+- **When:** created or checked out in Triage (Step 2d), right after the `work-id` is resolved and **before any task file or index is written**.
+- **Idempotent:** re-running Work resumes on the same branch (already on it → no-op; branch exists → check it out; otherwise create from the default branch).
+- **Dirty working tree:** uncommitted changes fail branch creation with an explicit error — never stashed, committed, or carried silently.
+- **Not a git repository:** one explicit warning; the pipeline continues without a branch (`work-branch: null`).
+- **Recording:** the branch name is stored as `work-branch` in the Work Manifest (with `work-branch-base` and `work-branch-state`) and carried through the Prepare/Execute/Review artifacts; the orchestrator's quality gate verifies branch coherence before Execute.
+
 ### Phases
 
 | Phase | Phase Module                  | Output Artifact                                                    | Saved to                            |
 | ----- | ----------------------------- | ------------------------------------------------------------------ | ----------------------------------- |
-| 1     | [Triage](modules/triage.md)   | [Work manifest](references/templates/artifacts/work-manifest.md)   | `docs/plans/.work/.triage/<id>.md`  |
+| 1     | [Triage](modules/triage.md)   | [Work manifest](references/templates/artifacts/work-manifest.md) + `work/<slug>` branch | `docs/plans/.work/.triage/<id>.md`  |
 | 2     | [Prepare](modules/prepare.md) | [Execution plan](references/templates/artifacts/execution-plan.md) | `docs/plans/.work/.prepare/<id>.md` |
 | 3     | [Execute](modules/execute.md) | [Execution log](references/templates/artifacts/execution-log.md)   | `docs/plans/.work/.execute/<id>.md` |
 | 4     | [Review](modules/review.md)   | [Work report](references/templates/artifacts/work-report.md)       | `docs/plans/.work/.review/<id>.md`  |
@@ -84,6 +95,7 @@ Between phases, the orchestrator validates the output artifact before passing it
 2. **Cross-phase consistency** — IDs (`work-id`, `triage-id`, `prepare-id`, `execute-id`, `review-id`) match the upstream artifacts; `interactionMode` and `executionMode` are identical across artifacts.
 3. **Status check** — the artifact's `status` is `complete` (not `pending` or `failed`).
 4. **Task-status coherence** (after Execute) — every task in the work list is `completed`, `blocked` (with a recorded reason), or `skipped` (with a recorded reason); the `docs/tasks/<work-id>/index.md` checklist state matches the task files' frontmatter `status`. No task is left `in-progress`.
+5. **Branch coherence** (after Triage, before Execute) — when `work-branch` is not `null`, the repository's current branch matches the Work Manifest's `work-branch`; a mismatch returns to Triage with the error context.
 
 If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).
 
@@ -103,6 +115,7 @@ Each phase is responsible for its own index updates:
 
 - **Task files:** Updated at `docs/tasks/<work-id>/T<NN>-<name>.md` with final `status` (`completed` / `blocked` / `skipped`) — frontmatter and the `## Acceptance Criteria` checkbox both updated.
 - **Task index:** `docs/tasks/<work-id>/index.md` checklist ticked to match task outcomes (`- [x]` complete; remaining `- [ ]` for `blocked`/`skipped`).
+- **Work branch:** `work/<short-description>` created (or checked out) during Triage Step 2d, recorded as `work-branch` in the Work Manifest; re-runs resume on the same branch.
 - **Work Report:** Saved to `docs/plans/.work/.review/<review-id>.md`, with a consolidation/simplification summary, test-regression check, any scope-creep notes, and learnings surfaced for `/learn`.
 - **(Optional) Learnings:** New learnings discovered during execution are handed to the Learn skill (`/learn`) to persist — Work does not write `docs/learn/` directly.
 
@@ -135,6 +148,7 @@ Artifact templates live in [references/templates/artifacts/](references/template
 - **Deterministic Pipeline:** Phases always execute in sequence (no agent switching, no fallback paths).
 - **Test-First Execution:** Every task runs Red → Green → Refactor — the failing test is written/confirmed **before** implementation. A task is not `completed` until its single test is green.
 - **One Acceptance Criterion per Task:** Preserve the `/plan` invariant — one AC → one task → one test. Ad-hoc work is resolved to the same shape by Triage; never bundle criteria during execution.
+- **Work Branch:** Every new feature or plan executes on its own git branch `work/<short-description>` (slug derived from the plan name or work description). The branch is created or checked out in Triage before any artifact is written, the setup is idempotent for resume, and a dirty working tree fails explicitly instead of stashing or carrying changes.
 - **Separate Execution from Planning:** Execute the plan as sliced; do not re-plan during execution. Surface scope changes to the user instead of silently expanding a task.
 - **Quality Gates (Work Review Phase 4):** After Execute completes, Phase 4 Review runs a lightweight pre-check: simplify/consolidate, run regression test (binary: any failure = gate), detect scope-creep (binary: any finding = gate). If gate fails → tasks enter `status: for-review` (not `completed`) and await Standalone Review approval. If gate passes → tasks move to `status: completed`. This decouples execution quality from final approval authority.
 - **Learnings Orthogonal to Approval:** Work Report surfaces `learnings-to-capture` candidates (from Execute + Review phases) for later `/learn` invocation. Learnings are separate from approval gates; the Learn skill is the single authoritative source for durable knowledge.
