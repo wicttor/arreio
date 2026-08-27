@@ -26,12 +26,7 @@
   ],
   "main": "README.md",
   "files": [
-    "README.md",
-    "ARCHITECTURE.md",
-    "skills/",
-    "package.json",
-    ".gitignore",
-    "LICENSE"
+    "skills/"
   ],
   "engines": {
     "node": ">=14.0.0"
