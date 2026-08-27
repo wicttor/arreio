@@ -21,3 +21,4 @@ jest.config.js
 webpack.config.js
 rollup.config.js
 .github/agents
+docs
