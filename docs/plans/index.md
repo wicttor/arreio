@@ -16,3 +16,9 @@ This is the central registry of all plans for the Arreio project. Each plan docu
 | Plan | Title | Status | Created |
 | ---- | ----- | ------ | ------- |
 | [2026-09-01-001-fix-end-session-gaps](2026-09-01-001-fix-end-session-gaps.md) | Fix end-session Skill Gaps | complete — all 6 tasks completed | 2026-09-01 |
+
+## Session Ends
+
+<!-- One line per session-end commit. See docs/plans/.end-session/<session-id>.md for the full artifact. -->
+
+- [2026-09-01-001](.end-session/2026-09-01-001.md) — Align end-session skill with Arreio conventions (`42aa3c8`, agent: Pi)
