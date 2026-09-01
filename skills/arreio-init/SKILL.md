@@ -159,7 +159,17 @@ _No review reports yet._
 
 **Action:** Create all four directories if they don't exist.
 
-### Step 11: Create Learn Category Folders
+### Step 11: Create End-Session Skill Hidden Artifact Directory
+
+**Folder:**
+
+- `docs/plans/.end-session/` — Stores session-end artifacts
+
+**Rationale:** The `end-session/SKILL.md` skill saves a session artifact here for every session-end commit, providing a traceable record of what was done, why, and by which agent.
+
+**Action:** Create the directory if it doesn't exist.
+
+### Step 12: Create Learn Category Folders
 
 **Folders:**
 
@@ -190,6 +200,8 @@ After initialization, verify:
   - `docs/plans/.review/index.md` (review reports registry)
 - ✓ Learn skill hidden artifact directories exist:
   - `docs/plans/.learn/.capture/`, `docs/plans/.learn/.refine/`, `docs/plans/.learn/.index/`, `docs/plans/.learn/.maintain/`
+- ✓ End-session skill hidden artifact directory exists:
+  - `docs/plans/.end-session/`
 - ✓ Learn category folders exist:
   - `docs/learn/decision/`, `docs/learn/pattern/`, `docs/learn/gotcha/`, `docs/learn/workflow/`
 - ✓ Per-plan task indexes created on-demand by plan skill: `docs/tasks/<plan-id>/index.md` (created when Tasks phase runs)
@@ -203,6 +215,7 @@ Downstream skills (plan, learn, work, review) automatically create missing folde
 - **work** skill creates missing `docs/plans/.work/` directories (`.triage/`, `.prepare/`, `.execute/`, `.review/`) on first execution.
 - **review** skill creates missing `docs/plans/.review/` directories and `index.md` registry on first review.
 - **learn** skill creates missing `docs/plans/.learn/` directories and `docs/learn/` category folders on first learning capture.
+- **end-session** skill creates missing `docs/plans/.end-session/` directory (and the `## Session Ends` section in `docs/plans/index.md`) on first session end.
 
 **However**, running `arreio-init` upfront provides several benefits:
 

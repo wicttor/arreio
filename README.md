@@ -78,4 +78,4 @@ Initialize a new project, enabling the project to follow the four phases of the 
 
 #### /end-session
 
-Preserve session context with a well-documented commit capturing state, decisions, and next steps.
+Preserve session context with a well-documented commit capturing state, decisions, and next steps — saved as a traceable session artifact (with agent attribution) in `docs/plans/.end-session/`.
