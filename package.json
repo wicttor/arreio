@@ -27,12 +27,8 @@
   "main": "README.md",
   "files": [
     "skills/",
-    "scripts/",
     "README.md"
   ],
-  "scripts": {
-    "postinstall": "node scripts/postinstall.js"
-  },
   "engines": {
     "node": ">=14.0.0"
   },

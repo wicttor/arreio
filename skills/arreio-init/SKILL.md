@@ -33,7 +33,20 @@ After initialization, the following modules can operate:
 
 ## Workflow
 
-### Step 1: Create Core Folder Structure
+The initialization workflow runs in two phases:
+
+1. **Phase 0: Install Skills** — Copy Arreio skills to `~/.agents/skills/` for VS Code Copilot Chat discovery
+2. **Phase 1: Initialize Project Structure** — Create folders, indexes, and architectural documentation
+
+### Step 1: Install Skills
+
+Install Arreio skills to the user's `.agents/skills` directory. See [modules/install.md](modules/install.md) for detailed instructions.
+
+**Why:** Skills must be copied from the installed npm package to the user's home directory so they are discoverable by VS Code Copilot Chat. This step must run first, before project structure is created.
+
+**Action:** Execute the [install.md](modules/install.md) phase to copy all skills from `node_modules/arreio/skills/` to `~/.agents/skills/`.
+
+### Step 2: Create Core Folder Structure
 
 Creates the organizational spine for Arreio artifacts:
 
@@ -45,7 +58,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Why:** Downstream skills assume these folders exist and will create files within them.
 
-### Step 2: Initialize Root Architecture Document
+### Step 3: Initialize Root Architecture Document
 
 **File:** `ARCHITECTURE.md` (project root)
 
@@ -53,7 +66,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** If `ARCHITECTURE.md` doesn't exist, create it using the [Architecture Template](references/architecture-template.md).
 
-### Step 3: Initialize Plans Index
+### Step 4: Initialize Plans Index
 
 **File:** `docs/plans/index.md`
 
@@ -61,7 +74,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** If `docs/plans/index.md` doesn't exist, create it using the [Plan Index Template](references/plan-index-template.md).
 
-### Step 4: Create Tasks Folder
+### Step 5: Create Tasks Folder
 
 **Folder:** `docs/tasks/`
 
@@ -69,7 +82,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** Create the `docs/tasks/` folder if it doesn't exist.
 
-### Step 5: Initialize Learning Index
+### Step 6: Initialize Learning Index
 
 **File:** `docs/learn/index.md`
 
@@ -77,7 +90,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** If `docs/learn/index.md` doesn't exist, create it using the [Learn Index Template](references/learn-index-template.md).
 
-### Step 6: Create Reports Folder
+### Step 7: Create Reports Folder
 
 **Folder:** `docs/reports/`
 
@@ -85,7 +98,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** Create the `docs/reports/` folder if it doesn't exist.
 
-### Step 7: Create Plan Skill Hidden Artifact Directories
+### Step 8: Create Plan Skill Hidden Artifact Directories
 
 **Folders:**
 
@@ -97,7 +110,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** Create all three directories if they don't exist.
 
-### Step 8: Create Work Skill Hidden Artifact Directories
+### Step 9: Create Work Skill Hidden Artifact Directories
 
 **Folders:**
 
@@ -110,7 +123,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** Create all four directories if they don't exist.
 
-### Step 9: Create Review Skill Hidden Artifact Directories and Registry
+### Step 10: Create Review Skill Hidden Artifact Directories and Registry
 
 **Folders:**
 
@@ -146,7 +159,7 @@ This is the index of all review reports for the project. Reports are organized b
 _No review reports yet._
 ```
 
-### Step 10: Create Learn Skill Hidden Artifact Directories
+### Step 11: Create Learn Skill Hidden Artifact Directories
 
 **Folders:**
 
@@ -159,7 +172,7 @@ _No review reports yet._
 
 **Action:** Create all four directories if they don't exist.
 
-### Step 11: Create End-Session Skill Hidden Artifact Directory
+### Step 12: Create End-Session Skill Hidden Artifact Directory
 
 **Folder:**
 
@@ -169,7 +182,7 @@ _No review reports yet._
 
 **Action:** Create the directory if it doesn't exist.
 
-### Step 12: Create Learn Category Folders
+### Step 13: Create Learn Category Folders
 
 **Folders:**
 
@@ -186,6 +199,13 @@ _No review reports yet._
 
 After initialization, verify:
 
+- ✓ All Arreio skills are installed to `~/.agents/skills/`:
+  - `~/.agents/skills/plan/`
+  - `~/.agents/skills/work/`
+  - `~/.agents/skills/review/`
+  - `~/.agents/skills/learn/`
+  - `~/.agents/skills/end-session/`
+  - `~/.agents/skills/arreio-init/`
 - ✓ All five core folders exist: `docs/plans/`, `docs/learn/`, `docs/reports/`, `docs/tasks/`, `docs/archives/`
 - ✓ `ARCHITECTURE.md` exists at project root
 - ✓ Root-level index files exist:
