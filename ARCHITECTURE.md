@@ -128,6 +128,7 @@ graph LR
 - **Skill Validation**: Before modifying any `SKILL.md`, confirm its downstream modules and references still align with the contract.
 - **Artifact Consistency**: All docs under `docs/` must use the metadata schema defined in `references/` templates.
 - **Git Hygiene**: Run `/end-session` before closing a session to ensure state, decisions, and next steps are committed.
+- **Agent Attribution**: Every session-end commit carries an `[AGENT: ...]` trailer on its last line — a project-wide commit standard. The trailer names the agent that made the session's file changes (verified against the session's change history; fallback: the current agent). Session-end artifacts under `docs/plans/.end-session/` record the same attribution for traceability.
 - **Index Maintenance**: After creating any plan, task, or learning, update the corresponding `index.md` so the knowledge graph remains traversable.
 
 ## 8. Design Decisions — Work Review & Standalone Review Integration (2026-08-12)
