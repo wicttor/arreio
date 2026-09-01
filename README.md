@@ -9,6 +9,22 @@ By enforcing a **pragmatic**, guardrailed execution, Arreio brings structure to 
 
 **Plan → Work → Review → Learn**
 
+## Installation
+
+Install Arreio as a dependency to enable all skills in your workspace:
+
+```bash
+npm install arreio
+```
+
+The post-install script will automatically copy all Arreio skills to your `.agents/skills` directory. This makes all four core skills available in your AI development environment:
+
+- **arreio-init** - Initialize projects to follow the Arreio workflow
+- **plan** - Structure and decompose work into executable tasks
+- **work** - Execute tasks with guardrailed implementation
+- **review** - Conduct comprehensive code reviews
+- **learn** - Capture and refine knowledge from completed work
+
 ## Skill Based Workflow
 
 **Arreio** orchestrates work through predictable skills that run in sequence:
