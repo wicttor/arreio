@@ -17,7 +17,19 @@ Install Arreio as a dependency to enable all skills in your workspace:
 npm install arreio
 ```
 
-The post-install script will automatically copy all Arreio skills to your `.agents/skills` directory. This makes all four core skills available in your AI development environment:
+Then initialize your project to set up Arreio workflows:
+
+```
+/arreio-init
+```
+
+Run this command in VS Code Copilot Chat to:
+
+1. Copy all Arreio skills to your `~/.agents/skills/` directory
+2. Create the project structure (`docs/plans/`, `docs/learn/`, etc.)
+3. Set up architectural documentation and index files
+
+This makes all five core skills available in your AI development environment:
 
 - **arreio-init** - Initialize projects to follow the Arreio workflow
 - **plan** - Structure and decompose work into executable tasks
