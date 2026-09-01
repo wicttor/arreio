@@ -1,4 +1,4 @@
-**Universal rules** (TDD, Clean Code, SOLID, Agent behavior) are defined in [`~/.pi/agent/AGENTS.md`](file:///home/wicttor/.pi/agent/AGENTS.md).
+**Universal rules**
 
 - Batch non-blocking questions at the end under “Open decisions”.
 - Ask first and do not assume anything, but do not ask me for permission to do straightforward engineering work.

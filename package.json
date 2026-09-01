@@ -1,17 +1,17 @@
 {
-  "name": "@torquem/arreio",
-  "version": "1.0.0",
+  "name": "arreio",
+  "version": "1.0.0-dev-1",
   "description": "Arreio transforms agentic coding workflows into a predictable, safe, and high-quality software delivery pipeline. Master the four core phases—Plan, Work, Review, Learn—to orchestrate a highly reliable development cycle.",
   "license": "MIT",
-  "author": "wicttor",
+  "author": "Wicttor",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wicttor/torquem.git"
+    "url": "https://github.com/wicttor/arreio.git"
   },
   "bugs": {
-    "url": "https://github.com/wicttor/torquem/issues"
+    "url": "https://github.com/wicttor/arreio/issues"
   },
-  "homepage": "https://github.com/wicttor/torquem#readme",
+  "homepage": "https://github.com/wicttor/arreio#readme",
   "keywords": [
     "arreio",
     "agentic-workflows",
@@ -26,8 +26,13 @@
   ],
   "main": "README.md",
   "files": [
-    "skills/"
+    "skills/",
+    "scripts/",
+    "README.md"
   ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
   "engines": {
     "node": ">=14.0.0"
   },
