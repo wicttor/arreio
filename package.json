@@ -1,6 +1,6 @@
 {
   "name": "arreio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Arreio transforms agentic coding workflows into a predictable, safe, and high-quality software delivery pipeline. Master the four core phases—Plan, Work, Review, Learn—to orchestrate a highly reliable development cycle.",
   "license": "MIT",
   "author": "Wicttor",
@@ -27,8 +27,12 @@
   "main": "README.md",
   "files": [
     "skills/",
+    "scripts/",
     "README.md"
   ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
   "engines": {
     "node": ">=14.0.0"
   },
