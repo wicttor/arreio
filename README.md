@@ -1,8 +1,3 @@
----
-Title: Arreio
-Type: Documentation
----
-
 **Arreio** (Brazilian word for _harness_) transforms agentic coding workflows into a predictable, safe, and high-quality software delivery pipeline.
 
 By enforcing a **pragmatic**, guardrailed execution, Arreio brings structure to AI-driven development. Master just four core phases to orchestrate a highly reliable development cycle:
