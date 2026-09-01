@@ -1,22 +1,37 @@
 ---
 title: Install Skills
-description: Install Arreio skills to the user's .agents/skills directory, making them available in VS Code Copilot Chat.
+description: Verify or manually install Arreio skills to the user's .agents/skills directory, providing a fallback if npm postinstall was skipped.
 type: module
 version: 1.0
 timestamp: "2026-09-01"
 ---
 
-# Phase 0 - Install Skills
+# Phase 0 - Install Skills (Fallback)
 
-**Purpose:** Copy Arreio skills from the installed npm package to the user's `~/.agents/skills/` directory, making them available for discovery and invocation in VS Code Copilot Chat. This ensures all Arreio workflows (plan, work, review, learn, end-session) are accessible after initialization.
+**Purpose:** Verify that Arreio skills are installed to the user's `~/.agents/skills/` directory, making them available for discovery and invocation in VS Code Copilot Chat. This is normally handled by the npm postinstall script, but this phase provides a manual fallback if postinstall was skipped or if users need to reinstall skills.
 
 ## Workflow
 
-This is the Phase 0 pipeline for the Arreio Init Skill. It orchestrates the following steps before creating project structure.
+This is the Phase 0 pipeline for the Arreio Init Skill. It performs verification and optional installation before creating project structure.
 
-### Step 1: Verify Installation Context
+### Step 1: Check if Skills Already Installed
 
-Verify that the prerequisites are met:
+First, verify that Arreio skills are already available:
+
+1. Check if `~/.agents/skills/` directory exists and contains the expected skill folders (plan, work, review, learn, end-session, arreio-init).
+2. If all skills are present and current, log success and skip to project structure initialization (Step 2).
+3. If skills are missing or incomplete, proceed to Step 2.
+
+**Result:**
+
+- ✓ Skills already installed → Skip to project structure
+- ✗ Skills missing → Proceed to manual installation
+
+### Step 2: Verify Installation Context (if needed)
+
+### Step 2: Verify Installation Context (if needed)
+
+Verify that the prerequisites are met if skills need to be installed:
 
 1. Arreio is installed as an npm package in the current project (`node_modules/arreio/` exists).
 2. The skills directory exists in the package: `node_modules/arreio/skills/` contains subdirectories for each skill.
@@ -28,7 +43,7 @@ If any verification fails:
 - **Missing skills:** Report a package integrity error (the skills/ directory is missing from the installed package).
 - **No home access:** Report an environment error (unable to determine home directory).
 
-### Step 2: Create Target Directory
+### Step 3: Create Target Directory
 
 Create the destination directory hierarchy:
 
@@ -36,7 +51,7 @@ Create the destination directory hierarchy:
 2. If `~/.agents/skills/` does not exist, create it.
 3. Log: `✓ Created ~/.agents/skills/`
 
-### Step 3: Copy Skills from Package
+### Step 4: Copy Skills from Package
 
 Copy each skill directory from `node_modules/arreio/skills/` to `~/.agents/skills/`:
 
@@ -64,7 +79,7 @@ If any copy operation fails:
 - Ask the user to manually verify the source exists and the destination is writable.
 - Do not proceed to the next phase.
 
-### Step 4: Verify Installation Success
+### Step 5: Verify Installation Success
 
 After all skills are copied, verify that the expected skill files are present:
 
@@ -89,14 +104,14 @@ Skills are now available in VS Code Copilot Chat.
 
 If verification fails for any skill, report which skills failed and suggest manual verification.
 
-### Step 5: Log Installation Summary
+### Step 6: Log Installation Summary
 
 Provide the user with confirmation and next steps:
 
 ```
 Installation complete. Arreio skills are now available:
 
-Next step: Project structure will be initialized in Step 1 of arreio-init.
+Next step: Project structure will be initialized in the next phase of arreio-init.
 
 You can now use:
   /plan    — Create implementation plans

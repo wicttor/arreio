@@ -35,16 +35,18 @@ After initialization, the following modules can operate:
 
 The initialization workflow runs in two phases:
 
-1. **Phase 0: Install Skills** — Copy Arreio skills to `~/.agents/skills/` for VS Code Copilot Chat discovery
+1. **Phase 0: Install Skills (Optional)** — Verify or manually copy Arreio skills to `~/.agents/skills/` (skills are normally installed via npm postinstall, but this phase can install them as a fallback)
 2. **Phase 1: Initialize Project Structure** — Create folders, indexes, and architectural documentation
 
-### Step 1: Install Skills
+### Step 1: Install Skills (Optional Fallback)
 
-Install Arreio skills to the user's `.agents/skills` directory. See [modules/install.md](modules/install.md) for detailed instructions.
+Verify that Arreio skills are installed to the user's `.agents/skills` directory. See [modules/install.md](modules/install.md) for detailed instructions.
 
-**Why:** Skills must be copied from the installed npm package to the user's home directory so they are discoverable by VS Code Copilot Chat. This step must run first, before project structure is created.
+**Why:** Skills must be available in `~/.agents/skills/` for VS Code Copilot Chat discovery. Normally, the npm postinstall script handles this automatically when you run `npm install arreio`. This step provides a manual fallback if postinstall was skipped.
 
-**Action:** Execute the [install.md](modules/install.md) phase to copy all skills from `node_modules/arreio/skills/` to `~/.agents/skills/`.
+**When to run:** Skip this step if npm postinstall has already run. If skills are not yet installed, this phase will copy them from `node_modules/arreio/skills/` to `~/.agents/skills/`.
+
+**Action:** See [install.md](modules/install.md) for verification and manual installation steps.
 
 ### Step 2: Create Core Folder Structure
 
