@@ -8,7 +8,7 @@ timestamp: "2026-09-01"
 
 # Phase 0 - Install Skills (Fallback)
 
-**Purpose:** Verify that Arreio skills are installed to the project's `.agents/skills/` directory, making them available for discovery and invocation in VS Code Copilot Chat. This is normally handled by the npm postinstall script, but this phase provides a manual fallback if postinstall was skipped or if users need to reinstall skills.
+**Purpose:** Verify that Arreio skills are installed to the project's `.agents/skills/` directory, making them available for discovery and invocation by your AI coding agent. This is normally handled by the npm postinstall script, but this phase provides a manual fallback if postinstall was skipped or if users need to reinstall skills.
 
 ## Workflow
 
@@ -103,7 +103,7 @@ If verification passes, log:
   - end-session
   - arreio-init
 
-Skills are now available in VS Code Copilot Chat.
+Skills are now available to your AI coding agent.
 ```
 
 If verification fails for any skill, report which skills failed and suggest manual verification.
@@ -137,7 +137,7 @@ After this phase completes:
   - `.agents/skills/end-session/`
   - `.agents/skills/arreio-init/`
 - ✓ Each skill directory contains `SKILL.md` and expected subdirectories
-- ✓ Skills are ready for discovery by VS Code Copilot Chat
+- ✓ Skills are ready for discovery by your AI coding agent
 
 ## Error Handling
 
