@@ -42,7 +42,7 @@ The initialization workflow runs in two phases:
 
 Verify that Arreio skills are installed to the project's `.agents/skills/` directory. See [modules/install.md](modules/install.md) for detailed instructions.
 
-**Why:** Skills must be available in `.agents/skills/` for VS Code Copilot Chat discovery. Normally, the npm postinstall script handles this automatically when you run `npm install arreio`. This step provides a manual fallback if postinstall was skipped.
+**Why:** Skills must be available in `.agents/skills/` so your AI coding agent can discover them. Normally, the npm postinstall script handles this automatically when you run `npm install arreio`. This step provides a manual fallback if postinstall was skipped.
 
 **When to run:** Skip this step if npm postinstall has already run. If skills are not yet installed, this phase will copy them from `node_modules/arreio/skills/` to `.agents/skills/`.
 
