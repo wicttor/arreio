@@ -23,3 +23,4 @@ This is the central registry of all plans for the Arreio project. Each plan docu
 
 - [2026-09-01-001](.end-session/2026-09-01-001.md) — Align end-session skill with Arreio conventions (`42aa3c8`, agent: Pi)
 - [2026-09-01-002](.end-session/2026-09-01-002.md) — Implement hybrid skill installation (`3f269d9`, agent: AI agent)
+- [2026-09-02-001](.end-session/2026-09-02-001.md) — Remove VS Code/Copilot references from Arreio docs (`a27e8dd`, agent: Pi)
