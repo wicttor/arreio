@@ -12,7 +12,15 @@ Install Arreio as a dependency to enable all skills in your workspace:
 npm install arreio
 ```
 
-The post-install script will automatically copy all Arreio skills to your project's `.agents/skills/` directory, making them available to your AI coding agent. (Note: npm may show an advisory about unallowed install scripts—this is informational and won't block the installation.)
+The post-install script will automatically copy all Arreio skills to your project's `.agents/skills/` directory, making them available to your AI coding agent.
+
+> **Note on npm 10+ install scripts:** npm 10+ blocks lifecycle scripts by default and will print a warning like `npm warn install-scripts arreio@x.y.z (postinstall: ...)`. The script is not run automatically until you allow it. Run:
+>
+> ```bash
+> npm install-scripts approve arreio
+> ```
+>
+> If you skip the postinstall, run `/arreio-init` in your AI coding agent — it will install the skills for you.
 
 Then initialize your project to set up the Arreio folder structure and documentation:
 

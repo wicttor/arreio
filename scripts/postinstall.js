@@ -11,7 +11,11 @@ const path = require('path');
 // Determine the source and destination paths
 const packageDir = path.dirname(__dirname);
 const skillsSource = path.join(packageDir, 'skills');
-const agentsDir = path.join(process.cwd(), '.agents');
+
+// INIT_CWD is set by npm to the project root during lifecycle scripts.
+// Fallback to process.cwd() for direct/manual runs.
+const projectRoot = process.env.INIT_CWD || process.cwd();
+const agentsDir = path.join(projectRoot, '.agents');
 const skillsDestination = path.join(agentsDir, 'skills');
 
 // Function to recursively copy directories
