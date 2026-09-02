@@ -12,7 +12,7 @@ Install Arreio as a dependency to enable all skills in your workspace:
 npm install arreio
 ```
 
-The post-install script will automatically copy all Arreio skills to your `~/.agents/skills/` directory, making them available in VS Code Copilot Chat. (Note: npm may show an advisory about unallowed install scripts—this is informational and won't block the installation.)
+The post-install script will automatically copy all Arreio skills to your project's `.agents/skills/` directory, making them available in VS Code Copilot Chat. (Note: npm may show an advisory about unallowed install scripts—this is informational and won't block the installation.)
 
 Then initialize your project to set up the Arreio folder structure and documentation:
 
@@ -22,7 +22,7 @@ Then initialize your project to set up the Arreio folder structure and documenta
 
 Run this command in VS Code Copilot Chat to:
 
-1. Verify or manually install Arreio skills to `~/.agents/skills/` (if postinstall was skipped)
+1. Verify or manually install Arreio skills to `.agents/skills/` (if postinstall was skipped)
 2. Create the project structure (`docs/plans/`, `docs/learn/`, etc.)
 3. Set up architectural documentation and index files
 

@@ -35,16 +35,16 @@ After initialization, the following modules can operate:
 
 The initialization workflow runs in two phases:
 
-1. **Phase 0: Install Skills (Optional)** — Verify or manually copy Arreio skills to `~/.agents/skills/` (skills are normally installed via npm postinstall, but this phase can install them as a fallback)
+1. **Phase 0: Install Skills (Optional)** — Verify or manually copy Arreio skills to `.agents/skills/` in the project (skills are normally installed via npm postinstall, but this phase can install them as a fallback)
 2. **Phase 1: Initialize Project Structure** — Create folders, indexes, and architectural documentation
 
 ### Step 1: Install Skills (Optional Fallback)
 
-Verify that Arreio skills are installed to the user's `.agents/skills` directory. See [modules/install.md](modules/install.md) for detailed instructions.
+Verify that Arreio skills are installed to the project's `.agents/skills/` directory. See [modules/install.md](modules/install.md) for detailed instructions.
 
-**Why:** Skills must be available in `~/.agents/skills/` for VS Code Copilot Chat discovery. Normally, the npm postinstall script handles this automatically when you run `npm install arreio`. This step provides a manual fallback if postinstall was skipped.
+**Why:** Skills must be available in `.agents/skills/` for VS Code Copilot Chat discovery. Normally, the npm postinstall script handles this automatically when you run `npm install arreio`. This step provides a manual fallback if postinstall was skipped.
 
-**When to run:** Skip this step if npm postinstall has already run. If skills are not yet installed, this phase will copy them from `node_modules/arreio/skills/` to `~/.agents/skills/`.
+**When to run:** Skip this step if npm postinstall has already run. If skills are not yet installed, this phase will copy them from `node_modules/arreio/skills/` to `.agents/skills/`.
 
 **Action:** See [install.md](modules/install.md) for verification and manual installation steps.
 
@@ -201,13 +201,13 @@ _No review reports yet._
 
 After initialization, verify:
 
-- ✓ All Arreio skills are installed to `~/.agents/skills/`:
-  - `~/.agents/skills/plan/`
-  - `~/.agents/skills/work/`
-  - `~/.agents/skills/review/`
-  - `~/.agents/skills/learn/`
-  - `~/.agents/skills/end-session/`
-  - `~/.agents/skills/arreio-init/`
+- ✓ All Arreio skills are installed to `.agents/skills/`:
+  - `.agents/skills/plan/`
+  - `.agents/skills/work/`
+  - `.agents/skills/review/`
+  - `.agents/skills/learn/`
+  - `.agents/skills/end-session/`
+  - `.agents/skills/arreio-init/`
 - ✓ All five core folders exist: `docs/plans/`, `docs/learn/`, `docs/reports/`, `docs/tasks/`, `docs/archives/`
 - ✓ `ARCHITECTURE.md` exists at project root
 - ✓ Root-level index files exist:

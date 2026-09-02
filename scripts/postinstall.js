@@ -2,17 +2,16 @@
 
 /**
  * Post-install script for arreio
- * Copies skills from the package to the user's .agents/skills directory
+ * Copies skills from the package to the project's .agents/skills directory
  */
 
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 
 // Determine the source and destination paths
 const packageDir = path.dirname(__dirname);
 const skillsSource = path.join(packageDir, 'skills');
-const agentsDir = path.join(os.homedir(), '.agents');
+const agentsDir = path.join(process.cwd(), '.agents');
 const skillsDestination = path.join(agentsDir, 'skills');
 
 // Function to recursively copy directories

@@ -1,6 +1,6 @@
 ---
 title: Install Skills
-description: Verify or manually install Arreio skills to the user's .agents/skills directory, providing a fallback if npm postinstall was skipped.
+description: Verify or manually install Arreio skills to the project's .agents/skills directory, providing a fallback if npm postinstall was skipped.
 type: module
 version: 1.0
 timestamp: "2026-09-01"
@@ -8,7 +8,7 @@ timestamp: "2026-09-01"
 
 # Phase 0 - Install Skills (Fallback)
 
-**Purpose:** Verify that Arreio skills are installed to the user's `~/.agents/skills/` directory, making them available for discovery and invocation in VS Code Copilot Chat. This is normally handled by the npm postinstall script, but this phase provides a manual fallback if postinstall was skipped or if users need to reinstall skills.
+**Purpose:** Verify that Arreio skills are installed to the project's `.agents/skills/` directory, making them available for discovery and invocation in VS Code Copilot Chat. This is normally handled by the npm postinstall script, but this phase provides a manual fallback if postinstall was skipped or if users need to reinstall skills.
 
 ## Workflow
 
@@ -18,7 +18,7 @@ This is the Phase 0 pipeline for the Arreio Init Skill. It performs verification
 
 First, verify that Arreio skills are already available:
 
-1. Check if `~/.agents/skills/` directory exists and contains the expected skill folders (plan, work, review, learn, end-session, arreio-init).
+1. Check if `.agents/skills/` directory exists in the project and contains the expected skill folders (plan, work, review, learn, end-session, arreio-init).
 2. If all skills are present and current, log success and skip to project structure initialization (Step 2).
 3. If skills are missing or incomplete, proceed to Step 2.
 
@@ -35,25 +35,29 @@ Verify that the prerequisites are met if skills need to be installed:
 
 1. Arreio is installed as an npm package in the current project (`node_modules/arreio/` exists).
 2. The skills directory exists in the package: `node_modules/arreio/skills/` contains subdirectories for each skill.
-3. The user's home directory is accessible (required to create `~/.agents/skills/`).
+3. The project directory is writable (required to create `.agents/skills/`).
 
 If any verification fails:
 
 - **Missing package:** Suggest running `npm install arreio` first.
 - **Missing skills:** Report a package integrity error (the skills/ directory is missing from the installed package).
-- **No home access:** Report an environment error (unable to determine home directory).
+- **No write access:** Report an environment error (unable to write to project directory).
 
 ### Step 3: Create Target Directory
 
 Create the destination directory hierarchy:
 
-1. If `~/.agents/` does not exist, create it.
-2. If `~/.agents/skills/` does not exist, create it.
-3. Log: `✓ Created ~/.agents/skills/`
+### Step 3: Create Target Directory
+
+Create the destination directory hierarchy:
+
+1. If `.agents/` does not exist, create it.
+2. If `.agents/skills/` does not exist, create it.
+3. Log: `✓ Created .agents/skills/`
 
 ### Step 4: Copy Skills from Package
 
-Copy each skill directory from `node_modules/arreio/skills/` to `~/.agents/skills/`:
+Copy each skill directory from `node_modules/arreio/skills/` to `.agents/skills/`:
 
 **Skills to copy:**
 
@@ -69,7 +73,7 @@ Copy each skill directory from `node_modules/arreio/skills/` to `~/.agents/skill
 For each skill:
 
 1. Read the source directory: `node_modules/arreio/skills/<skill-name>/`
-2. Copy recursively to destination: `~/.agents/skills/<skill-name>/`
+2. Copy recursively to destination: `.agents/skills/<skill-name>/`
 3. Verify the destination directory was created and contains the expected files (`SKILL.md`, `modules/`, `references/`).
 4. Log: `✓ Copied <skill-name>`
 
@@ -85,7 +89,7 @@ After all skills are copied, verify that the expected skill files are present:
 
 For each skill, check:
 
-- `~/.agents/skills/<skill-name>/SKILL.md` exists
+- `.agents/skills/<skill-name>/SKILL.md` exists
 - Directory structure is intact (modules/, references/ subdirs if present)
 
 If verification passes, log:
@@ -124,14 +128,14 @@ You can now use:
 
 After this phase completes:
 
-- ✓ `~/.agents/skills/` directory exists
-- ✓ All six skills are copied to `~/.agents/skills/`:
-  - `~/.agents/skills/plan/`
-  - `~/.agents/skills/work/`
-  - `~/.agents/skills/review/`
-  - `~/.agents/skills/learn/`
-  - `~/.agents/skills/end-session/`
-  - `~/.agents/skills/arreio-init/`
+- ✓ `.agents/skills/` directory exists in the project
+- ✓ All six skills are copied to `.agents/skills/`:
+  - `.agents/skills/plan/`
+  - `.agents/skills/work/`
+  - `.agents/skills/review/`
+  - `.agents/skills/learn/`
+  - `.agents/skills/end-session/`
+  - `.agents/skills/arreio-init/`
 - ✓ Each skill directory contains `SKILL.md` and expected subdirectories
 - ✓ Skills are ready for discovery by VS Code Copilot Chat
 
@@ -141,11 +145,11 @@ Refer to [error-handling.md](../references/error-handling.md) for category class
 
 - **Category 1 (Missing context):** Arreio package not installed; suggest `npm install arreio`.
 - **Category 2 (Routing error):** Skills directory missing from package; report package integrity issue.
-- **Category 3 (Environment issue):** Cannot write to `~/.agents/`; insufficient permissions or home dir unavailable.
+- **Category 3 (Environment issue):** Cannot write to project `.agents/` directory; insufficient permissions.
 
 ## Notes
 
 - This phase runs **before** project structure initialization (Phase 1 → Create Core Folders).
-- Skills are copied to the user's home directory (`~/.agents/`), not the project directory. This allows skills to be reused across all projects once installed.
-- The copy is non-destructive; if skills already exist in `~/.agents/skills/`, they are overwritten with the latest version from the installed package. This supports package updates.
+- Skills are copied to the project's `.agents/` directory, keeping them scoped to the project. Each project gets its own copy of skills.
+- The copy is non-destructive; if skills already exist in `.agents/skills/`, they are overwritten with the latest version from the installed package. This supports package updates.
 - This phase is idempotent; running it multiple times produces the same result.
