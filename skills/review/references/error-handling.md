@@ -85,7 +85,7 @@ Errors encountered while saving or reading artifact files.
 | Target directory does not exist                  | Create directory (`mkdir -p`); treat counter as 0; start from 001 | No                 |
 | Counter directory exists but no files match date | Start counter at 001                                              | No                 |
 | File write permission denied                     | Log error; ask user to check permissions; retry once              | Yes, after 1 retry |
-| `docs/plans/.review/index.md` registry missing  | Create it with a `# Reviews` header (Pre-Flight already creates; idempotent) | No     |
+| `docs/review/index.md` registry missing  | Create it with a `# Reviews` header (Pre-Flight already creates; idempotent) | No     |
 | `docs/tasks/<work-id>/index.md` missing (Report cross-link) | Skip the cross-link; note the absence in the report (do not fabricate a work index) | No |
 
 ### Category 5: Interaction Mode Errors

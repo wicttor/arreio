@@ -69,7 +69,7 @@ Tools never **create** a finding on their own outside the change boundary; they 
 ### Step 5: Aggregate Tallies and Generate the Findings Artifact
 
 1. **Aggregate** findings by category and count by severity. Compute preliminary tallies (Report derives the final approval status from these — Analyze does not pre-derive approval).
-2. **Assign an `analyze-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-analyze`, saved to `docs/plans/.review/.analyze/`). Reuse it if the user later picks **Edit & Retry**.
+2. **Assign an `analyze-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-analyze`, saved to `docs/review/.analyze/`). Reuse it if the user later picks **Edit & Retry**.
 3. Produce a **Findings** block (as markdown) following the schema in [findings.md](../references/templates/artifacts/findings.md). Include:
    - `analyze-id`, inherited `prepare-id`, `scope-id`, `review-id`, `input-shape`, `interactionMode`
    - the findings list: per finding — `id`, `severity`, `category`, `location` (repository-relative `file:line` or `file:hunk`), `message`, `trace` **or** `scope-creep: true`, and an optional non-binding `suggested-fix` (Review is read-only — suggestions are informational, never applied)
@@ -90,7 +90,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.review/.analyze/<analyze-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 4 (Report).
+Then save the artifact to `docs/review/.analyze/<analyze-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 4 (Report).
 
 ## Output: Findings Artifact
 
@@ -99,6 +99,6 @@ Then save the artifact to `docs/plans/.review/.analyze/<analyze-id>.md` (ensure 
 - Verify the **scope-creep** category either ran (with `spec-content` not `none`) or is recorded `skipped (no requirements)` — never silently absent, never inventing requirements.
 - Verify severities were **assigned from** [severity-rubric.md](../references/severity-rubric.md) rather than re-defined inline (no second rubric contradicting the authoritative reference).
 - Verify the category checks were **run from** [review-categories.md](../references/review-categories.md) rather than re-encoded inline.
-- Verify that the artifact is saved to `docs/plans/.review/.analyze/<analyze-id>.md`.
+- Verify that the artifact is saved to `docs/review/.analyze/<analyze-id>.md`.
 
 > Pass the Findings to `report` (Phase 4) for the approval-status derivation, the report write, and the registry / work-index cross-link.

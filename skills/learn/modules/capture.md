@@ -30,7 +30,7 @@ If the input is empty or ambiguous, ask the user one question: "What would you l
 Determine which of the two authoring shapes applies (maintain is rejected in Step 0):
 
 1. **Explicit** — the input carries a `<type>` (one of `decision` / `pattern` / `gotcha` / `workflow`) and `<text>` (prose, a file/commit ref, or a short description to expand).
-2. **Candidate** — the input carries a ref to a Work `review-id` (`docs/plans/.work/.review/<id>.md`) or a Review `report-id` (`docs/plans/.review/.report/<id>.md`).
+2. **Candidate** — the input carries a ref to a Work `review-id` (`docs/plans/.work/.review/<id>.md`) or a Review `report-id` (`docs/review/.report/<id>.md`).
 
 Record `input-shape: explicit | candidate`. If `<type>` is provided but is not one of the four, ask the user to pick from the four (Step 2 confirms intent either way).
 
@@ -48,7 +48,7 @@ Capture produces **one** Captured Entry per run (single-shape artifact). The sha
 
 1. Resolve the ref to the artifact file:
    - Work `review-id` → `docs/plans/.work/.review/<review-id>.md` → read its `learnings-to-capture` list.
-   - Review `report-id` → `docs/plans/.review/.report/<report-id>.md` → read its `learnings-to-capture` list.
+   - Review `report-id` → `docs/review/.report/<report-id>.md` → read its `learnings-to-capture` list.
 2. If the list is empty, inform the user (no candidates to curate) and stop — do not fabricate an entry.
 3. Present the candidate list to the user (each has a `title`, `domain`, `source` {finding-id or task-id+gate}, `summary`, `type`) and ask which to author **first** (one entry per Captured Entry). If the candidate's recorded `type` is one of the four, use it; otherwise map: `confirmed-pattern` → `pattern`, `refuted-assumption` → `gotcha`, `gotcha` → `gotcha`, `forced-decision` → `decision`. The user may override the inferred type.
 4. Record the selected candidate as `capture.source-candidate` (carried for traceability into the entry's `source` frontmatter).

@@ -56,7 +56,7 @@ learning-gaps:
 work-id: YYYY-MM-DD-NNN | null             # work-linked only, for the index cross-link; null otherwise
 ```
 
-Also save the Review Scope to `docs/plans/.review/.scope/<scope-id>.md`.
+Also save the Review Scope to `docs/review/.scope/<scope-id>.md`.
 
 ## Validation Rules
 

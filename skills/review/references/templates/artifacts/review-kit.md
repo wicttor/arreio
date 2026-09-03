@@ -60,7 +60,7 @@ tool-inventory:
 work-id: YYYY-MM-DD-NNN | null    # work-linked only; null otherwise
 ```
 
-Also save the Review Kit to `docs/plans/.review/.prepare/<prepare-id>.md`.
+Also save the Review Kit to `docs/review/.prepare/<prepare-id>.md`.
 
 ## Validation Rules
 
