@@ -95,6 +95,6 @@ maintain:
 
 ## Notes
 
-- The Orchestrator's Pre-Flight Check ensures `docs/learn/`, `docs/plans/.learn/.{capture,refine,index,maintain}/` exist, and seeds `docs/learn/index.md` if missing (self-healing via `mkdir -p`), before routing the artifact.
+- The Orchestrator's Pre-Flight Check ensures `docs/learn/`, `docs/learn/.{capture,refine,index,maintain}/` exist, and seeds `docs/learn/index.md` if missing (self-healing via `mkdir -p`), before routing the artifact.
 - `interactionMode` flows from this artifact into every downstream artifact (Capture → Refine → Index for authoring; straight to Maintain otherwise); the orchestrator quality gate #2 cross-checks it is identical across the authoring chain (Maintain carries it standalone).
 - The shape **determines the route**, not just the allocation: a `maintain` shape never reaches Capture, Refine, or Index. The phase ids reflect this — `maintain-id` is standalone (no `learn-id` umbrella) per [id-generation.md](../../id-generation.md).

@@ -74,7 +74,7 @@ Rebuild `docs/learn/index.md` from the on-disk file tree — the file tree is th
 
 ### Step 6: Allocate the maintain-id
 
-Assign a `maintain-id` per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-maintain`, saved to `docs/plans/.learn/.maintain/`). Maintain has **no `learn-id` umbrella** (it authors no new entry). Reuse the `maintain-id` if the user picks **Edit & Retry**.
+Assign a `maintain-id` per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-maintain`, saved to `docs/learn/.maintain/`). Maintain has **no `learn-id` umbrella** (it authors no new entry). Reuse the `maintain-id` if the user picks **Edit & Retry**.
 
 ### Step 7: Generate the Maintain Log Artifact
 
@@ -101,7 +101,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed (but destructive operations — migration, prune, merge — always surface for confirmation even in Smart, per the principle that destructive writes are never silent).
 - **Autopilot:** auto-proceed for non-destructive steps (refresh, rebuild); **still pause** for destructive operations (migration, prune) — Autopilot never silently deletes or rewrites paths.
 
-Then save the artifact to `docs/plans/.learn/.maintain/<maintain-id>.md` (ensure `interactionMode` included) and return it to the Orchestrator. The Orchestrator marks the Maintain run complete — the canonical knowledge base is reconciled.
+Then save the artifact to `docs/learn/.maintain/<maintain-id>.md` (ensure `interactionMode` included) and return it to the Orchestrator. The Orchestrator marks the Maintain run complete — the canonical knowledge base is reconciled.
 
 ## Output: Maintain Log Artifact
 
@@ -111,6 +111,6 @@ Then save the artifact to `docs/plans/.learn/.maintain/<maintain-id>.md` (ensure
 - Verify that every prune was explicitly confirmed (no silent deletion); a delete leaves no file; a de-index keeps the file with `status: obsolete`.
 - Verify **index coherence** (orchestrator gate #5): the rebuilt `docs/learn/index.md` YAML length matches the on-disk entry-file count; per-type totals consistent; no duplicate rows.
 - Verify that the rebuild was **applied from** [index-format.md](../references/index-format.md) (and the applicability-enum derivation) rather than re-encoded inline.
-- Verify that the artifact is saved to `docs/plans/.learn/.maintain/<maintain-id>.md`.
+- Verify that the artifact is saved to `docs/learn/.maintain/<maintain-id>.md`.
 
 > The Maintain Log is the Maintain run's deliverable. The Orchestrator marks the workflow complete; the canonical knowledge base at `docs/learn/` is reconciled and `docs/learn/index.md` reflects the on-disk truth.

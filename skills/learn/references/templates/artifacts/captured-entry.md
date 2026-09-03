@@ -53,7 +53,7 @@ inferred: true | false                     # true when drafted from a short desc
                                            # false when grounded in a concrete ref/file the user provided
 ```
 
-Also save the Captured Entry Artifact to `docs/plans/.learn/.capture/<capture-id>.md`.
+Also save the Captured Entry Artifact to `docs/learn/.capture/<capture-id>.md`.
 
 ## Validation Rules
 

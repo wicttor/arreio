@@ -55,7 +55,7 @@ Update `docs/learn/index.md` per the authoritative **[index-format.md](../refere
 
 ### Step 4: Allocate the index-id
 
-Assign an `index-id` per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-index`, saved to `docs/plans/.learn/.index/`). Reuse it if the user later picks **Edit & Retry**. The `learn-id` umbrella is inherited unchanged.
+Assign an `index-id` per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-index`, saved to `docs/learn/.index/`). Reuse it if the user later picks **Edit & Retry**. The `learn-id` umbrella is inherited unchanged.
 
 ### Step 5: Generate the Index Update Artifact
 
@@ -79,7 +79,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.learn/.index/<index-id>.md` (ensure `interactionMode` included) and return it to the Orchestrator. The Orchestrator marks the authoring run complete — the durable entry now lives at `docs/learn/<type>/<slug>.md` and `docs/learn/index.md` reflects it.
+Then save the artifact to `docs/learn/.index/<index-id>.md` (ensure `interactionMode` included) and return it to the Orchestrator. The Orchestrator marks the authoring run complete — the durable entry now lives at `docs/learn/<type>/<slug>.md` and `docs/learn/index.md` reflects it.
 
 ## Output: Index Update Artifact
 
@@ -89,6 +89,6 @@ Then save the artifact to `docs/plans/.learn/.index/<index-id>.md` (ensure `inte
 - Verify **index coherence** (orchestrator gate #5): the YAML block length matches the on-disk entry-file count; the per-type count headings match; no duplicate index rows.
 - Verify that a merge **de-indexed** (not deleted) the analog and recorded the `superseded-by` lineage in the analog's file — lineage preserved per [dedup-rules.md](../references/dedup-rules.md).
 - Verify that the derived `index-applicability` enum was **read from** [index-format.md](../references/index-format.md) (the derivation rule) rather than re-encoded inline.
-- Verify that the artifact is saved to `docs/plans/.learn/.index/<index-id>.md`.
+- Verify that the artifact is saved to `docs/learn/.index/<index-id>.md`.
 
 > The Index Update is the authoring run's final artifact. The Orchestrator marks the workflow complete; the durable knowledge entry lives at `docs/learn/<type>/<slug>.md` and is discoverable via `docs/learn/index.md` (the source-of-truth index Plan/Work/Review search).

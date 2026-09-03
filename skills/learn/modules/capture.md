@@ -70,8 +70,8 @@ Draft the entry's frontmatter and body per the authoritative write contract **[e
 ### Step 4: Propose slug and Allocate the learn-id Umbrella
 
 1. **Propose a `slug`** — a kebab-case, globally-unique stable key for the entry. Derive from the title (concise, descriptive); for time-bound decisions a date suffix is allowed (`critical-risk-tier-security-payments-2026-07-04`). The slug is the upsert key for the entry file and its index record. Refine checks uniqueness; Capture only **proposes**.
-2. **Allocate a `learn-id`** umbrella of the form `YYYY-MM-DD-NNN` per [id-generation.md](../references/id-generation.md), counting existing `docs/plans/.learn/.capture/YYYY-MM-DD-NNN-capture.md` files for today. The `learn-id` is the pipeline umbrella carried through Capture → Refine → Index (Maintain-only runs allocate their own `maintain-id` and have no `learn-id`).
-3. **Assign a `capture-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-capture`, saved to `docs/plans/.learn/.capture/`). Reuse it if the user later picks **Edit & Retry**.
+2. **Allocate a `learn-id`** umbrella of the form `YYYY-MM-DD-NNN` per [id-generation.md](../references/id-generation.md), counting existing `docs/learn/.capture/YYYY-MM-DD-NNN-capture.md` files for today. The `learn-id` is the pipeline umbrella carried through Capture → Refine → Index (Maintain-only runs allocate their own `maintain-id` and have no `learn-id`).
+3. **Assign a `capture-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-capture`, saved to `docs/learn/.capture/`). Reuse it if the user later picks **Edit & Retry**.
 
 ### Step 5: Generate the Captured Entry Artifact
 
@@ -95,7 +95,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.learn/.capture/<capture-id>.md` (ensure `interactionMode` and `target-type` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Refine).
+Then save the artifact to `docs/learn/.capture/<capture-id>.md` (ensure `interactionMode` and `target-type` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Refine).
 
 ## Output: Captured Entry Artifact
 
@@ -103,6 +103,6 @@ Then save the artifact to `docs/plans/.learn/.capture/<capture-id>.md` (ensure `
 - Verify that `target-type` is one of `decision` / `pattern` / `gotcha` / `workflow`.
 - Verify that the frontmatter and body conform to [entry-schema.md](../references/entry-schema.md) (the per-type section template), without re-encoding the schema inline.
 - Verify that the `learn-id` umbrella was allocated (Capture is the allocating phase) and the `slug` is kebab-case and descriptive.
-- Verify that the artifact is saved to `docs/plans/.learn/.capture/<capture-id>.md`.
+- Verify that the artifact is saved to `docs/learn/.capture/<capture-id>.md`.
 
 > Pass the Captured Entry to `refine` (Phase 2) for type/frontmatter validation and the duplicate + analog check against existing entries.

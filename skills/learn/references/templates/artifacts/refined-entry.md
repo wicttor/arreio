@@ -58,7 +58,7 @@ lineage:                                        # set ONLY when resolution == me
 source-candidate: <carried from Capture> | null
 ```
 
-Also save the Refined Entry Artifact to `docs/plans/.learn/.refine/<refine-id>.md`.
+Also save the Refined Entry Artifact to `docs/learn/.refine/<refine-id>.md`.
 
 ## Validation Rules
 
