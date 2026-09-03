@@ -49,7 +49,7 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 - Receives a context object from the user, a saved prompt, a document, or a combination.
 - **Three input shapes:**
   1. **Explicit** — `/learn <type> <text>`. Capture drafts an entry of the named type from the text. The canonical path for authoring a decision/pattern/gotcha/workflow.
-  2. **Candidate** — `/learn <candidate-ref>`. The ref resolves to a Work `review-id` (`docs/plans/.work/.review/<id>.md`) or a Review `report-id` (`docs/plans/.review/.report/<id>.md`); Capture reads its `learnings-to-capture` list and, for each candidate, drafts the corresponding entry. The user confirms which candidates become durable entries.
+  2. **Candidate** — `/learn <candidate-ref>`. The ref resolves to a Work `review-id` (`docs/plans/.work/.review/<id>.md`) or a Review `report-id` (`docs/review/.report/<id>.md`); Capture reads its `learnings-to-capture` list and, for each candidate, drafts the corresponding entry. The user confirms which candidates become durable entries.
   3. **Maintain** — `/learn maintain`. Runs only the Maintain phase (dedup / refresh / prune); bypasses Capture → Refine → Index (no new entry is authored).
 - **If no context is provided**, ask: "What would you like to capture? Provide a type and text, a candidate ref, or `maintain`."
 - **Unified key:** downstream phases key off a `learn-id` umbrella (`YYYY-MM-DD-NNN`), allocated by Capture. For Maintain-only runs, Maintain allocates its own `maintain-id` (no `learn-id` umbrella — there is no newly authored entry).

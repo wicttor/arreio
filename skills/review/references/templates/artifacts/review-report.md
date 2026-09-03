@@ -8,7 +8,7 @@ timestamp: "2026-08-08"
 
 # Review Report Artifact
 
-The product of the **Report** phase is the Review Report — the Review skill's final deliverable. It records the **approval status** (`approved` / `changes-requested` / `rejected`) derived deterministically from the Findings tallies per [approval-criteria.md](../../approval-criteria.md), with a one-line rationale tied to the counts; the findings rollup (by severity and by category); non-binding **recommendations**; the **scope-creep summary**; **learnings-to-capture** candidates (handed to `/learn`); and the registration state. A registry row is appended to `docs/plans/.review/index.md` always; for work-linked input, a distinct `## Review Report — <report-id>` block is appended to `docs/tasks/<work-id>/index.md`.
+The product of the **Report** phase is the Review Report — the Review skill's final deliverable. It records the **approval status** (`approved` / `changes-requested` / `rejected`) derived deterministically from the Findings tallies per [approval-criteria.md](../../approval-criteria.md), with a one-line rationale tied to the counts; the findings rollup (by severity and by category); non-binding **recommendations**; the **scope-creep summary**; **learnings-to-capture** candidates (handed to `/learn`); and the registration state. A registry row is appended to `docs/review/index.md` always; for work-linked input, a distinct `## Review Report — <report-id>` block is appended to `docs/tasks/<work-id>/index.md`.
 
 ## Schema
 
@@ -54,18 +54,18 @@ learning-gaps:
 work-id: YYYY-MM-DD-NNN | null          # work-linked only; null otherwise
 
 registration:
-  registry-row-appended: true          # appended to docs/plans/.review/index.md (idempotent on report-id)
+  registry-row-appended: true          # appended to docs/review/index.md (idempotent on report-id)
   work-index-block-appended: true | skipped   # work-linked only; skipped if the work index is missing
 ```
 
-Also save the Review Report to `docs/plans/.review/.report/<report-id>.md`.
+Also save the Review Report to `docs/review/.report/<report-id>.md`.
 
 ## Closing Blocks
 
-### Registry row (appended to `docs/plans/.review/index.md`, always)
+### Registry row (appended to `docs/review/index.md`, always)
 
 ```
-- <report-id> — <target-summary> — <approval-status> — docs/plans/.review/.report/<report-id>.md
+- <report-id> — <target-summary> — <approval-status> — docs/review/.report/<report-id>.md
 ```
 
 ### Work-index block (appended to `docs/tasks/<work-id>/index.md`, work-linked only)
@@ -77,7 +77,7 @@ Also save the Review Report to `docs/plans/.review/.report/<report-id>.md`.
 - **Findings:** <blocker> blocker, <major> major, <minor> minor, <nit> nit
 - **Scope creep:** none | <count> | skipped (no requirements)
 - **Learnings to capture:** <count> (run `/learn` to persist)
-- **Review Report:** docs/plans/.review/.report/<report-id>.md
+- **Review Report:** docs/review/.report/<report-id>.md
 ```
 
 Both the registry row and the work-index block are **append-only** and **idempotent on `report-id`**: a re-run overwrites the entry with the same id, never duplicates it. The work-index block is deliberately distinct from Work's own `## Work Report — <review-id>` block (different label, different skill, different `report-id`).

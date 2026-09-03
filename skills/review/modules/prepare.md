@@ -68,7 +68,7 @@ If **no** linter/type-checker is configured for the repo, that is a Smart pause 
 
 ### Step 5: Generate the Review Kit Artifact
 
-1. **Assign a `prepare-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-prepare`, saved to `docs/plans/.review/.prepare/`). Reuse it if the user later picks **Edit & Retry**.
+1. **Assign a `prepare-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-prepare`, saved to `docs/review/.prepare/`). Reuse it if the user later picks **Edit & Retry**.
 
 2. Produce a **Review Kit** block (as markdown) following the schema in [review-kit.md](../references/templates/artifacts/review-kit.md). Include:
    - `prepare-id`, inherited `scope-id` and `review-id`, `input-shape`, `interactionMode`
@@ -90,7 +90,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.review/.prepare/<prepare-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Analyze).
+Then save the artifact to `docs/review/.prepare/<prepare-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Analyze).
 
 ## Output: Review Kit Artifact
 
@@ -98,6 +98,6 @@ Then save the artifact to `docs/plans/.review/.prepare/<prepare-id>.md` (ensure 
 - Verify that every `required` file has a diff entry (or is recorded as deleted / `current-contents`) and that `context` is separated from `required`.
 - Verify that `test-context` records covering tests per changed file and whether the change ships its own tests.
 - Verify that `requirements-source: none` propagated as `spec: none` (so Analyze skips the requirements-vs-scope-creep category rather than guessing).
-- Verify that the artifact is saved to `docs/plans/.review/.prepare/<prepare-id>.md`.
+- Verify that the artifact is saved to `docs/review/.prepare/<prepare-id>.md`.
 
 > Pass the Review Kit to `analyze` (Phase 3) for the categorized, severity-graded review of the diffs.

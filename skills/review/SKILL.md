@@ -58,8 +58,8 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 
 Before starting the review pipeline, the orchestrator verifies that required folders exist:
 
-- `docs/plans/.review/.scope/`, `docs/plans/.review/.prepare/`, `docs/plans/.review/.analyze/`, `docs/plans/.review/.report/` — must exist for saving the four phase artifacts
-- `docs/plans/.review/index.md` — must exist as the review registry (Report appends to it)
+- `docs/review/.scope/`, `docs/review/.prepare/`, `docs/review/.analyze/`, `docs/review/.report/` — must exist for saving the four phase artifacts
+- `docs/review/index.md` — must exist as the review registry (Report appends to it)
 
 **Self-Healing:** If any are missing, the orchestrator automatically creates them (`mkdir -p`, and a seed `index.md` with a registry header). This allows the Review skill to run even if `arreio-init` wasn't explicitly run.
 
@@ -73,10 +73,10 @@ For **task-in-review** input, verify the `work-id` exists and contains at least 
 
 | Phase | Phase Module                  | Output Artifact                                                  | Saved to                              |
 | ----- | ----------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
-| 1     | [Scope](modules/scope.md)     | [Review scope](references/templates/artifacts/review-scope.md)   | `docs/plans/.review/.scope/<id>.md`   |
-| 2     | [Prepare](modules/prepare.md) | [Review kit](references/templates/artifacts/review-kit.md)       | `docs/plans/.review/.prepare/<id>.md` |
-| 3     | [Analyze](modules/analyze.md) | [Findings](references/templates/artifacts/findings.md)           | `docs/plans/.review/.analyze/<id>.md` |
-| 4     | [Report](modules/report.md)   | [Review report](references/templates/artifacts/review-report.md) | `docs/plans/.review/.report/<id>.md`  |
+| 1     | [Scope](modules/scope.md)     | [Review scope](references/templates/artifacts/review-scope.md)   | `docs/review/.scope/<id>.md`   |
+| 2     | [Prepare](modules/prepare.md) | [Review kit](references/templates/artifacts/review-kit.md)       | `docs/review/.prepare/<id>.md` |
+| 3     | [Analyze](modules/analyze.md) | [Findings](references/templates/artifacts/findings.md)           | `docs/review/.analyze/<id>.md` |
+| 4     | [Report](modules/report.md)   | [Review report](references/templates/artifacts/review-report.md) | `docs/review/.report/<id>.md`  |
 
 ### Quality Gates
 
@@ -99,7 +99,7 @@ Each phase is responsible for its own index updates:
 | Scope   | _(none — produces artifact only)_                                      | Allocates the `review-id`; no index write.                                                                                     |
 | Prepare | _(none)_                                                               | Gathers the review kit; no index write.                                                                                        |
 | Analyze | _(none)_                                                               | Produces findings; no index write.                                                                                             |
-| Report  | `docs/plans/.review/index.md`                                          | Append a registry row: `<report-id>`, review target summary, approval status, link to the report file.                         |
+| Report  | `docs/review/index.md`                                          | Append a registry row: `<report-id>`, review target summary, approval status, link to the report file.                         |
 | Report  | `docs/tasks/<work-id>/index.md` _(work-linked or task-in-review only)_ | Append a distinct `## Review Report — <report-id>` block (separate from Work's own `## Work Report` block).                    |
 | Report  | Task frontmatter _(task-in-review only)_                               | Update task file `status:` field to `completed` (if approved) or `blocked` (if changes-requested, with reason in frontmatter). |
 
@@ -107,8 +107,8 @@ Each phase is responsible for its own index updates:
 
 ### FINAL OUTPUT
 
-- **Review Report:** Saved to `docs/plans/.review/.report/<report-id>.md`, with: the change boundary, the approval status (`approved` / `changes-requested` / `rejected`), the graded findings rollup, recommendations, and (when requirements were available) the scope-creep summary.
-- **Registry row:** `docs/plans/.review/index.md` updated with the new review.
+- **Review Report:** Saved to `docs/review/.report/<report-id>.md`, with: the change boundary, the approval status (`approved` / `changes-requested` / `rejected`), the graded findings rollup, recommendations, and (when requirements were available) the scope-creep summary.
+- **Registry row:** `docs/review/index.md` updated with the new review.
 - **(Work-linked or task-in-review only) Index cross-link:** `docs/tasks/<work-id>/index.md` gets a `## Review Report — <report-id>` block so a future glance at the work index shows that an external Review ran over it.
 - **(Task-in-review only) Task Status Update:** ✅ **NEW**: For each task with `status: for-review`:
   - If approval status = `approved` → update task file's frontmatter `status: completed`

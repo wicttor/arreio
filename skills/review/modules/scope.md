@@ -89,9 +89,9 @@ Search `docs/learn/index.md` for entries relevant to the review domains (the cha
 
 ### Step 6: Allocate review-id and Generate the Review Scope Artifact
 
-1. **Allocate a `review-id`** of the form `YYYY-MM-DD-NNN` per [id-generation.md](../references/id-generation.md), counting existing `docs/plans/.review/.scope/YYYY-MM-DD-NNN-scope.md` files (or registry rows) for today. This is the pipeline umbrella id (distinct from any Work `review-id` for work-linked input — the two skills produce independent artifacts; the `work-id` is carried alongside for traceability).
+1. **Allocate a `review-id`** of the form `YYYY-MM-DD-NNN` per [id-generation.md](../references/id-generation.md), counting existing `docs/review/.scope/YYYY-MM-DD-NNN-scope.md` files (or registry rows) for today. This is the pipeline umbrella id (distinct from any Work `review-id` for work-linked input — the two skills produce independent artifacts; the `work-id` is carried alongside for traceability).
 
-2. **Assign a `scope-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-scope`, saved to `docs/plans/.review/.scope/`). Reuse it if the user later picks **Edit & Retry**.
+2. **Assign a `scope-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-scope`, saved to `docs/review/.scope/`). Reuse it if the user later picks **Edit & Retry**.
 
 3. Produce a **Review Scope Artifact** block (as markdown) following the schema in [review-scope.md](../references/templates/artifacts/review-scope.md). Include:
    - `scope-id`, `review-id`, `input-shape`, `interactionMode`
@@ -113,7 +113,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.review/.scope/<scope-id>.md` (ensure `interactionMode`, `input-shape`, and `review-id` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Prepare).
+Then save the artifact to `docs/review/.scope/<scope-id>.md` (ensure `interactionMode`, `input-shape`, and `review-id` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Prepare).
 
 ## Output: Review Scope Artifact
 
@@ -121,6 +121,6 @@ Then save the artifact to `docs/plans/.review/.scope/<scope-id>.md` (ensure `int
 - Verify that the change boundary is in **dependency-safe** form: `required` files are repository-relative and carry a status; `context` is separated from `required`.
 - Verify that `review-id` was allocated (scope is the allocating phase) and that `work-id` is carried for work-linked input.
 - Verify that scope-creep detection was run only when requirements were present (else explicitly skipped with a note), per [scope-creep-detection.md](../references/scope-creep-detection.md).
-- Verify that the artifact is saved to `docs/plans/.review/.scope/<scope-id>.md`.
+- Verify that the artifact is saved to `docs/review/.scope/<scope-id>.md`.
 
 > Pass the Review Scope to `prepare` (Phase 2) to gather the diffs, spec content, test context, and tool inventory.

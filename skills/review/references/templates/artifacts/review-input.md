@@ -111,6 +111,6 @@ references: null
 
 ## Notes
 
-- The Orchestrator's Pre-Flight Check ensures `docs/plans/.review/.{scope,prepare,analyze,report}/` and `docs/plans/.review/index.md` exist (self-healing via `mkdir -p`) before handing the Review Input Artifact to Scope.
+- The Orchestrator's Pre-Flight Check ensures `docs/review/.{scope,prepare,analyze,report}/` and `docs/review/index.md` exist (self-healing via `mkdir -p`) before handing the Review Input Artifact to Scope.
 - `interactionMode` flows from this artifact into every downstream artifact (Scope → Prepare → Analyze → Report); the orchestrator quality gate #2 cross-checks it is identical across all.
 - For work-linked input, the Work `review-id` and the Review skill's own `review-id` are **distinct** (see [id-generation.md](../../id-generation.md)); the `work-review-id` here is only an input resolver, never reused as the Review skill's umbrella id.

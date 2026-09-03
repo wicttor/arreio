@@ -54,7 +54,7 @@ Creates the organizational spine for Arreio artifacts:
 
 - `docs/plans/` — Stores generated plans and design artifacts
 - `docs/learn/` — Stores extracted learnings and insights
-- `docs/reports/` — Stores review reports and analysis
+- `docs/review/` — Stores review reports and analysis
 - `docs/tasks/` — Stores task lists and execution records
 - `docs/archives/` — Stores historical artifacts
 
@@ -92,15 +92,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** If `docs/learn/index.md` doesn't exist, create it using the [Learn Index Template](references/learn-index-template.md).
 
-### Step 7: Create Reports Folder
-
-**Folder:** `docs/reports/`
-
-**Rationale:** Stores review reports and analysis artifacts. The `review/SKILL.md` module generates reports here.
-
-**Action:** Create the `docs/reports/` folder if it doesn't exist.
-
-### Step 8: Create Plan Skill Hidden Artifact Directories
+### Step 7: Create Plan Skill Hidden Artifact Directories
 
 **Folders:**
 
@@ -112,7 +104,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** Create all three directories if they don't exist.
 
-### Step 9: Create Work Skill Hidden Artifact Directories
+### Step 8: Create Work Skill Hidden Artifact Directories
 
 **Folders:**
 
@@ -125,22 +117,22 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** Create all four directories if they don't exist.
 
-### Step 10: Create Review Skill Hidden Artifact Directories and Registry
+### Step 9: Create Review Skill Hidden Artifact Directories and Registry
 
 **Folders:**
 
-- `docs/plans/.review/.scope/` — Stores Review Scope phase artifacts
-- `docs/plans/.review/.prepare/` — Stores Review Prepare phase artifacts
-- `docs/plans/.review/.analyze/` — Stores Review Analyze phase artifacts
-- `docs/plans/.review/.report/` — Stores Review Report phase artifacts
+- `docs/review/.scope/` — Stores Review Scope phase artifacts
+- `docs/review/.prepare/` — Stores Review Prepare phase artifacts
+- `docs/review/.analyze/` — Stores Review Analyze phase artifacts
+- `docs/review/.report/` — Stores Review Report phase artifacts
 
 **File:**
 
-- `docs/plans/.review/index.md` — Central registry of all review reports
+- `docs/review/index.md` — Central registry of all review reports
 
 **Rationale:** The `review/SKILL.md` orchestrator saves phase artifacts in these hidden directories and maintains a central index of all review reports.
 
-**Action:** Create all four directories if they don't exist. If `docs/plans/.review/index.md` doesn't exist, create it with a header:
+**Action:** Create all four directories if they don't exist. If `docs/review/index.md` doesn't exist, create it with a header:
 
 ```markdown
 ---
@@ -161,7 +153,7 @@ This is the index of all review reports for the project. Reports are organized b
 _No review reports yet._
 ```
 
-### Step 11: Create Learn Skill Hidden Artifact Directories
+### Step 10: Create Learn Skill Hidden Artifact Directories
 
 **Folders:**
 
@@ -174,7 +166,7 @@ _No review reports yet._
 
 **Action:** Create all four directories if they don't exist.
 
-### Step 12: Create End-Session Skill Hidden Artifact Directory
+### Step 11: Create End-Session Skill Hidden Artifact Directory
 
 **Folder:**
 
@@ -184,7 +176,7 @@ _No review reports yet._
 
 **Action:** Create the directory if it doesn't exist.
 
-### Step 13: Create Learn Category Folders
+### Step 12: Create Learn Category Folders
 
 **Folders:**
 
@@ -208,7 +200,7 @@ After initialization, verify:
   - `.agents/skills/learn/`
   - `.agents/skills/end-session/`
   - `.agents/skills/arreio-init/`
-- ✓ All five core folders exist: `docs/plans/`, `docs/learn/`, `docs/reports/`, `docs/tasks/`, `docs/archives/`
+- ✓ All five core folders exist: `docs/plans/`, `docs/learn/`, `docs/review/`, `docs/tasks/`, `docs/archives/`
 - ✓ `ARCHITECTURE.md` exists at project root
 - ✓ Root-level index files exist:
   - `docs/plans/index.md` (registry of all plans)
@@ -218,8 +210,8 @@ After initialization, verify:
 - ✓ Work skill hidden artifact directories exist:
   - `docs/plans/.work/.triage/`, `docs/plans/.work/.prepare/`, `docs/plans/.work/.execute/`, `docs/plans/.work/.review/`
 - ✓ Review skill hidden artifact directories exist:
-  - `docs/plans/.review/.scope/`, `docs/plans/.review/.prepare/`, `docs/plans/.review/.analyze/`, `docs/plans/.review/.report/`
-  - `docs/plans/.review/index.md` (review reports registry)
+  - `docs/review/.scope/`, `docs/review/.prepare/`, `docs/review/.analyze/`, `docs/review/.report/`
+  - `docs/review/index.md` (review reports registry)
 - ✓ Learn skill hidden artifact directories exist:
   - `docs/plans/.learn/.capture/`, `docs/plans/.learn/.refine/`, `docs/plans/.learn/.index/`, `docs/plans/.learn/.maintain/`
 - ✓ End-session skill hidden artifact directory exists:
@@ -235,7 +227,7 @@ Downstream skills (plan, learn, work, review) automatically create missing folde
 
 - **plan** skill creates missing `docs/plans/` core folders, and allocates `docs/plans/.scope/`, `.research/`, `.design/` directories on first use.
 - **work** skill creates missing `docs/plans/.work/` directories (`.triage/`, `.prepare/`, `.execute/`, `.review/`) on first execution.
-- **review** skill creates missing `docs/plans/.review/` directories and `index.md` registry on first review.
+- **review** skill creates missing `docs/review/` directories and `index.md` registry on first review.
 - **learn** skill creates missing `docs/plans/.learn/` directories and `docs/learn/` category folders on first learning capture.
 - **end-session** skill creates missing `docs/plans/.end-session/` directory (and the `## Session Ends` section in `docs/plans/index.md`) on first session end.
 

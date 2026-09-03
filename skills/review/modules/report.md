@@ -1,6 +1,6 @@
 ---
 title: Report
-description: Fourth and final step in the Review workflow. Derives the final approval status (approved / changes-requested / rejected) from the Findings per the authoritative approval criteria, composes non-binding recommendations, generates the Review Report, registers it in docs/plans/.review/index.md, and (work-linked only) appends a distinct ## Review Report — <report-id> block to the work task index. Returns the Review Report as the Review skill's final deliverable.
+description: Fourth and final step in the Review workflow. Derives the final approval status (approved / changes-requested / rejected) from the Findings per the authoritative approval criteria, composes non-binding recommendations, generates the Review Report, registers it in docs/review/index.md, and (work-linked only) appends a distinct ## Review Report — <report-id> block to the work task index. Returns the Review Report as the Review skill's final deliverable.
 type: module
 version: 1.0
 timestamp: "2026-08-08"
@@ -8,7 +8,7 @@ timestamp: "2026-08-08"
 
 # Phase 4 - Report
 
-**Purpose:** Fourth and final step in the Review workflow. Reads the [Findings](../references/templates/artifacts/findings.md) from Analyze, derives the final **approval status** (`approved` / `changes-requested` / `rejected`) per the authoritative criteria, composes non-binding recommendations, writes the [Review Report](../references/templates/artifacts/review-report.md), registers it in `docs/plans/.review/index.md`, and — for work-linked input only — appends a distinct `## Review Report — <report-id>` block to `docs/tasks/<work-id>/index.md` (clearly separate from Work's own `## Work Report` block). Returns the Review Report as the Review skill's final deliverable.
+**Purpose:** Fourth and final step in the Review workflow. Reads the [Findings](../references/templates/artifacts/findings.md) from Analyze, derives the final **approval status** (`approved` / `changes-requested` / `rejected`) per the authoritative criteria, composes non-binding recommendations, writes the [Review Report](../references/templates/artifacts/review-report.md), registers it in `docs/review/index.md`, and — for work-linked input only — appends a distinct `## Review Report — <report-id>` block to `docs/tasks/<work-id>/index.md` (clearly separate from Work's own `## Work Report` block). Returns the Review Report as the Review skill's final deliverable.
 
 ## Workflow
 
@@ -44,7 +44,7 @@ Derive the status deterministically from the tallies (count of `blocker`/`major`
 
 ### Step 3: Generate the Review Report Artifact
 
-1. **Assign a `report-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-report`, saved to `docs/plans/.review/.report/`). Reuse it if the user later picks **Edit & Retry**.
+1. **Assign a `report-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-report`, saved to `docs/review/.report/`). Reuse it if the user later picks **Edit & Retry**.
 
 2. Produce a **Review Report** block (as markdown) following the schema in [review-report.md](../references/templates/artifacts/review-report.md). Include:
    - `report-id`, inherited `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `interactionMode`
@@ -57,10 +57,10 @@ Derive the status deterministically from the tallies (count of `blocker`/`major`
 
 ### Step 4: Register in the Review Registry
 
-Append a registry row to `docs/plans/.review/index.md`:
+Append a registry row to `docs/review/index.md`:
 
 ```
-- <report-id> — <target-summary> — <approval-status> — docs/plans/.review/.report/<report-id>.md
+- <report-id> — <target-summary> — <approval-status> — docs/review/.report/<report-id>.md
 ```
 
 Create the index with a registry header (`# Reviews`) if it does not yet exist. The row is **idempotent on `report-id`**: a re-run overwrites the row with the same id, never duplicates it.
@@ -76,7 +76,7 @@ When `input-shape: work-linked`, append a **distinct** status block to `docs/tas
 - **Findings:** <blocker> blocker, <major> major, <minor> minor, <nit> nit
 - **Scope creep:** none | <count> | skipped (no requirements)
 - **Learnings to capture:** <count> (run `/learn` to persist)
-- **Review Report:** docs/plans/.review/.report/<report-id>.md
+- **Review Report:** docs/review/.report/<report-id>.md
 ```
 
 The block is **append-only** and **idempotent on `report-id`** (a re-run overwrites the block with the same id, never duplicates it). If the work index does not exist, skip the cross-link and note it in the report (do not fabricate a work index).
@@ -92,7 +92,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.review/.report/<report-id>.md` (ensure `interactionMode` included).
+Then save the artifact to `docs/review/.report/<report-id>.md` (ensure `interactionMode` included).
 
 ### Step 7: Return to Orchestrator
 
@@ -103,7 +103,7 @@ Return the Review Report to the Orchestrator — `path`, `report-id`, `review-id
 - Verify that the Review Report is complete and valid: `report-id`, `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `interactionMode`, `approval-status`, the findings rollup, `recommendations`, `scope-creep-summary`, and `learnings-to-capture`.
 - Verify that **findings coherence** held (re-verified in Step 0): every finding has a severity, category, repo-relative location, and a `trace` or `scope-creep: true`.
 - Verify that the approval status was **derived from** [approval-criteria.md](../references/approval-criteria.md) rather than re-defined inline (no second rule contradicting the authoritative reference).
-- Verify the registry row was appended to `docs/plans/.review/index.md` (idempotent on `report-id`), and — for work-linked input — the distinct `## Review Report — <report-id>` block was appended to `docs/tasks/<work-id>/index.md` (idempotent, never colliding with Work's `## Work Report` block).
-- Verify that the artifact is saved to `docs/plans/.review/.report/<report-id>.md`.
+- Verify the registry row was appended to `docs/review/index.md` (idempotent on `report-id`), and — for work-linked input — the distinct `## Review Report — <report-id>` block was appended to `docs/tasks/<work-id>/index.md` (idempotent, never colliding with Work's `## Work Report` block).
+- Verify that the artifact is saved to `docs/review/.report/<report-id>.md`.
 
 > The Review Report is the primary deliverable of the Review Skill. The Orchestrator marks the workflow complete; optionally chains to `/learn` when learnings were surfaced.
