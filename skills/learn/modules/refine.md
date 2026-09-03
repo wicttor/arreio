@@ -65,7 +65,7 @@ Record the matches (`dup-status: exact | analog | none`, the matched `slug`/file
 
 ### Step 4: Allocate the refine-id
 
-Assign a `refine-id` per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-refine`, saved to `docs/plans/.learn/.refine/`). Reuse it if the user later picks **Edit & Retry**. The `learn-id` umbrella is inherited unchanged.
+Assign a `refine-id` per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-refine`, saved to `docs/learn/.refine/`). Reuse it if the user later picks **Edit & Retry**. The `learn-id` umbrella is inherited unchanged.
 
 ### Step 5: Generate the Refined Entry Artifact
 
@@ -91,7 +91,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.learn/.refine/<refine-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Index).
+Then save the artifact to `docs/learn/.refine/<refine-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Index).
 
 ## Output: Refined Entry Artifact
 
@@ -99,6 +99,6 @@ Then save the artifact to `docs/plans/.learn/.refine/<refine-id>.md` (ensure `in
 - Verify that the frontmatter conforms to [entry-schema.md](../references/entry-schema.md) (every required field valid; the per-type body template present) without re-encoding the schema inline.
 - Verify that the duplicate/analog check ran per [dedup-rules.md](../references/dedup-rules.md) and that any conflict was resolved with a recorded `resolution` (never silently two entries).
 - Verify that a merge recorded `lineage` (the analog `slug` + `superseded-by` note) — lineage preserved, never deleted.
-- Verify that the artifact is saved to `docs/plans/.learn/.refine/<refine-id>.md`.
+- Verify that the artifact is saved to `docs/learn/.refine/<refine-id>.md`.
 
 > Pass the Refined Entry to `index` (Phase 3) to write the entry file and upsert the canonical index.

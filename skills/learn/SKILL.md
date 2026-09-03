@@ -60,7 +60,7 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 Before starting the learn pipeline, the orchestrator verifies that required folders exist:
 
 - `docs/learn/` — must exist for writing entries and the index; the seed `docs/learn/index.md` must exist (empty `entries:` block is valid — the legacy migration populates 28 entries)
-- `docs/plans/.learn/.capture/`, `docs/plans/.learn/.refine/`, `docs/plans/.learn/.index/`, `docs/plans/.learn/.maintain/` — must exist for saving the phase artifacts
+- `docs/learn/.capture/`, `docs/learn/.refine/`, `docs/learn/.index/`, `docs/learn/.maintain/` — must exist for saving the phase artifacts
 
 **Self-Healing:** If any are missing, the orchestrator automatically creates them (`mkdir -p`), and seeds `docs/learn/index.md` from the [index-format.md](references/index-format.md) template. This allows the Learn skill to run even if `arreio-init` wasn't explicitly run.
 
@@ -70,10 +70,10 @@ For **explicit** input, verify `<type>` is one of the four; if not, ask to pick 
 
 | Phase | Phase Module                          | Output Artifact                                                              | Saved to                               |
 | ----- | ------------------------------------ | ---------------------------------------------------------------------------- | -------------------------------------- |
-| 1     | [Capture](modules/capture.md)        | [Captured entry](references/templates/artifacts/captured-entry.md)           | `docs/plans/.learn/.capture/<id>.md`   |
-| 2     | [Refine](modules/refine.md)          | [Refined entry](references/templates/artifacts/refined-entry.md)             | `docs/plans/.learn/.refine/<id>.md`    |
-| 3     | [Index](modules/index.md)            | [Index update](references/templates/artifacts/index-update.md)               | `docs/plans/.learn/.index/<id>.md`     |
-| 4     | [Maintain](modules/maintain.md) _(on demand)_ | [Maintain log](references/templates/artifacts/maintain-log.md)   | `docs/plans/.learn/.maintain/<id>.md`  |
+| 1     | [Capture](modules/capture.md)        | [Captured entry](references/templates/artifacts/captured-entry.md)           | `docs/learn/.capture/<id>.md`   |
+| 2     | [Refine](modules/refine.md)          | [Refined entry](references/templates/artifacts/refined-entry.md)             | `docs/learn/.refine/<id>.md`    |
+| 3     | [Index](modules/index.md)            | [Index update](references/templates/artifacts/index-update.md)               | `docs/learn/.index/<id>.md`     |
+| 4     | [Maintain](modules/maintain.md) _(on demand)_ | [Maintain log](references/templates/artifacts/maintain-log.md)   | `docs/learn/.maintain/<id>.md`  |
 
 **Phase 4 is on-demand.** A normal `/learn <type> <text>` run executes Phases 1–3 and writes one entry; Maintain runs only via `/learn maintain`. The migration procedure (legacy → canonical) is a Maintain operation, run once.
 
@@ -104,7 +104,7 @@ The **Index phase** is the skill's only index writer for authored entries; the *
 
 - **Entry file:** Saved to `docs/learn/<type>/<slug>.md` with the [entry-schema.md](references/entry-schema.md) frontmatter (`type`, `domain`, `tags`, `applicability`, `summary`, plus `created_at`/`updated_at`, `source`, `confidence`, and `related`).
 - **Index:** `docs/learn/index.md` updated — a YAML `entries:` block (the `filename` / `domain` / `tags` / `applicability` / `summary` record per entry — the **read contract** that Plan/Work/Review's [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md) parses) plus the human-readable By Category / By Domain tables.
-- **Maintain Log (if `/learn maintain`):** Saved to `docs/plans/.learn/.maintain/<maintain-id>.md`, recording the dedup/refresh/prune operations performed and any migration applied.
+- **Maintain Log (if `/learn maintain`):** Saved to `docs/learn/.maintain/<maintain-id>.md`, recording the dedup/refresh/prune operations performed and any migration applied.
 - **Not produced:** This skill produces **no session log, no event transcript, no "what we did."** Only durable entries and the index.
 
 ## References

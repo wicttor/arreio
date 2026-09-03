@@ -157,10 +157,10 @@ _No review reports yet._
 
 **Folders:**
 
-- `docs/plans/.learn/.capture/` — Stores Capture phase artifacts
-- `docs/plans/.learn/.refine/` — Stores Refine phase artifacts
-- `docs/plans/.learn/.index/` — Stores Index phase artifacts
-- `docs/plans/.learn/.maintain/` — Stores Maintain phase artifacts
+- `docs/learn/.capture/` — Stores Capture phase artifacts
+- `docs/learn/.refine/` — Stores Refine phase artifacts
+- `docs/learn/.index/` — Stores Index phase artifacts
+- `docs/learn/.maintain/` — Stores Maintain phase artifacts
 
 **Rationale:** The `learn/SKILL.md` orchestrator saves phase artifacts in these hidden directories to preserve the knowledge entry authoring trail.
 
@@ -213,7 +213,7 @@ After initialization, verify:
   - `docs/review/.scope/`, `docs/review/.prepare/`, `docs/review/.analyze/`, `docs/review/.report/`
   - `docs/review/index.md` (review reports registry)
 - ✓ Learn skill hidden artifact directories exist:
-  - `docs/plans/.learn/.capture/`, `docs/plans/.learn/.refine/`, `docs/plans/.learn/.index/`, `docs/plans/.learn/.maintain/`
+  - `docs/learn/.capture/`, `docs/learn/.refine/`, `docs/learn/.index/`, `docs/learn/.maintain/`
 - ✓ End-session skill hidden artifact directory exists:
   - `docs/plans/.end-session/`
 - ✓ Learn category folders exist:
@@ -228,7 +228,7 @@ Downstream skills (plan, learn, work, review) automatically create missing folde
 - **plan** skill creates missing `docs/plans/` core folders, and allocates `docs/plans/.scope/`, `.research/`, `.design/` directories on first use.
 - **work** skill creates missing `docs/plans/.work/` directories (`.triage/`, `.prepare/`, `.execute/`, `.review/`) on first execution.
 - **review** skill creates missing `docs/review/` directories and `index.md` registry on first review.
-- **learn** skill creates missing `docs/plans/.learn/` directories and `docs/learn/` category folders on first learning capture.
+- **learn** skill creates missing phase-artifact directories under `docs/learn/` and the `docs/learn/` category folders on first learning capture.
 - **end-session** skill creates missing `docs/plans/.end-session/` directory (and the `## Session Ends` section in `docs/plans/index.md`) on first session end.
 
 **However**, running `arreio-init` upfront provides several benefits:

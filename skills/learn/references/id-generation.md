@@ -14,10 +14,10 @@ Shared ID algorithm for the `capture`, `refine`, `index`, and `maintain` phases,
 
 | Phase    | ID format                            | Saved to                            |
 | -------- | ----------------------------------- | ----------------------------------- |
-| Capture  | `YYYY-MM-DD-NNN-capture`            | `docs/plans/.learn/.capture/<id>.md`   |
-| Refine   | `YYYY-MM-DD-NNN-refine`             | `docs/plans/.learn/.refine/<id>.md`    |
-| Index    | `YYYY-MM-DD-NNN-index`              | `docs/plans/.learn/.index/<id>.md`     |
-| Maintain | `YYYY-MM-DD-NNN-maintain`           | `docs/plans/.learn/.maintain/<id>.md`  |
+| Capture  | `YYYY-MM-DD-NNN-capture`            | `docs/learn/.capture/<id>.md`   |
+| Refine   | `YYYY-MM-DD-NNN-refine`             | `docs/learn/.refine/<id>.md`    |
+| Index    | `YYYY-MM-DD-NNN-index`              | `docs/learn/.index/<id>.md`     |
+| Maintain | `YYYY-MM-DD-NNN-maintain`           | `docs/learn/.maintain/<id>.md`  |
 
 `learn-id` (see below) is the umbrella shared across Capture → Refine → Index. **Maintain has no `learn-id`** — it authors no new entry; it allocates only a standalone `maintain-id`.
 
@@ -27,7 +27,7 @@ Allocated **only in Capture** Step 4:
 
 ```
 1. Get the current date in UTC
-2. List existing files under docs/plans/.learn/.capture/ matching YYYY-MM-DD-NNN-capture.md for that date
+2. List existing files under docs/learn/.capture/ matching YYYY-MM-DD-NNN-capture.md for that date
 3. NNN = (highest existing NNN for that date), zero-padded to 3 digits
    - if none exist for that date, start at 001
 4. learn-id = "<date>-<NNN>"  (the same NNN as the capture-id being allocated)
@@ -42,7 +42,7 @@ Allocated **only in Maintain** Step 6:
 
 ```
 1. Get the current date in UTC
-2. List existing files under docs/plans/.learn/.maintain/ matching YYYY-MM-DD-NNN-maintain.md for that date
+2. List existing files under docs/learn/.maintain/ matching YYYY-MM-DD-NNN-maintain.md for that date
 3. NNN = (count + 1), zero-padded to 3 digits
 4. maintain-id = "<date>-<NNN>-maintain"
 ```
@@ -74,10 +74,10 @@ The `slug` is the stable, globally-unique key for a knowledge entry — it keys 
 ```
 1. Get the current date in UTC (e.g., 2026-08-08)
 2. List existing files for today in the phase's save directory:
-   - capture  -> docs/plans/.learn/.capture/  matching YYYY-MM-DD-*-capture.md
-   - refine   -> docs/plans/.learn/.refine/   matching YYYY-MM-DD-*-refine.md
-   - index    -> docs/plans/.learn/.index/    matching YYYY-MM-DD-*-index.md
-   - maintain -> docs/plans/.learn/.maintain/ matching YYYY-MM-DD-*-maintain.md
+   - capture  -> docs/learn/.capture/  matching YYYY-MM-DD-*-capture.md
+   - refine   -> docs/learn/.refine/   matching YYYY-MM-DD-*-refine.md
+   - index    -> docs/learn/.index/    matching YYYY-MM-DD-*-index.md
+   - maintain -> docs/learn/.maintain/ matching YYYY-MM-DD-*-maintain.md
 3. NNN = (count + 1), zero-padded to 3 digits (001, 002, ..., 010, ...)
 4. id = "<date>-<NNN>-<phase>"
 ```
@@ -108,7 +108,7 @@ The legacy `docs/learnings/` store uses filenames, not slugs, as the key. The mi
 
 ## Notes
 
-- IDs reuse the daily-counter algorithm for cross-skill consistency with `/plan`, `/work`, and `/review`; the Learn skill's counters are independent from those skills (separate save directories under `docs/plans/.learn/`).
+- IDs reuse the daily-counter algorithm for cross-skill consistency with `/plan`, `/work`, and `/review`; the Learn skill's counters are independent from those skills (separate save directories under `docs/learn/`).
 - `learn-id` carries through Capture → Refine → Index; Maintain uses the standalone `maintain-id` only. Cross-phase chaining is `capture-id → refine-id → index-id`, all sharing one `learn-id` (see [error-handling.md](error-handling.md) "Cross-Phase Consistency Checks").
 - The `slug` is a **separate** key from the phase ids — it identifies the durable knowledge entry across re-authors, not the pipeline run. A single `slug` may be authored by many `learn-id` runs over time (each upsert overwrites); the `slug` is stable, the `learn-id` is per-run.
 - Counter collisions are impossible within a date because each phase writes to its own directory and recomputes the count from the directory listing.

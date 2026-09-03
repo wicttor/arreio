@@ -56,7 +56,7 @@ summary:                                    # a one-line human-readable summary
   "<N> entries migrated; <M> merged; <R> normalized, <F> flagged; <P> pruned; <I> indexed"
 ```
 
-Also save the Maintain Log Artifact to `docs/plans/.learn/.maintain/<maintain-id>.md`.
+Also save the Maintain Log Artifact to `docs/learn/.maintain/<maintain-id>.md`.
 
 ## Validation Rules
 
