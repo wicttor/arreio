@@ -17,3 +17,6 @@
 # PWRL
 .context/
 .pwrlrc.json
+
+# Arreio generated docs (plans, tasks, learn, review)
+docs/
