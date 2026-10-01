@@ -90,7 +90,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/review/.prepare/<prepare-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Analyze).
+Then, **in `detailed` mode only**, save the artifact to `docs/review/.prepare/<prepare-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Analyze). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Review Kit Artifact
 
@@ -98,6 +98,6 @@ Then save the artifact to `docs/review/.prepare/<prepare-id>.md` (ensure `intera
 - Verify that every `required` file has a diff entry (or is recorded as deleted / `current-contents`) and that `context` is separated from `required`.
 - Verify that `test-context` records covering tests per changed file and whether the change ships its own tests.
 - Verify that `requirements-source: none` propagated as `spec: none` (so Analyze skips the requirements-vs-scope-creep category rather than guessing).
-- Verify that the artifact is saved to `docs/review/.prepare/<prepare-id>.md`.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/review/.prepare/<prepare-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the Review Kit to `analyze` (Phase 3) for the categorized, severity-graded review of the diffs.

@@ -53,7 +53,7 @@ scope-creep-ran: true | "skipped (no requirements)"   # false only via the skipp
 work-id: YYYY-MM-DD-NNN | null          # work-linked only; null otherwise
 ```
 
-Also save the Findings to `docs/review/.analyze/<analyze-id>.md`.
+In `detailed` mode only, also save the Findings to `docs/review/.analyze/<analyze-id>.md`. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
 
 ## Validation Rules
 

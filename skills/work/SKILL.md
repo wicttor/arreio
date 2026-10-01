@@ -35,6 +35,8 @@ Store in the context object:
 interactionMode: detailed | smart | autopilot
 ```
 
+**Artifact persistence:** intermediate phase artifacts are written to disk **only in `detailed` mode**. In `smart`/`autopilot` they are passed between phases in context and never written (see `references/interaction-mode-propagation.md#artifact-persistence`). Final deliverables are always written.
+
 **Propagation:** `interactionMode` flows into the `triage`, `prepare`, `execute`, and `review` artifacts; each downstream phase reads it to adjust confirmation behaviour (detailed = pause every transition; autopilot = run all; smart = pause only on HIGH-risk).
 
 > **Interaction mode is distinct from execution mode.** `interactionMode` governs _when to pause for the user_ (the same three modes as the `/plan` skill). **Execution mode** (inline / serial / parallel) governs _how multiple tasks are run_ and is selected in the Prepare phase. The two are carried independently through the pipeline.
@@ -59,7 +61,8 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 Before starting the work pipeline, the orchestrator verifies that required folders exist:
 
 - `docs/tasks/` — must exist for reading (plan-based) or creating (ad-hoc) the task list
-- `docs/plans/.work/.triage/`, `docs/plans/.work/.prepare/`, `docs/plans/.work/.execute/`, `docs/plans/.work/.review/` — must exist for saving the four phase artifacts
+- `docs/plans/.work/.review/` — must exist for saving the Work Report (always written)
+- `docs/plans/.work/.triage/`, `docs/plans/.work/.prepare/`, `docs/plans/.work/.execute/` — **`detailed` mode only**, for saving the intermediate phase artifacts; do not create them in `smart`/`autopilot`
 
 **Self-Healing:** If any are missing, the orchestrator automatically creates them (`mkdir -p`). This allows the work skill to run even if `arreio-init` wasn't explicitly run.
 
@@ -82,9 +85,9 @@ Every new feature or plan runs on its own git branch:
 
 | Phase | Phase Module                  | Output Artifact                                                    | Saved to                            |
 | ----- | ----------------------------- | ------------------------------------------------------------------ | ----------------------------------- |
-| 1     | [Triage](modules/triage.md)   | [Work manifest](references/templates/artifacts/work-manifest.md) + `work/<slug>` branch | `docs/plans/.work/.triage/<id>.md`  |
-| 2     | [Prepare](modules/prepare.md) | [Execution plan](references/templates/artifacts/execution-plan.md) | `docs/plans/.work/.prepare/<id>.md` |
-| 3     | [Execute](modules/execute.md) | [Execution log](references/templates/artifacts/execution-log.md)   | `docs/plans/.work/.execute/<id>.md` |
+| 1     | [Triage](modules/triage.md)   | [Work manifest](references/templates/artifacts/work-manifest.md) + `work/<slug>` branch | `docs/plans/.work/.triage/<id>.md` _(detailed only)_ |
+| 2     | [Prepare](modules/prepare.md) | [Execution plan](references/templates/artifacts/execution-plan.md) | `docs/plans/.work/.prepare/<id>.md` _(detailed only)_ |
+| 3     | [Execute](modules/execute.md) | [Execution log](references/templates/artifacts/execution-log.md)   | `docs/plans/.work/.execute/<id>.md` _(detailed only)_ |
 | 4     | [Review](modules/review.md)   | [Work report](references/templates/artifacts/work-report.md)       | `docs/plans/.work/.review/<id>.md`  |
 
 ### Quality Gates
@@ -143,6 +146,17 @@ Artifact templates live in [references/templates/artifacts/](references/template
 | [execution-log.md](references/templates/artifacts/execution-log.md)   | Execute      |
 | [work-report.md](references/templates/artifacts/work-report.md)       | Review       |
 
+## Execution Rules
+
+Follow these literally; they exist to keep runs consistent across agents.
+
+1. **Run each module's steps in order**, starting with its Step 0 verification. Do not skip, merge, or reorder steps.
+2. **Never invent values.** If a required input is missing, apply the recovery in [error-handling.md](references/error-handling.md) or ask the user; do not fill it with a plausible guess.
+3. **Compute, don't copy.** Values defined by an algorithm or reference (`executionMode`, per-task risk floor, task status transitions, baseline result) must be evaluated with the real inputs; a recommendation is never `serial` just because it is the fallback. Example values in references and templates are illustrations, never defaults.
+4. **One question at a time**, with 2–4 concrete options; build the question text from the current values.
+5. **Announce phase transitions in one line** (e.g., "Phase 2/4 Prepare complete: <key result>") so the user can follow progress, even in Autopilot.
+6. **Honor write rules:** intermediate phase artifacts only in `detailed` mode; final deliverables always.
+
 ## Core Principles
 
 - **Deterministic Pipeline:** Phases always execute in sequence (no agent switching, no fallback paths).
@@ -156,6 +170,7 @@ Artifact templates live in [references/templates/artifacts/](references/template
 - **Error Handling:** Fail explicitly, not silently; each phase has clear error handling with recovery suggestions.
 - **Be Concrete:** Use specific files, components, and dependencies from the task artifacts.
 - **Stay Portable:** Use repository-relative paths only.
+- **Lean Persistence:** Phase artifacts hit disk only in `detailed` mode; `smart`/`autopilot` pass them in context to save tokens and time.
 - **Transparent Artifacts:** Each phase produces an explicit output artifact for the next phase.
 - **Interaction Mode Propagation:** `interactionMode` is read at the start of each subsequent phase and determines whether confirmation steps execute.
 - **Single Source of Truth:** This skill defines all its own rules; it does not depend on any external agent rule file.

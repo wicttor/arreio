@@ -25,10 +25,14 @@ Reference for how `interactionMode` propagates through the Plan pipeline (Scope 
 | **Scope**    | Present artifact; ask Proceed/Edit/Abort         | Auto-proceed; pause if 3+ learning gaps, non-software domain, or conflicting requirements              | Auto-proceed                      |
 | **Research** | Show findings; ask Proceed/Edit/Abort           | Auto-proceed; pause if HIGH/CRITICAL risk with <3 patterns, or zero patterns found                    | Auto-proceed                      |
 | **Design**   | Show units; ask Proceed/Edit/Abort              | Auto-proceed; pause if VERY_HIGH complexity, HIGH risk + <3 patterns, 3+ scope gaps, or Novelty=3      | Auto-proceed                      |
-| **Generate** | Show plan; ask Proceed/Edit/Skip/Abort          | Auto-proceed; pause if tier=Deep, tier preference conflicts with risk floor, or CRITICAL risk          | Auto-proceed                      |
+| **Generate** | Show plan; ask Proceed/Edit/Skip/Abort          | Auto-proceed; pause if tier=Deep (not when forced by `--deep`), tier preference conflicts with risk floor, or CRITICAL risk          | Auto-proceed                      |
 | **Tasks**    | Ask Create/Review/No (full file content shown)  | Ask Create/Review/No (summary shown)                                                                   | Ask Create/Review/No (always asks) |
 
 **Smart mode pauses only on each phase's documented triggers above** (the canonical list lives in each module's confirmation step; this table is a summary).
+
+## `--deep` Flag
+
+`/plan --deep <task>` sets `force_deep: true` in the Orchestrator context. It is orthogonal to `interactionMode`: in every mode the Generate phase selects the Deep tier without asking about tier. It does not add pauses and removes the Smart-mode "tier is Deep" pause. See [plan-tier-selection.md](plan-tier-selection.md#deep-override---deep).
 
 ## Artifact Schema
 
@@ -73,3 +77,23 @@ status: pending | complete | failed
 | Invalid mode value          | Reject; re-prompt Orchestrator        |
 | Artifact missing mode field | Assume "smart"; log warning; continue |
 | Timeout/connection lost     | Pause; ask user to retry or abort     |
+
+## Artifact Persistence
+
+Phase artifacts (Scope, Research, Design) are **handoff data between phases**, not deliverables. Whether they are written to disk depends on `interactionMode`:
+
+| Mode          | Phase artifacts (`docs/plans/.scope/`, `.research/`, `.design/`)          | Phase handoff                                  |
+| ------------- | ---------------------------------------- | ---------------------------------------------- |
+| **Detailed**  | Written to the hidden directories (audit trail; creating the directory on first use) | Artifact is written, shown, then passed on     |
+| **Smart**     | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+| **Autopilot** | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+
+**Always written, in every mode:** the final plan in `docs/plans/` (+ `docs/plans/index.md`) and any task files in `docs/tasks/<plan-id>/`.
+
+**Rules:**
+
+- The artifact schema, quality gates, cross-phase ID checks, and pause triggers are **unchanged** — only the disk write is skipped. Validate and pass the in-memory artifact exactly as you would the file.
+- Never create the hidden directories in `smart`/`autopilot`; no placeholder or empty files.
+- **ID allocation without files:** Allocate the plan-id `YYYY-MM-DD-NNN` once at Scope by counting today's final plan files in `docs/plans/` (excluding hidden dirs); every phase id is `<plan-id>-<phase>` (e.g. `2026-09-02-001-scope`).
+- If the user switches to `detailed` mid-run, write the artifacts produced so far, then continue writing.
+- Because nothing is on disk, **Edit & Retry** reuses the in-memory artifact and its id (no file to overwrite).

@@ -35,6 +35,8 @@ Store in the context object:
 interactionMode: detailed | smart | autopilot
 ```
 
+**Artifact persistence:** intermediate phase artifacts are written to disk **only in `detailed` mode**. In `smart`/`autopilot` they are passed between phases in context and never written (see `references/interaction-mode-propagation.md#artifact-persistence`). Final deliverables are always written.
+
 **Propagation:** `interactionMode` flows into the `scope`, `prepare`, `analyze`, and `report` artifacts; each downstream phase reads it to adjust confirmation behaviour (detailed = pause every transition; autopilot = run all; smart = pause only on `blocker`/`major` findings or detected scope creep).
 
 ## Orchestration Implementation
@@ -58,7 +60,8 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 
 Before starting the review pipeline, the orchestrator verifies that required folders exist:
 
-- `docs/review/.scope/`, `docs/review/.prepare/`, `docs/review/.analyze/`, `docs/review/.report/` — must exist for saving the four phase artifacts
+- `docs/review/.report/` — must exist for saving the Review Report (always written)
+- `docs/review/.scope/`, `docs/review/.prepare/`, `docs/review/.analyze/` — **`detailed` mode only**, for saving the intermediate phase artifacts; do not create them in `smart`/`autopilot`
 - `docs/review/index.md` — must exist as the review registry (Report appends to it)
 
 **Self-Healing:** If any are missing, the orchestrator automatically creates them (`mkdir -p`, and a seed `index.md` with a registry header). This allows the Review skill to run even if `arreio-init` wasn't explicitly run.
@@ -73,9 +76,9 @@ For **task-in-review** input, verify the `work-id` exists and contains at least 
 
 | Phase | Phase Module                  | Output Artifact                                                  | Saved to                              |
 | ----- | ----------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
-| 1     | [Scope](modules/scope.md)     | [Review scope](references/templates/artifacts/review-scope.md)   | `docs/review/.scope/<id>.md`   |
-| 2     | [Prepare](modules/prepare.md) | [Review kit](references/templates/artifacts/review-kit.md)       | `docs/review/.prepare/<id>.md` |
-| 3     | [Analyze](modules/analyze.md) | [Findings](references/templates/artifacts/findings.md)           | `docs/review/.analyze/<id>.md` |
+| 1     | [Scope](modules/scope.md)     | [Review scope](references/templates/artifacts/review-scope.md)   | `docs/review/.scope/<id>.md` _(detailed only)_ |
+| 2     | [Prepare](modules/prepare.md) | [Review kit](references/templates/artifacts/review-kit.md)       | `docs/review/.prepare/<id>.md` _(detailed only)_ |
+| 3     | [Analyze](modules/analyze.md) | [Findings](references/templates/artifacts/findings.md)           | `docs/review/.analyze/<id>.md` _(detailed only)_ |
 | 4     | [Report](modules/report.md)   | [Review report](references/templates/artifacts/review-report.md) | `docs/review/.report/<id>.md`  |
 
 ### Quality Gates
@@ -143,6 +146,17 @@ Artifact templates live in [references/templates/artifacts/](references/template
 | [findings.md](references/templates/artifacts/findings.md)           | Analyze      |
 | [review-report.md](references/templates/artifacts/review-report.md) | Report       |
 
+## Execution Rules
+
+Follow these literally; they exist to keep runs consistent across agents.
+
+1. **Run each module's steps in order**, starting with its Step 0 verification. Do not skip, merge, or reorder steps.
+2. **Never invent values.** If a required input is missing, apply the recovery in [error-handling.md](references/error-handling.md) or ask the user; do not fill it with a plausible guess.
+3. **Compute, don't copy.** Values defined by a rule (finding severity, `approval-status`, scope-creep flag) must be derived from the cited rubric and the real findings — never judged by feel, and never copied from an example. Example values in references and templates are illustrations, never defaults.
+4. **One question at a time**, with 2–4 concrete options; build the question text from the current values.
+5. **Announce phase transitions in one line** (e.g., "Phase 2/4 Analyze complete: <key result>") so the user can follow progress, even in Autopilot.
+6. **Honor write rules:** intermediate phase artifacts only in `detailed` mode; final deliverables always.
+
 ## Core Principles
 
 - **Deterministic Pipeline:** Phases always execute in sequence (no agent switching, no fallback paths).
@@ -155,6 +169,7 @@ Artifact templates live in [references/templates/artifacts/](references/template
 - **Test the Tests:** Reviewing changes includes evaluating the tests that accompany them — coverage, correctness of assertions, and whether they assert the intended Acceptance Criterion — not just production code.
 - **Read-Only Review:** Review analyzes and reports; it never edits the code under review. Required changes become a follow-up task (a new `/plan` + `/work`, or manual edits) — never applied inline here.
 - **Single Source of Truth:** This skill defines all its own rules; it does not depend on any external agent rule file. Category, severity, and approval definitions live once in their authoritative references and are never re-encoded inline in the modules.
+- **Lean Persistence:** Phase artifacts hit disk only in `detailed` mode; `smart`/`autopilot` pass them in context to save tokens and time.
 - **Transparent Artifacts:** Each phase produces an explicit output artifact for the next phase.
 - **Behavior-Described, Tool-Agnostic:** Steps describe required capabilities ("read the diff", "run the test suite", "update the index"), not specific tool names; each agent maps to its native tools.
 - **Interaction Mode Propagation:** `interactionMode` is read at the start of each subsequent phase and determines whether confirmation steps execute.

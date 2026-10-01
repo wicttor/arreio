@@ -111,12 +111,12 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-On any proceed/skip path: save the artifact to `docs/plans/.research/<research-id>.md` (ensure `interactionMode` is included), then return the artifact and `interactionMode` to the Orchestrator for the transition to Phase 3 (Design).
+On any proceed/skip path: in `detailed` mode only, save the artifact to `docs/plans/.research/<research-id>.md` (ensure `interactionMode` is included), then return the artifact and `interactionMode` to the Orchestrator for the transition to Phase 3 (Design). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Research Findings Artifact
 
 - Verify that the Research Findings Artifact is complete and valid, containing all required fields, and it accurately reflects the user's input and any existing plans, learnings, or requirements found.
 - Verify that the `interactionMode` value is set correctly based on the user's selection in the Orchestrator skill.
-- Verify that the artifact is saved to `docs/plans/.research/<research-id>.md` for future reference or reuse.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.research/<research-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the research findings to `design` (Phase 3) for the design phase.

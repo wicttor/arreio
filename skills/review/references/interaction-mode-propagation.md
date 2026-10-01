@@ -78,3 +78,23 @@ Review deliberately has **no** `executionMode`:
 | Artifact missing mode field | Assume "smart"; log warning; continue |
 | User selects "Abort"        | Stop immediately; inform Orchestrator |
 | Timeout/connection lost     | Pause; ask user to retry or abort     |
+
+## Artifact Persistence
+
+Phase artifacts (Scope, Prepare, Analyze) are **handoff data between phases**, not deliverables. Whether they are written to disk depends on `interactionMode`:
+
+| Mode          | Phase artifacts (`docs/review/.scope/`, `.prepare/`, `.analyze/`)          | Phase handoff                                  |
+| ------------- | ---------------------------------------- | ---------------------------------------------- |
+| **Detailed**  | Written to the hidden directories (audit trail; creating the directory on first use) | Artifact is written, shown, then passed on     |
+| **Smart**     | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+| **Autopilot** | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+
+**Always written, in every mode:** the Review Report in `docs/review/.report/<report-id>.md` and its row in `docs/review/index.md` (a cross-skill handoff read by `/learn`).
+
+**Rules:**
+
+- The artifact schema, quality gates, cross-phase ID checks, and pause triggers are **unchanged** — only the disk write is skipped. Validate and pass the in-memory artifact exactly as you would the file.
+- Never create the hidden directories in `smart`/`autopilot`; no placeholder or empty files.
+- **ID allocation without files:** Allocate `review-id` NNN by counting today's files in `docs/review/.report/` (+1); `scope-id`/`prepare-id`/`analyze-id` reuse that NNN as in-memory labels.
+- If the user switches to `detailed` mid-run, write the artifacts produced so far, then continue writing.
+- Because nothing is on disk, **Edit & Retry** reuses the in-memory artifact and its id (no file to overwrite).

@@ -78,3 +78,23 @@ The two never override one another; the orchestrator's quality gate #2 cross-che
 | Artifact missing mode field | Assume "smart"; log warning; continue |
 | User selects "Abort"        | Stop immediately; inform Orchestrator |
 | Timeout/connection lost     | Pause; ask user to retry or abort     |
+
+## Artifact Persistence
+
+Phase artifacts (Triage, Prepare, Execute) are **handoff data between phases**, not deliverables. Whether they are written to disk depends on `interactionMode`:
+
+| Mode          | Phase artifacts (`docs/plans/.work/.triage/`, `.prepare/`, `.execute/`)          | Phase handoff                                  |
+| ------------- | ---------------------------------------- | ---------------------------------------------- |
+| **Detailed**  | Written to the hidden directories (audit trail; creating the directory on first use) | Artifact is written, shown, then passed on     |
+| **Smart**     | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+| **Autopilot** | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+
+**Always written, in every mode:** the Work Report in `docs/plans/.work/.review/<review-id>.md` (a cross-skill handoff read by `/review` and `/learn`), the task files/index in `docs/tasks/<work-id>/`, and the work branch.
+
+**Rules:**
+
+- The artifact schema, quality gates, cross-phase ID checks, and pause triggers are **unchanged** — only the disk write is skipped. Validate and pass the in-memory artifact exactly as you would the file.
+- Never create the hidden directories in `smart`/`autopilot`; no placeholder or empty files.
+- **ID allocation without files:** Triage/Prepare/Execute ids are `<work-id>-<phase>` (in-memory labels). Only the Work Report `review-id` is persisted, so it still counts existing files in `docs/plans/.work/.review/`.
+- If the user switches to `detailed` mid-run, write the artifacts produced so far, then continue writing.
+- Because nothing is on disk, **Edit & Retry** reuses the in-memory artifact and its id (no file to overwrite).

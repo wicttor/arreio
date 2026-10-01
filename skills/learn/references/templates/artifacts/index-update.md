@@ -50,7 +50,7 @@ entry-written: true                           # the entry file was written (fals
 index-updated: true                           # docs/learn/index.md was upserted
 ```
 
-Also save the Index Update Artifact to `docs/learn/.index/<index-id>.md`.
+In `detailed` mode only, also save the Index Update Artifact to `docs/learn/.index/<index-id>.md`. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
 
 ## Validation Rules
 

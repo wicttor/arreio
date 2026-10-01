@@ -87,3 +87,23 @@ Learn deliberately has **no** `executionMode`:
 | Artifact missing mode field | Assume "smart"; log warning; continue |
 | User selects "Abort"        | Stop immediately; inform Orchestrator |
 | Timeout/connection lost     | Pause; ask user to retry or abort     |
+
+## Artifact Persistence
+
+Phase artifacts (Capture, Refine, Index, Maintain) are **handoff data between phases**, not deliverables. Whether they are written to disk depends on `interactionMode`:
+
+| Mode          | Phase artifacts (`docs/learn/.capture/`, `.refine/`, `.index/`, `.maintain/`)          | Phase handoff                                  |
+| ------------- | ---------------------------------------- | ---------------------------------------------- |
+| **Detailed**  | Written to the hidden directories (audit trail; creating the directory on first use) | Artifact is written, shown, then passed on     |
+| **Smart**     | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+| **Autopilot** | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+
+**Always written, in every mode:** the durable entry in `docs/learn/<type>/<slug>.md` and its `docs/learn/index.md` record (written in every mode).
+
+**Rules:**
+
+- The artifact schema, quality gates, cross-phase ID checks, and pause triggers are **unchanged** — only the disk write is skipped. Validate and pass the in-memory artifact exactly as you would the file.
+- Never create the hidden directories in `smart`/`autopilot`; no placeholder or empty files.
+- **ID allocation without files:** Phase ids are in-memory labels `<date>-001-<phase>`; no directory is listed to allocate them. The `slug` is unaffected.
+- If the user switches to `detailed` mid-run, write the artifacts produced so far, then continue writing.
+- Because nothing is on disk, **Edit & Retry** reuses the in-memory artifact and its id (no file to overwrite).

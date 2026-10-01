@@ -12,7 +12,7 @@ Shared ID algorithm for the `capture`, `refine`, `index`, and `maintain` phases,
 
 ## ID Format by Phase
 
-| Phase    | ID format                            | Saved to                            |
+| Phase    | ID format                            | Saved to (detailed only)                            |
 | -------- | ----------------------------------- | ----------------------------------- |
 | Capture  | `YYYY-MM-DD-NNN-capture`            | `docs/learn/.capture/<id>.md`   |
 | Refine   | `YYYY-MM-DD-NNN-refine`             | `docs/learn/.refine/<id>.md`    |
@@ -68,6 +68,8 @@ The `slug` is the stable, globally-unique key for a knowledge entry — it keys 
 **On a collision (Refine Step 3):** Refine runs the duplicate/analog check per [dedup-rules.md](dedup-rules.md). An exact match gives the user two choices: **update-existing** (keep the `slug`, overwrite the file + index record) or **new-slug** (append a distinguishing suffix, e.g., `<slug>-v2` or a domain qualifier). Capture does **not** pre-resolve collisions.
 
 > **Slug is the upsert key, not a timestamp id.** A re-author with the same `slug` overwrites in place (idempotent); a new `slug` creates a new entry. The slug namespace is shared across all four types — there is one global `docs/learn/` slug space, not four.
+
+> **Persistence by mode.** The "Saved to" column and the directory-listing algorithm below apply **only in `detailed` mode**. In `smart`/`autopilot` mode phase artifacts are not written, so no directory is listed: Phase ids are in-memory labels `<date>-001-<phase>`; no directory is listed to allocate them. The `slug` is unaffected. See [Artifact Persistence](interaction-mode-propagation.md#artifact-persistence).
 
 ## Algorithm (new phase artifact)
 

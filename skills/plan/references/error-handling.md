@@ -145,6 +145,7 @@ In addition to per-phase verification, the Orchestrator should verify consistenc
 | `scope-id` in design artifact matches scope output   | Reject design; re-run from research         |
 | `plan-id` references the correct design artifact     | Reject generate; re-run from design         |
 | `interactionMode` is identical across all artifacts  | Log warning; use earliest non-default value |
+| `tier_recommended` equals `recommend_tier(complexity, risk_level)` | Recompute; use the recomputed value; log warning |
 
 ## Notes
 

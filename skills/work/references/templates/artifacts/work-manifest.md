@@ -56,7 +56,7 @@ dependency-warning: null | proceeded-without-upstream | expanded-to-upstream   #
 work-state: ready | nothing-ready              # nothing-ready if no task is runnable
 ```
 
-Also save the manifest to `docs/plans/.work/.triage/<triage-id>.md` for future reference or reuse.
+In `detailed` mode only, also save the manifest to `docs/plans/.work/.triage/<triage-id>.md` for future reference or reuse. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
 
 ## Validation Rules
 

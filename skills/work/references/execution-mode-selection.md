@@ -2,8 +2,8 @@
 title: Execution Mode Selection
 description: Authoritative reference for the Prepare phase. Defines the three execution modes (inline/serial/parallel), their selection defaults, the risk floor (HIGH-risk forces inline, non-downgradable), and the per-mode flows Execute follows.
 type: reference
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-01"
 ---
 
 # Execution Mode Selection
@@ -40,6 +40,25 @@ Authoritative reference for the **Prepare** phase (Step 3). Defines the three ex
      serial    -> stop-on-blocked: true
      parallel  -> waves: [Wave0, Wave1, ...]
 ```
+
+**Evaluation rules:**
+
+- The `default_mode` branches are checked **in the order written**; the first match wins. `serial` is the result **only** when neither earlier branch matches — it is a fallback, not a neutral default.
+- Evaluate with the real manifest data (task count, priorities, HIGH-risk flags, wave count). Do not copy a mode from an example.
+- The recommendation shown to the user is `default_mode` after the risk floor.
+
+**Detailed-mode question** — build it from computed values; replace every `<…>`:
+
+```
+This run has <N> tasks in <W> wave(s); <H> HIGH-risk, <P0> P0. I recommend <default_mode>.
+Which execution mode would you like?
+  - Inline: one task at a time, pause between tasks
+  - Serial: ordered list, no per-task pause
+  - Parallel: concurrent waves
+  - Auto: use the recommendation (result: <default_mode>)
+```
+
+Append ` [Recommended]` to the option equal to `default_mode`; if the risk floor makes an option unsafe, say so on that option.
 
 ## Risk Floor (authoritative, non-downgradable)
 

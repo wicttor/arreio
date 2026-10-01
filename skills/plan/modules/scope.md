@@ -110,12 +110,12 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.scope/<scope-id>.md` (ensure `interactionMode` is included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Research).
+Then, **in `detailed` mode only**, save the artifact to `docs/plans/.scope/<scope-id>.md` (ensure `interactionMode` is included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Research). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Scoped Context Artifact
 
 - Verify that the Scoped Context Artifact is complete and valid, containing all required fields, and it accurately reflects the user's input and any existing plans, learnings, or requirements found.
 - Verify that the `interactionMode` value is set correctly based on the user's selection in the Orchestrator skill.
-- Verify that the artifact is saved to `docs/plans/.scope/<scope-id>.md` for future reference or reuse.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.scope/<scope-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the scoped context to `research` (Phase 2) for the research phase.

@@ -166,7 +166,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.work/.triage/<triage-id>.md` (ensure `interactionMode` and `input-shape` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Prepare).
+Then, **in `detailed` mode only**, save the artifact to `docs/plans/.work/.triage/<triage-id>.md` (ensure `interactionMode` and `input-shape` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Prepare). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Work Manifest Artifact
 
@@ -176,6 +176,6 @@ Then save the artifact to `docs/plans/.work/.triage/<triage-id>.md` (ensure `int
 - Verify that `work-id` is correct for the shape (inherited `plan-id` for plan-based/task-file; freshly allocated for ad-hoc).
 - Verify that `work-branch` is recorded in the manifest and, unless `null`, the repository is checked out on that branch.
 - Verify that for `ad-hoc` input, the task files and `docs/tasks/<work-id>/index.md` were created.
-- Verify that the artifact is saved to `docs/plans/.work/.triage/<triage-id>.md`.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.work/.triage/<triage-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the Work Manifest to `prepare` (Phase 2) for execution-mode selection and sequencing.

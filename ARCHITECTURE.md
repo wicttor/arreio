@@ -63,6 +63,8 @@ graph LR
 
 ### Phase Pipelines
 
+> **Artifact persistence:** intermediate phase artifacts (`.scope/`, `.research/`, `.design/`, `.triage/`, `.prepare/`, `.execute/`, `.analyze/`, `.capture/`, `.refine/`, `.index/`, `.maintain/`) are written only in `detailed` interaction mode. `smart`/`autopilot` pass them in context. Final deliverables (plans, tasks, Work/Review Reports, learn entries) are always written.
+
 | Phase                 | Pipeline                                                   | Output Artifacts                                                                                     |
 | --------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | **Plan**              | Scope → Research → Design → Generate → Tasks               | `docs/plans/<plan-id>.md`, `docs/tasks/<plan-id>/`                                                   |

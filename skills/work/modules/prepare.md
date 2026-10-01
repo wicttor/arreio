@@ -79,7 +79,7 @@ Select how `execution-list` is run. The three modes are defined canonically in *
 1. **Compute the default** from the table above, reading each task's `priority` and any HIGH-risk flag carried from the manifest.
 2. **Apply the risk floor (authoritative in [execution-mode-selection.md](../references/execution-mode-selection.md)):** any HIGH-risk task forces `inline` for that task; the user may not downgrade a HIGH-risk task below `inline`.
 3. **Determine user preference:**
-   - **Detailed:** ask the user which mode to run, presenting the recommendation.
+   - **Detailed:** ask the user which mode to run using the question template in [execution-mode-selection.md](../references/execution-mode-selection.md), filled with the computed values (including `Auto`).
    - **Smart:** auto-select, unless a pause trigger fires (Step 7).
    - **Autopilot:** auto-select; never ask.
 4. **Honor user preference** unless it violates the risk floor; on violation, ask the user to accept `inline` instead.
@@ -126,7 +126,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.work/.prepare/<prepare-id>.md` (ensure `interactionMode` and `executionMode` are included) and return it, with both mode values, to the Orchestrator for the transition to Phase 3 (Execute).
+Then, **in `detailed` mode only**, save the artifact to `docs/plans/.work/.prepare/<prepare-id>.md` (ensure `interactionMode` and `executionMode` are included) and return it, with both mode values, to the Orchestrator for the transition to Phase 3 (Execute). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Execution Plan Artifact
 
@@ -135,6 +135,6 @@ Then save the artifact to `docs/plans/.work/.prepare/<prepare-id>.md` (ensure `i
 - Verify that the gate/policy details were **read from** [task-execution-rules.md](../references/task-execution-rules.md) rather than re-encoded inline (no second formula contradicting the authoritative reference).
 - Verify that `execution-list` preserves the manifest's dependency order (no task before its dependencies) and that wave-grouping (if `parallel`) respects dependency layers.
 - Verify that the `baseline` policy is recorded (a red baseline was surfaced, not hidden).
-- Verify that the artifact is saved to `docs/plans/.work/.prepare/<prepare-id>.md`.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.work/.prepare/<prepare-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the Execution Plan to `execute` (Phase 3) for the test-first execution run.
