@@ -22,6 +22,7 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
 2. **Research Findings Artifact** with `research-id`, `Patterns Found`, `High-Risk Detection` (with `risk_level`), `Tech Stack`.
 3. `interactionMode` present (default to `smart` if missing; log warning).
 4. Cross-phase consistency: the research artifact's `scope-id` matches the scope output.
+5. `force_deep` (boolean from the Orchestrator context; default `false`). It never changes `complexity` or `tier_recommended`; it only raises the amount of material this phase must produce (Steps 4–5).
 
 ### Step 1: Approach Selection
 
@@ -90,6 +91,8 @@ Score the design across five dimensions (0–3 each) and compute the complexity 
 2. Sum the scores (0–15).
 3. Map to complexity level: `TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH`.
 4. Record all five scores, the total, and the complexity level in the Design Artifact.
+5. **Compute `tier_recommended`** by evaluating `recommend_tier(complexity, risk_level)` from [plan-tier-selection.md](../references/plan-tier-selection.md) with the actual values from steps 1–3 (complexity-driven default, then the risk floor). Apply the Anti-Default Rules there: `HIGH`/`VERY_HIGH` → `deep`, `MEDIUM` → `standard`, `TRIVIAL`/`LOW` → `fast`, raised only by risk. Do not ignore `risk_level`, and do not pick `standard` by default. `force_deep` and user preference do **not** affect this value.
+6. **If `force_deep` is true:** also draft rollout notes (feature flags, monitoring, data migration, rollback, performance baseline — or `Not applicable — <reason>` per item) and a cross-system integration map so Generate can fill the Deep sections from real content.
 
 ### Step 5: Alternative Approaches
 
@@ -97,7 +100,7 @@ Document the approaches considered but not selected, with rejection rationale.
 
 - **TRIVIAL / LOW complexity:** At least 1 alternative (may be brief).
 - **MEDIUM complexity:** At least 1 alternative with rationale.
-- **HIGH / VERY_HIGH complexity:** At least 2 alternatives with side-by-side rationale.
+- **HIGH / VERY_HIGH complexity, or `force_deep` is true:** At least 2 alternatives with side-by-side rationale.
 
 Format: `**[Approach Name]**: [Description] → **Rejected because:** [Rationale]`
 
@@ -113,7 +116,7 @@ Format: `**[Approach Name]**: [Description] → **Rejected because:** [Rationale
 1. **Assign a `design-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-design`, saved to `docs/plans/.design/`). Reuse it if the user later picks **Edit & Retry**.
 
 2. Produce a **Design Artifact** block (as markdown) following the schema in [design.md](../references/templates/artifacts/design.md).
-   - Include the generated `design-id`, inherited `scope-id` and `research-id`, `interactionMode`, `complexity`, and `tier_recommended` (derived from complexity per [plan-tier-selection.md](../references/plan-tier-selection.md)).
+   - Include the generated `design-id`, inherited `scope-id` and `research-id`, `interactionMode`, `complexity`, and `tier_recommended` (the value computed in Step 4.5 — never re-derive it from complexity alone).
 
 ### Step 7: Present, Confirm, and Save
 
@@ -128,13 +131,14 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.design/<design-id>.md` (ensure `interactionMode`, `complexity`, and `tier_recommended` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 4 (Generate).
+Then, **in `detailed` mode only**, save the artifact to `docs/plans/.design/<design-id>.md` (ensure `interactionMode`, `complexity`, and `tier_recommended` are included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 4 (Generate). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Design Artifact
 
 - Verify that the Design Artifact is complete and valid, containing all required fields: `design-id`, `scope-id`, `research-id`, `interactionMode`, `complexity`, `tier_recommended`, Approach, High-Level Technical Design, Implementation Units (each with Acceptance Criteria), Complexity Assessment, Alternative Approaches, Related Learnings, and Learning Gaps.
 - Verify that the `complexity` value matches the threshold mapping from the five dimension scores.
-- Verify that `tier_recommended` is consistent with the complexity and risk level per [plan-tier-selection.md](../references/plan-tier-selection.md).
-- Verify that the artifact is saved to `docs/plans/.design/<design-id>.md` for future reference or reuse.
+- Verify that `tier_recommended` equals `recommend_tier(complexity, risk_level)` per [plan-tier-selection.md](../references/plan-tier-selection.md) (e.g., `complexity: HIGH` → `deep`, not `standard`).
+- Verify that, when `force_deep` is true, the artifact contains ≥ 2 alternatives and the rollout/integration drafts from Step 4.6.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.design/<design-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the design artifact to `generate` (Phase 4) for final plan generation.

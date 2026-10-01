@@ -98,7 +98,7 @@ tier_recommended: fast | standard | deep
 - [Gap name] — [Follow-up action via /learn]
 ```
 
-Also save the design artifact to `docs/plans/.design/<design-id>.md` for future reference or reuse. The `interactionMode` and `complexity` values flow into the Generate artifact for tier selection.
+In `detailed` mode only, also save the design artifact to `docs/plans/.design/<design-id>.md` for future reference or reuse. The `interactionMode` and `complexity` values flow into the Generate artifact for tier selection. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
 
 ## Validation Rules
 

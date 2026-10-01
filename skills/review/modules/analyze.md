@@ -90,7 +90,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/review/.analyze/<analyze-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 4 (Report).
+Then, **in `detailed` mode only**, save the artifact to `docs/review/.analyze/<analyze-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 4 (Report). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Findings Artifact
 
@@ -99,6 +99,6 @@ Then save the artifact to `docs/review/.analyze/<analyze-id>.md` (ensure `intera
 - Verify the **scope-creep** category either ran (with `spec-content` not `none`) or is recorded `skipped (no requirements)` — never silently absent, never inventing requirements.
 - Verify severities were **assigned from** [severity-rubric.md](../references/severity-rubric.md) rather than re-defined inline (no second rubric contradicting the authoritative reference).
 - Verify the category checks were **run from** [review-categories.md](../references/review-categories.md) rather than re-encoded inline.
-- Verify that the artifact is saved to `docs/review/.analyze/<analyze-id>.md`.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/review/.analyze/<analyze-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the Findings to `report` (Phase 4) for the approval-status derivation, the report write, and the registry / work-index cross-link.

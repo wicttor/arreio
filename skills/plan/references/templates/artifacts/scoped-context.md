@@ -50,4 +50,4 @@ action: resume | review | archive | delete | create-new | none
 - (Empty list if none found)
 ```
 
-Also save the scoped context to `docs/plans/.scope/<scope-id>.md` for future reference or reuse. The `interactionMode` value flows into `research`, `design`, and `generate` artifacts.
+In `detailed` mode only, also save the scoped context to `docs/plans/.scope/<scope-id>.md` for future reference or reuse. The `interactionMode` value flows into `research`, `design`, and `generate` artifacts. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.

@@ -12,7 +12,7 @@ Shared ID algorithm for the `scope`, `prepare`, `analyze`, and `report` phases, 
 
 ## ID Format by Phase
 
-| Phase    | ID format                            | Saved to                            |
+| Phase    | ID format                            | Saved to (detailed only)                            |
 | -------- | ----------------------------------- | ----------------------------------- |
 | Scope    | `YYYY-MM-DD-NNN-scope`              | `docs/review/.scope/<id>.md`    |
 | Prepare  | `YYYY-MM-DD-NNN-prepare`            | `docs/review/.prepare/<id>.md`  |
@@ -28,6 +28,8 @@ The `review-id` is the umbrella key that ties all four phase artifacts together 
 **Format:** `YYYY-MM-DD-NNN` (date + zero-padded 3-digit daily counter), counting existing `docs/review/.scope/YYYY-MM-DD-NNN-scope.md` files for that date (the scope phase is the allocating phase, so its counter is the source of truth for the umbrella id).
 
 > **Distinct from a Work `review-id`.** When Review is invoked over a `/work` run (`input-shape: work-linked`), the Work skill's own `review-id` (`docs/plans/.work/.review/...`) **already exists**. The Review skill allocates its **own** `review-id` (`docs/review/...`) — the two skills produce independent artifacts and never share an id. The `work-id` is carried alongside in the Review artifacts for traceability and the work-index cross-link, but `review-id` ≠ Work `review-id`.
+
+> **Persistence by mode.** The "Saved to" column and the directory-listing algorithm below apply **only in `detailed` mode**. In `smart`/`autopilot` mode phase artifacts are not written, so no directory is listed: Allocate `review-id` NNN by counting today's files in `docs/review/.report/` (+1); `scope-id`/`prepare-id`/`analyze-id` reuse that NNN as in-memory labels. See [Artifact Persistence](interaction-mode-propagation.md#artifact-persistence).
 
 ## Algorithm (new phase artifact)
 

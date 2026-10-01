@@ -55,7 +55,7 @@ policy:                                  # recorded read-only from task-executio
 work-state: ready | nothing-ready         # echoes the Work Manifest if carried through
 ```
 
-Also save the Execution Plan to `docs/plans/.work/.prepare/<prepare-id>.md`.
+In `detailed` mode only, also save the Execution Plan to `docs/plans/.work/.prepare/<prepare-id>.md`. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
 
 ## Validation Rules
 

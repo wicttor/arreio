@@ -58,7 +58,7 @@ lineage:                                        # set ONLY when resolution == me
 source-candidate: <carried from Capture> | null
 ```
 
-Also save the Refined Entry Artifact to `docs/learn/.refine/<refine-id>.md`.
+In `detailed` mode only, also save the Refined Entry Artifact to `docs/learn/.refine/<refine-id>.md`. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
 
 ## Validation Rules
 

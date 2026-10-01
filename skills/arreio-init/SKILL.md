@@ -92,7 +92,7 @@ Creates the organizational spine for Arreio artifacts:
 
 **Action:** If `docs/learn/index.md` doesn't exist, create it using the [Learn Index Template](references/learn-index-template.md).
 
-### Step 7: Create Plan Skill Hidden Artifact Directories
+### Step 7: Plan Skill Hidden Artifact Directories (not created at init)
 
 **Folders:**
 
@@ -100,11 +100,11 @@ Creates the organizational spine for Arreio artifacts:
 - `docs/plans/.research/` — Stores Research phase artifacts
 - `docs/plans/.design/` — Stores Design phase artifacts
 
-**Rationale:** The `plan/SKILL.md` orchestrator saves intermediate phase artifacts in these hidden directories to preserve the planning trail and enable recovery/resumption.
+**Rationale:** The `plan/SKILL.md` orchestrator writes intermediate phase artifacts to these hidden directories **only when the user picks `detailed` interaction mode**. In `smart`/`autopilot` they are passed in context.
 
-**Action:** Create all three directories if they don't exist.
+**Action:** Do **not** create them. The plan skill creates them lazily on first `detailed` run.
 
-### Step 8: Create Work Skill Hidden Artifact Directories
+### Step 8: Work Skill Artifact Directories
 
 **Folders:**
 
@@ -113,11 +113,11 @@ Creates the organizational spine for Arreio artifacts:
 - `docs/plans/.work/.execute/` — Stores Execute phase artifacts
 - `docs/plans/.work/.review/` — Stores Review phase artifacts
 
-**Rationale:** The `work/SKILL.md` orchestrator saves phase artifacts here during task execution to track work progress and decisions.
+**Rationale:** `.triage/`, `.prepare/`, `.execute/` hold intermediate artifacts written **only in `detailed` mode**. `.review/` holds the Work Report, which is always written (read by `/review` and `/learn`).
 
-**Action:** Create all four directories if they don't exist.
+**Action:** Create only `docs/plans/.work/.review/`. The work skill creates the other three lazily on first `detailed` run.
 
-### Step 9: Create Review Skill Hidden Artifact Directories and Registry
+### Step 9: Review Skill Artifact Directories and Registry
 
 **Folders:**
 
@@ -130,9 +130,9 @@ Creates the organizational spine for Arreio artifacts:
 
 - `docs/review/index.md` — Central registry of all review reports
 
-**Rationale:** The `review/SKILL.md` orchestrator saves phase artifacts in these hidden directories and maintains a central index of all review reports.
+**Rationale:** `.scope/`, `.prepare/`, `.analyze/` hold intermediate artifacts written **only in `detailed` mode**. `.report/` holds the Review Report (always written). The orchestrator also maintains a central index of all review reports.
 
-**Action:** Create all four directories if they don't exist. If `docs/review/index.md` doesn't exist, create it with a header:
+**Action:** Create only `docs/review/.report/`; the review skill creates the other three lazily on first `detailed` run. If `docs/review/index.md` doesn't exist, create it with a header:
 
 ```markdown
 ---
@@ -153,7 +153,7 @@ This is the index of all review reports for the project. Reports are organized b
 _No review reports yet._
 ```
 
-### Step 10: Create Learn Skill Hidden Artifact Directories
+### Step 10: Learn Skill Hidden Artifact Directories (not created at init)
 
 **Folders:**
 
@@ -162,9 +162,9 @@ _No review reports yet._
 - `docs/learn/.index/` — Stores Index phase artifacts
 - `docs/learn/.maintain/` — Stores Maintain phase artifacts
 
-**Rationale:** The `learn/SKILL.md` orchestrator saves phase artifacts in these hidden directories to preserve the knowledge entry authoring trail.
+**Rationale:** The `learn/SKILL.md` orchestrator writes phase artifacts here **only in `detailed` mode**. Durable entries and the index are always written elsewhere.
 
-**Action:** Create all four directories if they don't exist.
+**Action:** Do **not** create them. The learn skill creates them lazily on first `detailed` run.
 
 ### Step 11: Create End-Session Skill Hidden Artifact Directory
 
@@ -205,15 +205,10 @@ After initialization, verify:
 - ✓ Root-level index files exist:
   - `docs/plans/index.md` (registry of all plans)
   - `docs/learn/index.md` (central knowledge base)
-- ✓ Plan skill hidden artifact directories exist:
-  - `docs/plans/.scope/`, `docs/plans/.research/`, `docs/plans/.design/`
-- ✓ Work skill hidden artifact directories exist:
-  - `docs/plans/.work/.triage/`, `docs/plans/.work/.prepare/`, `docs/plans/.work/.execute/`, `docs/plans/.work/.review/`
-- ✓ Review skill hidden artifact directories exist:
-  - `docs/review/.scope/`, `docs/review/.prepare/`, `docs/review/.analyze/`, `docs/review/.report/`
+- ✓ Always-written report directories exist:
+  - `docs/plans/.work/.review/` (Work Reports), `docs/review/.report/` (Review Reports)
   - `docs/review/index.md` (review reports registry)
-- ✓ Learn skill hidden artifact directories exist:
-  - `docs/learn/.capture/`, `docs/learn/.refine/`, `docs/learn/.index/`, `docs/learn/.maintain/`
+- ✓ Intermediate phase-artifact directories (`.scope/`, `.research/`, `.design/`, `.triage/`, `.prepare/`, `.execute/`, `.analyze/`, `.capture/`, `.refine/`, `.index/`, `.maintain/`) are **not** created — skills create them lazily, only in `detailed` interaction mode
 - ✓ End-session skill hidden artifact directory exists:
   - `docs/plans/.end-session/`
 - ✓ Learn category folders exist:
@@ -225,10 +220,10 @@ After initialization, verify:
 
 Downstream skills (plan, learn, work, review) automatically create missing folders and indexes if arreio-init wasn't explicitly run:
 
-- **plan** skill creates missing `docs/plans/` core folders, and allocates `docs/plans/.scope/`, `.research/`, `.design/` directories on first use.
-- **work** skill creates missing `docs/plans/.work/` directories (`.triage/`, `.prepare/`, `.execute/`, `.review/`) on first execution.
-- **review** skill creates missing `docs/review/` directories and `index.md` registry on first review.
-- **learn** skill creates missing phase-artifact directories under `docs/learn/` and the `docs/learn/` category folders on first learning capture.
+- **plan** skill creates missing `docs/plans/` core folders; creates `docs/plans/.scope/`, `.research/`, `.design/` only in `detailed` mode.
+- **work** skill creates `docs/plans/.work/.review/` on first execution; creates `.triage/`, `.prepare/`, `.execute/` only in `detailed` mode.
+- **review** skill creates `docs/review/.report/` and the `index.md` registry on first review; creates `.scope/`, `.prepare/`, `.analyze/` only in `detailed` mode.
+- **learn** skill creates the `docs/learn/` category folders on first learning capture; creates `.capture/`, `.refine/`, `.index/`, `.maintain/` only in `detailed` mode.
 - **end-session** skill creates missing `docs/plans/.end-session/` directory (and the `## Session Ends` section in `docs/plans/index.md`) on first session end.
 
 **However**, running `arreio-init` upfront provides several benefits:

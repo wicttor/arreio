@@ -91,7 +91,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/learn/.refine/<refine-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Index).
+Then, **in `detailed` mode only**, save the artifact to `docs/learn/.refine/<refine-id>.md` (ensure `interactionMode` included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 3 (Index). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Refined Entry Artifact
 
@@ -99,6 +99,6 @@ Then save the artifact to `docs/learn/.refine/<refine-id>.md` (ensure `interacti
 - Verify that the frontmatter conforms to [entry-schema.md](../references/entry-schema.md) (every required field valid; the per-type body template present) without re-encoding the schema inline.
 - Verify that the duplicate/analog check ran per [dedup-rules.md](../references/dedup-rules.md) and that any conflict was resolved with a recorded `resolution` (never silently two entries).
 - Verify that a merge recorded `lineage` (the analog `slug` + `superseded-by` note) — lineage preserved, never deleted.
-- Verify that the artifact is saved to `docs/learn/.refine/<refine-id>.md`.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/learn/.refine/<refine-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the Refined Entry to `index` (Phase 3) to write the entry file and upsert the canonical index.

@@ -38,6 +38,8 @@ Store in the context object:
 interactionMode: detailed | smart | autopilot
 ```
 
+**Artifact persistence:** intermediate phase artifacts are written to disk **only in `detailed` mode**. In `smart`/`autopilot` they are passed between phases in context and never written (see `references/interaction-mode-propagation.md#artifact-persistence`). Final deliverables are always written.
+
 **Propagation:** `interactionMode` flows into the `capture`, `refine`, `index`, and `maintain` artifacts; each downstream phase reads it to adjust confirmation behaviour (detailed = pause every transition + before destructive writes; autopilot = run all; smart = pause only on duplicates, prunes, and migrations).
 
 ## Orchestration Implementation
@@ -60,7 +62,7 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 Before starting the learn pipeline, the orchestrator verifies that required folders exist:
 
 - `docs/learn/` — must exist for writing entries and the index; the seed `docs/learn/index.md` must exist (empty `entries:` block is valid — the legacy migration populates 28 entries)
-- `docs/learn/.capture/`, `docs/learn/.refine/`, `docs/learn/.index/`, `docs/learn/.maintain/` — must exist for saving the phase artifacts
+- `docs/learn/.capture/`, `docs/learn/.refine/`, `docs/learn/.index/`, `docs/learn/.maintain/` — **`detailed` mode only**, for saving the phase artifacts; do not create them in `smart`/`autopilot`
 
 **Self-Healing:** If any are missing, the orchestrator automatically creates them (`mkdir -p`), and seeds `docs/learn/index.md` from the [index-format.md](references/index-format.md) template. This allows the Learn skill to run even if `arreio-init` wasn't explicitly run.
 
@@ -70,10 +72,10 @@ For **explicit** input, verify `<type>` is one of the four; if not, ask to pick 
 
 | Phase | Phase Module                          | Output Artifact                                                              | Saved to                               |
 | ----- | ------------------------------------ | ---------------------------------------------------------------------------- | -------------------------------------- |
-| 1     | [Capture](modules/capture.md)        | [Captured entry](references/templates/artifacts/captured-entry.md)           | `docs/learn/.capture/<id>.md`   |
-| 2     | [Refine](modules/refine.md)          | [Refined entry](references/templates/artifacts/refined-entry.md)             | `docs/learn/.refine/<id>.md`    |
-| 3     | [Index](modules/index.md)            | [Index update](references/templates/artifacts/index-update.md)               | `docs/learn/.index/<id>.md`     |
-| 4     | [Maintain](modules/maintain.md) _(on demand)_ | [Maintain log](references/templates/artifacts/maintain-log.md)   | `docs/learn/.maintain/<id>.md`  |
+| 1     | [Capture](modules/capture.md)        | [Captured entry](references/templates/artifacts/captured-entry.md)           | `docs/learn/.capture/<id>.md` _(detailed only)_ |
+| 2     | [Refine](modules/refine.md)          | [Refined entry](references/templates/artifacts/refined-entry.md)             | `docs/learn/.refine/<id>.md` _(detailed only)_ |
+| 3     | [Index](modules/index.md)            | [Index update](references/templates/artifacts/index-update.md)               | `docs/learn/.index/<id>.md` _(detailed only)_ |
+| 4     | [Maintain](modules/maintain.md) _(on demand)_ | [Maintain log](references/templates/artifacts/maintain-log.md)   | `docs/learn/.maintain/<id>.md` _(detailed only)_ |
 
 **Phase 4 is on-demand.** A normal `/learn <type> <text>` run executes Phases 1–3 and writes one entry; Maintain runs only via `/learn maintain`. The migration procedure (legacy → canonical) is a Maintain operation, run once.
 
@@ -104,7 +106,7 @@ The **Index phase** is the skill's only index writer for authored entries; the *
 
 - **Entry file:** Saved to `docs/learn/<type>/<slug>.md` with the [entry-schema.md](references/entry-schema.md) frontmatter (`type`, `domain`, `tags`, `applicability`, `summary`, plus `created_at`/`updated_at`, `source`, `confidence`, and `related`).
 - **Index:** `docs/learn/index.md` updated — a YAML `entries:` block (the `filename` / `domain` / `tags` / `applicability` / `summary` record per entry — the **read contract** that Plan/Work/Review's [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md) parses) plus the human-readable By Category / By Domain tables.
-- **Maintain Log (if `/learn maintain`):** Saved to `docs/learn/.maintain/<maintain-id>.md`, recording the dedup/refresh/prune operations performed and any migration applied.
+- **Maintain Log (if `/learn maintain`, `detailed` mode only):** Saved to `docs/learn/.maintain/<maintain-id>.md`, recording the dedup/refresh/prune operations performed and any migration applied.
 - **Not produced:** This skill produces **no session log, no event transcript, no "what we did."** Only durable entries and the index.
 
 ## References
@@ -135,6 +137,17 @@ Artifact templates live in [references/templates/artifacts/](references/template
 
 > The Learn skill **owns the write side** — the per-entry frontmatter schema ([entry-schema.md](references/entry-schema.md)) and the `docs/learn/index.md` format ([index-format.md](references/index-format.md)). The Plan skill **owns the read side** — the keyword/relevance search in [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md), reused cross-skill by Work and Review. The two contracts share the **index-record shape** (`filename`, `domain`, `tags`, `applicability`, `summary` + the `applicability` enum). Learn **guarantees** its index satisfies that shape; it does **not** re-encode the search algorithm (honoring the secondary-spec-contradicts-authoritative-matrix gotcha — one algorithm lives in Plan's gate-logic, one schema lives here; see `docs/learn/gotcha/2026-08-07-secondary-spec-contradicts-authoritative-matrix.md` post-migration).
 
+## Execution Rules
+
+Follow these literally; they exist to keep runs consistent across agents.
+
+1. **Run each module's steps in order**, starting with its Step 0 verification. Do not skip, merge, or reorder steps.
+2. **Never invent values.** If a required input is missing, apply the recovery in [error-handling.md](references/error-handling.md) or ask the user; do not fill it with a plausible guess.
+3. **Compute, don't copy.** Values defined by a rule (`slug`, `applicability` enum, duplicate/analog matches, prune candidates) must be derived with the canonical reference and the real entry — never copied from an example or guessed. Example values in references and templates are illustrations, never defaults.
+4. **One question at a time**, with 2–4 concrete options; build the question text from the current values.
+5. **Announce phase transitions in one line** (e.g., "Phase 2/3 Refine complete: <key result>") so the user can follow progress, even in Autopilot.
+6. **Honor write rules:** intermediate phase artifacts only in `detailed` mode; final deliverables always.
+
 ## Core Principles
 
 - **Source of Truth, Not Memory:** `docs/learn/` is the project's durable, authoritative knowledge base. Plan/Work/Review search it; this skill authors and maintains it. Not a session memory, not an event log.
@@ -143,6 +156,7 @@ Artifact templates live in [references/templates/artifacts/](references/template
 - **Idempotent Writes:** Authoring a known `slug` upserts the entry file and its index record — never duplicates. Maintain rebuilds the index from the file tree and is idempotent. Re-running a normal `/learn` over the same content merges, it does not pile up.
 - **Dedup Welcomed, Lineage Preserved:** Decisions don't duplicate, but analogs exist; dedup merges an analog into the canonical entry and records the merge (the path-convention-split entry is the model — a migrated entry carries both the old and new path knowledge, not just the new; see `docs/learn/gotcha/2026-08-07-path-convention-split-silently-noops.md` post-migration).
 - **Write Side / Read Side Split:** Learn owns the entry schema and the index format; Plan owns the search algorithm. Both agree on the index-record shape. Never re-encode the other side's logic inline.
+- **Lean Persistence:** Phase artifacts hit disk only in `detailed` mode; `smart`/`autopilot` pass them in context to save tokens and time.
 - **Transparent Artifacts:** Each phase produces an explicit output artifact for the next phase.
 - **Behavior-Described, Tool-Agnostic:** Steps describe required capabilities ("write the entry file", "rebuild the index", "ask the user to confirm"), not specific tool names.
 - **Stay Portable:** Use repository-relative paths only — `docs/learn/<type>/<slug>.md`, never absolute.

@@ -30,19 +30,18 @@ Select the plan tier based on complexity, risk, and user preference. For the ful
 1. **Read inputs:**
    - `complexity` from the Design Artifact
    - `risk_level` from the Research Findings (carried via the Design Artifact's complexity assessment)
-   - `tier_recommended` from the Design Artifact (the algorithm's suggestion)
+   - `force_deep` from the Orchestrator context (`--deep` flag; default `false`)
+   - `tier_recommended` from the Design Artifact — then **recompute** `recommend_tier(complexity, risk_level)`; if they differ, use the recomputed value and log a warning.
 
 2. **Determine user preference:**
-   - In **Detailed** mode: Ask the user which tier they want, presenting the recommendation. Options: `Fast`, `Standard`, `Deep`, `Auto`.
-   - In **Smart** mode: Auto-select, unless a pause trigger fires (Deep tier, preference conflicts with risk floor, or CRITICAL risk). If paused, ask the user.
+   - If `force_deep` is true: set `tier = deep`, announce "Deep plan forced by `--deep`", and **skip the tier question in every mode**.
+   - In **Detailed** mode: Ask the user which tier they want using the prompt in [plan-tier-selection.md](../references/plan-tier-selection.md#asking-the-user-for-preference), filled with the computed complexity, risk level, and `tier_recommended`. Options: `Fast`, `Standard`, `Deep`, `Auto`.
+   - In **Smart** mode: Set `user_preference = auto`, unless a pause trigger fires (Deep tier without `force_deep`, preference conflicts with risk floor, or CRITICAL risk). If paused, ask the user.
    - In **Autopilot** mode: Set `user_preference = auto`; never ask.
 
-3. **Apply the selection algorithm** (see [plan-tier-selection.md](../references/plan-tier-selection.md)):
-   - Start from the complexity-driven default tier.
-   - Upgrade if risk warrants it (respect the risk floor).
-   - Honor user preference unless it violates the risk floor.
+3. **Evaluate `select_tier(...)`** from [plan-tier-selection.md](../references/plan-tier-selection.md) with the real values. `auto` resolves to `tier_recommended` — never to `Standard` by default. Honor an explicit preference unless it is below the risk floor.
 
-4. **Record the selected tier** as `tier` and the algorithm's recommendation as `tier_recommended` (for audit when the user overrides).
+4. **Record the selected tier** as `tier` and the algorithm's recommendation as `tier_recommended` (for audit when the user overrides or `--deep` is used).
 
 ### Step 2: Plan Rendering
 
@@ -100,6 +99,7 @@ Render the final plan from the [Final Plan template](../references/templates/art
 5. **Build Operational / Rollout Notes** (Standard/Deep only) from the Design's rollout units:
    - Feature flags, monitoring, data migration, rollback plan, performance baseline
    - Skip the section entirely if not applicable (Fast tier, or no rollout units)
+   - **Deep tier:** every required item (feature flags, monitoring, data migration, rollback plan, performance baseline) and the cross-system integration map must appear; write `Not applicable — <reason>` for items that truly do not apply (typical for `--deep` on a small change). Never invent content.
 
 6. **Right-size:** Per Plan Skill core principles — small tasks → short plans; complex work → more structure. Do not pad a Fast plan with empty sections; do not omit required sections from a Deep plan.
 
@@ -112,7 +112,7 @@ Render the final plan from the [Final Plan template](../references/templates/art
 
 Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these generate-specific **Smart pause triggers**:
 
-- The selected tier is `Deep`, or
+- The selected tier is `Deep` and `force_deep` is false, or
 - The user's tier preference conflicts with the risk floor, or
 - Research reported CRITICAL risk (Security or Payments).
 

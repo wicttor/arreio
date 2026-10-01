@@ -12,7 +12,7 @@ Shared ID algorithm for the `triage`, `prepare`, `execute`, and `review` phases,
 
 ## ID Format by Phase
 
-| Phase    | ID format                            | Saved to                         |
+| Phase    | ID format                            | Saved to (detailed only)                         |
 | -------- | ----------------------------------- | -------------------------------- |
 | Triage   | `YYYY-MM-DD-NNN-triage`             | `docs/plans/.work/.triage/<id>.md`   |
 | Prepare  | `YYYY-MM-DD-NNN-prepare`            | `docs/plans/.work/.prepare/<id>.md`  |
@@ -34,6 +34,8 @@ The `work-id` is the key that ties all four phase artifacts together and locates
 **Format:** `YYYY-MM-DD-NNN` (date + zero-padded 3-digit daily counter), identical to the `/plan` `plan-id`.
 
 > **Work branch name:** the git branch for a run is `work/<short-description>` — a kebab-case slug derived from the plan name or work description (Triage Step 2d), **not** the `work-id` itself. The Work Manifest records the `work-branch` ↔ `work-id` pairing; see `skills/work/modules/triage.md` Step 2d.
+
+> **Persistence by mode.** The "Saved to" column and the directory-listing algorithm below apply **only in `detailed` mode**. In `smart`/`autopilot` mode phase artifacts are not written, so no directory is listed: Triage/Prepare/Execute ids are `<work-id>-<phase>` (in-memory labels). Only the Work Report `review-id` is persisted, so it still counts existing files in `docs/plans/.work/.review/`. See [Artifact Persistence](interaction-mode-propagation.md#artifact-persistence).
 
 ## Algorithm (new phase artifact)
 

@@ -95,7 +95,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then save the artifact to `docs/plans/.work/.execute/<execute-id>.md` (ensure `interactionMode` and `executionMode` are included) and return it, with both mode values, to the Orchestrator for the transition to Phase 4 (Review).
+Then, **in `detailed` mode only**, save the artifact to `docs/plans/.work/.execute/<execute-id>.md` (ensure `interactionMode` and `executionMode` are included) and return it, with both mode values, to the Orchestrator for the transition to Phase 4 (Review). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Execution Log Artifact
 
@@ -104,6 +104,6 @@ Then save the artifact to `docs/plans/.work/.execute/<execute-id>.md` (ensure `i
 - Verify that each `completed` task has its `## Acceptance Criteria` checkbox flipped to `- [x]` and the index ticked `- [ ] → - [x]` (forward only — never reset).
 - Verify that every `completed` task's single AC test is green with no new regression beyond the recorded baseline snapshot.
 - Verify that the gate/transition behavior was **enforced from** [task-execution-rules.md](../references/task-execution-rules.md) and [execution-mode-selection.md](../references/execution-mode-selection.md) rather than re-defined inline.
-- Verify that the artifact is saved to `docs/plans/.work/.execute/<execute-id>.md`.
+- Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.work/.execute/<execute-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the Execution Log to `review` (Phase 4) for the simplification, consolidation, and learnings-capture pass.

@@ -52,7 +52,7 @@ final-index-state:
   uncompleted-rows: [<task-id>, ...]       # rows still - [] (blocked/skipped)
 ```
 
-Also save the Execution Log to `docs/plans/.work/.execute/<execute-id>.md`.
+In `detailed` mode only, also save the Execution Log to `docs/plans/.work/.execute/<execute-id>.md`. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
 
 ## Validation Rules
 
