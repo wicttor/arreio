@@ -25,3 +25,4 @@ This is the central registry of all plans for the Arreio project. Each plan docu
 - [2026-09-01-002](.end-session/2026-09-01-002.md) — Implement hybrid skill installation (`3f269d9`, agent: AI agent)
 - [2026-09-02-001](.end-session/2026-09-02-001.md) — Remove VS Code/Copilot references from Arreio docs (`a27e8dd`, agent: Pi)
 - [2026-09-02-002](.end-session/2026-09-02-002.md) — Fix postinstall path and add changelog (`1f85b73`, agent: Pi)
+- [2026-10-01-001](.end-session/2026-10-01-001.md) — Add plan --deep flag and fix tier selection (`5887711`, agent: Claude)
