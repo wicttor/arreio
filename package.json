@@ -1,9 +1,12 @@
 {
   "name": "arreio",
-  "version": "1.2.0",
-  "description": "Arreio transforms agentic coding workflows into a predictable, safe, and high-quality software delivery pipeline. Master the four core phases—Plan, Work, Review, Learn—to orchestrate a highly reliable development cycle.",
+  "version": "1.2.1",
+  "description": "Agent skills for AI coding agents (Claude Code, Codex, Copilot, Cursor): a guardrailed Plan → Work → Review → Learn workflow with /plan, /work, /review and /learn slash commands for predictable, test-first software delivery.",
   "license": "MIT",
-  "author": "Wicttor",
+  "author": {
+    "name": "Wicttor",
+    "url": "https://github.com/wicttor"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/wicttor/arreio.git"
@@ -14,21 +17,41 @@
   "homepage": "https://github.com/wicttor/arreio#readme",
   "keywords": [
     "arreio",
+    "agent-skills",
+    "ai-agents",
+    "ai-coding",
+    "ai-coding-agent",
+    "ai-assisted-development",
     "agentic-workflows",
-    "ai-driven-development",
-    "software-delivery",
+    "agentic-coding",
+    "claude-code",
+    "claude",
+    "codex",
+    "github-copilot",
+    "cursor",
+    "copilot",
+    "llm",
+    "skills",
+    "slash-commands",
+    "prompt-engineering",
     "plan-work-review-learn",
-    "guardrailed-execution",
-    "quality-assurance",
+    "guardrails",
+    "tdd",
+    "test-driven-development",
     "code-review",
-    "documentation",
-    "workflow-orchestration"
+    "task-planning",
+    "developer-workflow",
+    "workflow-orchestration",
+    "software-delivery",
+    "project-documentation"
   ],
   "main": "README.md",
   "files": [
     "skills/",
     "scripts/",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "ARCHITECTURE.md"
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall.js"

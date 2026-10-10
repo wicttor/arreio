@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-09
+
+### Changed
+
+- **npm discoverability.** Rewrote the package description, expanded keywords (agent skills, Claude Code, Codex, Copilot, Cursor, TDD, slash commands, etc.), made `author` an object with a profile URL, and now publish `CHANGELOG.md` and `ARCHITECTURE.md`.
+
 ## [1.2.0] - 2026-10-01
 
 ### Added
