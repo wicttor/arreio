@@ -34,6 +34,8 @@ Run this command in your AI coding agent to:
 2. Create the project structure (`docs/plans/`, `docs/learn/`, etc.)
 3. Set up architectural documentation and index files
 
+**Optional:** Python 3 enables the `/plan` coverage gate (`skills/plan/scripts/check-plan.py`). Without it, `/plan` falls back to a manual checklist.
+
 This makes all six skills available in your AI development environment:
 
 - **arreio-init** - Initialize projects to follow the Arreio workflow
@@ -46,7 +48,7 @@ This makes all six skills available in your AI development environment:
 ## Quick Start
 
 ```text
-/plan [--deep] Add Redis-backed session storage      # produce a plan (+ optional task files)
+/plan [--deep] Add Redis-backed session storage      # produce a source-bound plan (+ optional task files)
 /work <plan-id>                                      # execute the plan's tasks, test-first
 /review <work-id | git range | description>          # review the changes, get a verdict
 /learn <candidate-ref | decision "text">             # keep what the team learned
@@ -131,7 +133,7 @@ After `/arreio-init`, generated artifacts live under `docs/`:
 
 ```text
 docs/
-  plans/   final plans + index.md   (hidden .scope/.research/.design/ in Detailed mode)
+  plans/   final plans + index.md   (hidden .scope/ and .design/ always; .research/ in Detailed mode)
   tasks/   <plan-id>/ task files + index.md
   learn/   decision/ pattern/ gotcha/ workflow/ + index.md
   review/  index.md + .report/      (other hidden phase folders in Detailed mode)
