@@ -34,7 +34,7 @@ Run this command in your AI coding agent to:
 2. Create the project structure (`docs/plans/`, `docs/learn/`, etc.)
 3. Set up architectural documentation and index files
 
-**Optional:** Python 3 enables the `/plan` coverage gate (`skills/plan/scripts/check-plan.py`) the `/work` coherence gate (`skills/work/scripts/check-work.py`), and the `/review` report gate (`skills/review/scripts/check-review.py`). Without it, each falls back to a manual checklist.
+**Optional:** Python 3 enables the `/plan` coverage gate (`skills/plan/scripts/check-plan.py`) the `/work` coherence gate (`skills/work/scripts/check-work.py`), the `/review` report gate (`skills/review/scripts/check-review.py`), and the `/learn` knowledge-base gate (`skills/learn/scripts/check-learn.py`). Without it, each falls back to a manual checklist.
 
 This makes all six skills available in your AI development environment:
 
@@ -125,7 +125,7 @@ Invoke with `/review <git range | HEAD | branch | paths>`, `/review <work-id>`, 
 | 3     | **index**    | Catalog and index the entry         |
 | 4     | **maintain** | Dedup, refresh, and prune entries   |
 
-Invoke with `/learn <decision|pattern|gotcha|workflow> <text>`, `/learn <candidate-ref>` (a Work or Review `learnings-to-capture` item), or `/learn maintain`. Entries live in `docs/learn/<type>/`, are indexed in `docs/learn/index.md`, and are searched by Plan, Work, and Review.
+Invoke with `/learn <decision|pattern|gotcha|workflow> <text>`, `/learn <candidate-ref>` (a Work or Review `learnings-to-capture` item), or `/learn maintain`. Entries live in `docs/learn/<type>/`, are indexed in `docs/learn/index.md`, and are searched by Plan, Work, and Review. Every entry cites its evidence and passes a durability test; candidates already captured are skipped, and a run that authors nothing is a valid outcome.
 
 ### Project Structure
 

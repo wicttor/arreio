@@ -33,15 +33,17 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
 Validate every frontmatter field against the authoritative **[entry-schema.md](../references/entry-schema.md)** — Refine looks it up; it does not re-encode the field list:
 
 1. `domain` — a single primary domain (non-empty).
-2. `tags` — a list of 2–6 related domains.
+2. `tags` — a list of 2–6 related domains or topics.
 3. `applicability.current_project` and `applicability.general` — integers 0–10.
 4. `confidence` — one of `high` / `medium` / `low`.
 5. `priority` — one of `important` / `normal` (or absent → default `normal`).
-6. `summary` — a 1–2 sentence summary (non-empty).
-7. `source` — `{ type, reference, extracted_at }`; for a candidate input, `source.type: candidate` and `reference` points at the Work/Review report + finding id.
+6. `summary` — a 1–2 sentence conclusion, non-empty, at most 240 characters.
+7. `source` — `{ type, reference, extracted_at }` with a `reference` in the format fixed by [entry-discipline.md](../references/entry-discipline.md#evidence); for a candidate input, `source.type: candidate` and `reference` is the candidate key (`<report-id>#<finding-id | task-id:gate | cN>`).
 8. `created_at` / `updated_at` — ISO-8601; Refine leaves `created_at` as Capture set it and stamps `updated_at` to now.
 
 On any validation failure: surface the specific field, suggest the fix, and ask the user — never silently coerce a wrong value (Category 2 recovery).
+
+**Re-apply the discipline.** Do not trust Capture's `durability` answers: check the draft against [entry-discipline.md](../references/entry-discipline.md) yourself (durability test, evidence, no invented sections, no absolute paths or secrets, the rubric values reproduce from the cited facts). A draft that fails is declined with its code and nothing is written. If it would make more than a fifth of the store `important`, warn and ask.
 
 ### Step 3: Duplicate + Analog Check
 
@@ -57,11 +59,11 @@ Record the matches (`dup-status: exact | analog | none`, the matched `slug`/file
 
 | Match      | Resolution options the user picks from (Smart pause trigger Step 6)                                                               |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `exact`    | (a) **Update existing** — overwrite the existing entry file + index record with the refined content (idempotent on `slug`); (b) **New slug** — keep both, author under a new `slug`. |
-| `analog`   | (a) **Merge into canonical** — fold this draft into the matched entry (append/consolidate the new evidence, record a lineage link to the analog's `slug`, bump `updated_at`); (b) **Keep separate** — keep this as its own entry under the proposed `slug` (the user judges the analog too distant to merge). |
+| `exact`    | (a) **Update existing** — overwrite the existing entry file + index record with the refined content (idempotent on `slug`), carrying over `created_at`, `related`, `migrated-from`, `also-seen-in` and the old `source` from the existing file; (b) **New slug** — keep both, author under a new `slug`. If the matched entry is `obsolete`, the choices are **Revive** or **New slug** (see [dedup-rules.md](../references/dedup-rules.md)). |
+| `analog`   | (a) **Merge into canonical** — the matched (existing) entry is the canonical one: fold this draft's evidence into it (consolidate the body, union the tags up to 6, append the draft's `source.reference` to its `also-seen-in`, bump `updated_at`); no new file is written. (b) **Keep separate** — keep this as its own entry under the proposed `slug` (the user judges the analog too distant to merge). |
 | `none`     | Proceed — a genuine new entry; no resolution needed.                                                                            |
 
-> **Lineage is preserved** on a merge: the merged entry records the analog as a `related` / lineage link, and the analog's content is not deleted — it is de-indexed (its index record removed) but its **file is kept** with a `superseded-by: <canonical-slug>` note (per [dedup-rules.md](../references/dedup-rules.md)). The `path-convention-split` gotcha is the model: a migrated/merged entry carries both the old and new knowledge, never just the new. This is why dedup **merges**, never **deletes**.
+> **Lineage is preserved** on a merge: the canonical keeps its slug and file, gains the draft's evidence in the body and the draft's reference in `also-seen-in`, and no file is deleted or de-indexed at Refine time (per [dedup-rules.md](../references/dedup-rules.md)). That reference is also how the same candidate is recognized as already captured next time. Dedup **merges**, never **deletes**.
 
 ### Step 4: Allocate the refine-id
 
@@ -75,7 +77,8 @@ Produce a **Refined Entry** block (as markdown) following the schema in [refined
 - the validated `type`, the resolved `slug` (may differ from Capture's proposal after a conflict resolution)
 - the validated `frontmatter` and `body`
 - `dup-status` (`exact` / `analog` / `none`), the matched `slug`/file + evidence, and the chosen `resolution` (`update-existing` / `new-slug` / `merge-into-canonical` / `keep-separate` / `none`)
-- `lineage` — the analog `slug` + `superseded-by` note when a merge occured (else empty)
+- `lineage` — `merged-into` (the canonical slug) and the draft's reference appended to `also-seen-in` when a merge occurred (else empty)
+- `preserved` — for `update-existing`/revive, the fields carried over from the existing file
 - `source-candidate` carried through from Capture
 
 ### Step 6: Present, Confirm, and Save
@@ -98,7 +101,8 @@ Then, **in `detailed` mode only**, save the artifact to `docs/learn/.refine/<ref
 - Verify that the Refined Entry is complete and valid: `refine-id`, `capture-id`, `learn-id`, `input-shape`, `interactionMode`, the validated `type`, the resolved `slug`, the validated `frontmatter` and `body`, and the `dup-status` + `resolution`.
 - Verify that the frontmatter conforms to [entry-schema.md](../references/entry-schema.md) (every required field valid; the per-type body template present) without re-encoding the schema inline.
 - Verify that the duplicate/analog check ran per [dedup-rules.md](../references/dedup-rules.md) and that any conflict was resolved with a recorded `resolution` (never silently two entries).
-- Verify that a merge recorded `lineage` (the analog `slug` + `superseded-by` note) — lineage preserved, never deleted.
+- Verify that a merge recorded `lineage` (`merged-into` + the new `also-seen-in` entry) and that `update-existing` carried over `created_at`, `related`, `migrated-from` and `also-seen-in` — lineage preserved, nothing deleted.
+- Verify that the discipline was re-applied: `summary` present, evidence in the fixed format, no invented sections.
 - Verify that, in `detailed` mode, the artifact is saved to `docs/learn/.refine/<refine-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
 > Pass the Refined Entry to `index` (Phase 3) to write the entry file and upsert the canonical index.

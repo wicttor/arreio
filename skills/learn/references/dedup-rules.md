@@ -12,7 +12,7 @@ Authoritative reference for the **Refine** phase (per-entry duplicate+analog che
 
 ## Core Principle
 
-> **Decisions don't duplicate, but analogs exist.** An exact duplicate (same `slug`) means a re-author; the user updates the existing entry or picks a new `slug`. An analog (same conclusion about the same domain, different `slug`) is a dedup candidate: merging the analog into the canonical entry **preserves lineage** — the analog is de-indexed (its index record removed, its file kept with a `superseded-by` note), never deleted. This is why dedup **merges**, never **deletes**: knowledge is rarely destroyed, it is superseded and absorbed. The `path-convention-split` gotcha is the model — a merged/migrated entry carries both the old and new knowledge, not just the new.
+> **Decisions don't duplicate, but analogs exist.** An exact duplicate (same `slug`) means a re-author; the user updates the existing entry or picks a new `slug`. An analog (same conclusion about the same domain, different `slug`) is a dedup candidate: merging the analog into the canonical entry **preserves lineage** — the analog is de-indexed (its index record removed, its file kept with a `superseded-by` note), never deleted. This is why dedup **merges**, never **deletes**: knowledge is rarely destroyed, it is superseded and absorbed. A merged or migrated entry carries both the old and new knowledge, not just the new.
 
 ## Matching Categories
 
@@ -26,9 +26,10 @@ Authoritative reference for the **Refine** phase (per-entry duplicate+analog che
 
 ```
 1. Canonicalize the candidate's slug and title (kebab-case, lowercase, hyphen-collapsed).
-2. For each existing entry in docs/learn/<type>/ (and cross-type — slug namespace is global):
+2. For each existing entry in docs/learn/<type>/ (and cross-type — slug namespace is global;
+   entries marked obsolete or superseded still hold their slug):
    - if slug matches (hyphen-normalized, case-insensitive) -> EXACT
-3. Else, for each existing entry:
+3. Else, for each ACTIVE existing entry of the same type and domain (a bucket, never all pairs):
    - compute overlap: domain-strict-match + (shared-tags count) + same-type
    - if same domain AND >=2 shared tags AND same type:
        read both bodies' Problem/Solution; if semantically the same conclusion -> ANALOG
@@ -42,11 +43,11 @@ Only `exact` and `analogs` surface for resolution; `insignificant` matches are i
 
 ### exact
 
-A re-author of the same `slug`. Two options:
+A re-author of the same `slug`. Two options (a third applies when the existing entry is obsolete, see Edge Cases):
 
 | Option            | Action                                                                                       |
 | ----------------- | --------------------------------------------------------------------------------------------- |
-| **update-existing** | Overwrite the existing entry file at `docs/learn/<type>/<slug>.md` with the refined content; upsert its index record (idempotent on `slug`); bump `updated_at`. The canonical way to revise a decision. |
+| **update-existing** | Overwrite the existing entry file at `docs/learn/<type>/<slug>.md` with the refined content; upsert its index record (idempotent on `slug`); bump `updated_at`. **Carry over from the existing file:** `created_at`, `related`, `migrated-from`, `also-seen-in`, and its `source` (when the new draft's `source.reference` differs, append it to `also-seen-in`). The canonical way to revise a decision. |
 | **new-slug**        | Pick a different `slug` for the draft (e.g., append `-v2` or a domain qualifier); both entries coexist. Use when the new draft is a genuinely different decision that happened to share a slug by coincidence. |
 
 ### analog
@@ -55,7 +56,7 @@ A same-conclusion, same-domain entry under a different `slug`. Two options:
 
 | Option                    | Action                                                                                                                                                                                                                    |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **merge-into-canonical**  | Fold the draft's evidence into the matched canonical entry (append/consolidate the body; add the draft's tags; bump `updated_at`). The canonical `slug` stays. The draft (or, in Maintain, the analog) keeps its **file** with `superseded-by: <canonical-slug>` added and its index record **removed** (de-indexed, not deleted). The canonical entry's `related` list records the analog's `slug`. This is the lineage-preserving merge. |
+| **merge-into-canonical**  | **At Refine time the existing entry is the canonical one and the draft is folded into it:** append/consolidate the draft's evidence into the body, union the tags (cap 6), append the draft's `source.reference` to `also-seen-in`, bump `updated_at`. The draft never becomes a file, so nothing is de-indexed and no `superseded-by` is written. **In Maintain** (two existing entries) the analog keeps its **file** with `superseded-by: <canonical-slug>` and `status: obsolete` and its index record is **removed** (de-indexed, not deleted); the canonical's `related` records the analog's `slug`. Both forms keep the lineage. |
 | **keep-separate**          | Keep the draft as its own entry under the proposed `slug`. Use when the analog is genuinely a different angle (e.g., a cache-invalidation decision and a separate cache-key-naming decision that share `domain + 2 tags` but resolve different problems). |
 
 ### none
@@ -64,7 +65,7 @@ Proceed — a genuine new entry. No resolution.
 
 ## Lineage-Preserving Merge Procedure (authoritative)
 
-On a `merge-into-canonical` resolution, Index (for a Refine-time merge) or Maintain (for a base-wide merge) executes:
+On a base-wide `merge-into-canonical` (Maintain, two existing entries) the procedure below applies. A Refine-time merge uses only steps 2 (fold the draft's body and tags into the existing entry) and 4–5, with `also-seen-in` in place of `related`, because the draft has no file to mark.
 
 ```
 1. Pick the canonical slug:
@@ -93,8 +94,8 @@ On a `merge-into-canonical` resolution, Index (for a Refine-time merge) or Maint
 
 | Phase    | Scope of dedup                                                   | When                                                                 |
 | -------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Refine   | The **one** draft against all existing entries (per-entry)       | Every authoring run (`/learn <type> <text>` or candidate curation)   |
-| Maintain | **All** pairs in the canonical store (base-wide)                 | On-demand (`/learn maintain`), after the migration step              |
+| Refine   | The **one** draft against the existing entries of its type and domain (per-entry), plus an exact-slug check across all types | Every authoring run (`/learn <type> <text>` or candidate curation)   |
+| Maintain | Every pair **within a type + domain bucket** of the canonical store (base-wide)                 | On-demand (`/learn maintain`), after the migration step              |
 
 Refine catches duplicates at author-time (prevents creating a duplicate). Maintain catches **inter-existing** analogs across an already-built store (the store may have accumulated analogs from many separate runs). Both use the same matching algorithm and the same resolution options above.
 
@@ -113,12 +114,13 @@ Dedup operations are destructive (a merge de-indexes an analog; a slug collision
 | Two entries with the same `slug` already on disk (corrupt store)         | Maintain flags both; the user picks the canonical; the other renames. Index reconciliation detects the duplicate row. |
 | An analog referenced in another entry's `related` list                    | Still merge — but the canonical's `related` now points to the analog's old slug; readers follow the analog's `superseded-by` to the canonical. No orphan. |
 | Merge would push the canonical's `tags` over 6                          | Trim to top-6 by domain-relevance; log the trim; the analog's tags are noted in the body. |
+| A draft's slug matches an entry that is already `obsolete` or superseded   | Offer **revive** (re-author in place: `status` returns to active, `superseded-by` is removed, the former canonical's `related` entry for it is kept) or **new-slug**. Never write over an obsolete file silently. |
 | The canonical entry is itself `obsolete`                                  | Do not merge into an obsolete entry; surface to user — likely the analog is the live one; reverse the canonical choice. |
 
 ## Validation (Refine Step 3 / Maintain Step 2 re-checks)
 
 - A match was recorded for every same-slug / same-domain-overlapping pair (no silent matches).
-- A `merge-into-canonical` always sets `superseded-by` on the analog and adds the analog's slug to the canonical's `related` (lineage preserved both ways).
+- A Maintain `merge-into-canonical` always sets `superseded-by` on the analog and adds the analog's slug to the canonical's `related` (lineage preserved both ways); a Refine-time merge records the draft's reference in the canonical's `also-seen-in`.
 - No analog file was deleted on a merge (only de-indexed).
 - The matched evidence is recorded (`slug` + the shared signals) so the user can confirm the match is real, not a false positive.
 

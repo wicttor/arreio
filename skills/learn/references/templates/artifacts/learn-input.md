@@ -25,8 +25,8 @@ explicit:
   type: decision | pattern | gotcha | workflow   # REQUIRED when shape == explicit
   text: "<prose | file ref | commit ref | short description>"   # REQUIRED when shape == explicit
 candidate:
-  ref: "work-review-id | review-report-id"        # REQUIRED when shape == candidate
-  # e.g. "2026-07-10-001-review" (Work) or "2026-08-08-001-report" (Review)
+  ref: "work-review-id | review-report-id | work-id"   # REQUIRED when shape == candidate
+  # e.g. "2026-07-10-001-review" (Work), "2026-08-08-001-report" (Review), or "2026-07-10-001" (every report of that work)
 maintain:
   run: true                                       # REQUIRED when shape == maintain
 
@@ -46,7 +46,7 @@ references: [ ... ]
 - **shape:** Required. One of `explicit`, `candidate`, `maintain`.
 - **Exactly one shape's cargo is present** (the others null/absent):
   - `explicit` requires `explicit.type` ∈ the four types **and** non-empty `explicit.text`.
-  - `candidate` requires a non-empty `candidate.ref` resolving to a Work `review-id` or Review `report-id`.
+  - `candidate` requires a non-empty `candidate.ref` resolving to a Work `review-id` (ends `-review`), a Review `report-id` (ends `-report`), or a `work-id` (bare `YYYY-MM-DD-NNN`).
   - `maintain` requires `maintain.run: true`.
 - **Routing:** the Orchestrator routes `shape: maintain` directly to the Maintain phase (Phase 4); `shape: explicit` and `shape: candidate` route to Capture (Phase 1). A routing mismatch (e.g., a `maintain` shape reaching Capture) is a Category 2 error ([error-handling.md](../../error-handling.md)).
 

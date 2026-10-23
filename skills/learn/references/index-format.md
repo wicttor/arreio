@@ -20,7 +20,7 @@ Authoritative reference for the canonical `docs/learn/index.md` format. Defines 
 The project's durable knowledge base. Source of truth for decisions, patterns,
 gotchas, and workflows. Plan/Work/Review search this index via the YAML block.
 
-**Last updated:** <ISO-8601>
+**Last updated:** <ISO-8601>   <!-- stamped by every Index upsert and Maintain rebuild -->
 
 ## Entries
 
@@ -74,13 +74,13 @@ Each record carries **exactly these five fields** — the gate-logic's read cont
   domain: <primary-domain>                # REQUIRED. The entry's frontmatter domain.
   tags: [<tag>, ...]                       # REQUIRED. The entry's frontmatter tags (carried verbatim).
   applicability: <enum>                    # REQUIRED. Derived per the table below — never stored on the entry.
-  summary: <1-2 sentence summary>         # REQUIRED. The frontmatter summary, or the body Problem/Solution derivation.
+  summary: <1-2 sentence summary>         # REQUIRED. The entry's frontmatter summary, verbatim.
 ```
 
 - `filename` — repo-relative; uses forward slashes; stable (the slug is the upsert key, so the filename is stable across re-authors).
 - `domain`, `tags` — carried verbatim from the entry's frontmatter.
 - `applicability` — **derived** (see below), never stored on the entry's frontmatter (the entry keeps the numeric scores; the index projects to the enum).
-- `summary` — the entry's frontmatter `summary` field if present; else the first 1–2 sentences of the entry's Problem/Solution body (Capture/Refine/Index derive this; Maintain re-derives on rebuild).
+- `summary` — the entry's frontmatter `summary`, verbatim. An entry without one is a refresh finding (Maintain derives it from the body as a non-destructive fix) and is never indexed with an empty or invented summary.
 
 ## Applicability Enum Derivation (authoritative)
 
@@ -114,15 +114,58 @@ The human-readable projection. Both are **derived** from the same on-disk entrie
 - **Upsert (Index Step 3)** — the record is updated in place in the YAML `entries:` block (matched on `filename`), and the row is updated in place in the By Category table and the By Domain bullet (matched on `slug`/title). A re-author with the same `slug` overwrites the record, never appends a second.
 - **Rebuild (Maintain Step 5)** — the file tree is the source of truth: re-scan `docs/learn/<type>/*.md`, regenerate the YAML block and the tables, recompute the per-type `(N)` counts and the By Domain bullets. Idempotent (re-running rebuild over an unchanged tree produces an identical file).
 
-**Totals coherence** is the invariant: the YAML `entries:` block length must equal the count of non-de-indexed entry files on disk; each `### <Type> (N)` count must equal the number of records of that type in the YAML block; the By Domain bullets must list the same entries. If any drifts, Index reconciles in-place (non-destructive) and Maintain fully rebuilds.
+**Totals coherence** is the invariant: the YAML `entries:` block length must equal the count of **active** entry files on disk (an entry file is *active* unless its frontmatter has `status: obsolete` or a `superseded-by`; de-indexed files stay on disk and are not counted); each `### <Type> (N)` count must equal the number of records of that type in the YAML block; the By Domain bullets must list the same entries. If any drifts, Index reconciles in-place (non-destructive) and Maintain fully rebuilds.
 
 ## Validation (Index Step 3 / Maintain Step 5 re-checks)
 
 - Every on-disk entry (non-de-indexed) has exactly one YAML record and exactly one row in By Category and one slug in By Domain.
 - Every `applicability` enum in the index matches the derivation for that entry's frontmatter numerics (no drift).
 - The `(N)` counts match the YAML records per type.
-- The `summary` is present for every record (body-derived if absent in frontmatter).
+- The `summary` is present for every record and equals the entry's frontmatter `summary`.
 - No two records share a `filename` (the upsert key is unique).
+
+## Empty Index Seed
+
+Pre-Flight self-healing and `/arreio-init` write exactly this when `docs/learn/index.md` is missing (the `entries:` block is empty, and every per-type heading shows `(0)`):
+
+````markdown
+# Knowledge Index
+
+The project's durable knowledge base. Source of truth for decisions, patterns,
+gotchas, and workflows. Plan/Work/Review search this index via the YAML block.
+
+**Last updated:** <ISO-8601>
+
+## Entries
+
+```yaml
+entries: []
+```
+
+## By Category
+
+### Decision (0)
+
+### Pattern (0)
+
+### Gotcha (0)
+
+### Workflow (0)
+
+## By Domain
+````
+
+The first Index upsert replaces `entries: []` with a block list. The seed must parse: a reader that finds `entries: []` gets an empty list, not a malformed file.
+
+## Coherence Gate
+
+`scripts/check-learn.py` checks every invariant above mechanically (entry frontmatter and body sections, evidence, the five-field records, the derived enum, counts, By Domain coverage, lineage links). Index runs it after each upsert and Maintain after each rebuild:
+
+```bash
+python skills/learn/scripts/check-learn.py docs/learn
+```
+
+Without Python, verify the **Validation** list above and [entry-schema.md](entry-schema.md#validation-rules-refine-applies) by hand.
 
 ## Failure-Condition Reference
 

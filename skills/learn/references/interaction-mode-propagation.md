@@ -24,14 +24,14 @@ Reference for how `interactionMode` propagates through the Learn pipeline (`Capt
 
 | Phase        | Detailed                                         | Smart                                                                                                       | Autopilot                         |
 | ------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| **Capture**  | Present captured entry; ask Proceed/Edit/Abort   | Auto-proceed; pause if candidate/inferred draft (inferred type, domain, tags, body), or a bare ref that could not be read | Auto-proceed (still confirms inferred content per below) |
+| **Capture**  | Present captured entry; ask Proceed/Edit/Abort   | Auto-proceed; pause if candidate/inferred draft (inferred type, domain, tags, body), a bare ref that could not be read, or a section the input does not support (asked, never invented) | Auto-proceed; a section the input does not support is **still asked** (never invented); a candidate that fails the durability test is declined with a reason, not written |
 | **Refine**   | Present refined entry; ask Proceed/Edit/Abort    | Auto-proceed; pause on `dup-status: exact` (update vs new-slug), `dup-status: analog` (merge vs keep), a failed frontmatter field, or a missing body section | Auto-proceed (still surfaces duplicate/merge conflicts — destructive, never silent) |
 | **Index**    | Present index update; ask Finalize/Edit/Abort    | Auto-proceed; pause on `index-action: created` (overwrite of existing `slug`), `index-action: merged` (analog de-index), or an incoherent prior index that needed reconcile | Auto-proceed (still confirms overwrite + merge — destructive) |
-| **Maintain** | Present maintain log; ask Finalize/Edit/Abort     | Auto-proceed for non-destructive (refresh, rebuild); pause for migration rewrite, prune, merge, or incoherent rebuild | Auto-proceed for non-destructive; **still pauses** for migration/prune/merge (destructive — Autopilot never silently deletes or rewrites 28 paths) |
+| **Maintain** | Present maintain log; ask Finalize/Edit/Abort     | Auto-proceed for non-destructive (refresh, rebuild); pause for migration rewrite, prune, merge, or incoherent rebuild | Auto-proceed for non-destructive; **still pauses** for migration/prune/merge (destructive — Autopilot never silently deletes or rewrites legacy paths) |
 
 **Smart mode pauses only on each phase's documented triggers above** (the canonical list lives in each module's confirmation step; this table is a summary).
 
-**Destructive operations are never silent, even in Autopilot.** This is the Learn skill's guardrail against corrupting the canonical knowledge base: a migration that rewrites 28 entry paths, a prune that deletes a file, and a merge that de-indexes an analog all surface for user confirmation regardless of the interaction mode. Non-destructive curation (drafting a new entry, refreshing frontmatter defaults, rebuilding the index from the file tree) automates freely.
+**Destructive operations are never silent, even in Autopilot.** This is the Learn skill's guardrail against corrupting the canonical knowledge base: a migration that rewrites the legacy entry paths, a prune that deletes a file, and a merge that de-indexes an analog all surface for user confirmation regardless of the interaction mode. Non-destructive curation (drafting a new entry, refreshing frontmatter defaults, rebuilding the index from the file tree) automates freely.
 
 ## Artifact Schema
 
@@ -69,6 +69,18 @@ status: pending | complete | failed
 - Maintain Step 5 rebuild: auto-proceeds (non-destructive)
 
 **Result:** Paused only for the two destructive operations; the non-destructive refresh/rebuild ran automatically.
+
+## Candidate Lists
+
+A candidate ref can carry several `learnings-to-capture` items. The selection question is asked **once**, before the first Capture:
+
+| Mode | Selection | Per entry |
+| ---- | --------- | --------- |
+| **Detailed** | The user picks which candidates to author (all, a numbered subset, none). Candidates already captured are listed as skipped. | Every phase pauses as above, once per picked candidate. |
+| **Smart** | Same single question, with every not-yet-captured candidate that passes the durability test pre-selected as the recommendation. | Pauses only on each phase's triggers. |
+| **Autopilot** | No question. Every not-yet-captured candidate that passes the durability test is authored; the rest are declined with a code from [entry-discipline.md](entry-discipline.md#reasons-to-decline-record-do-not-write). | Destructive conflicts (exact duplicate, merge, overwrite of a slug) **still pause**. |
+
+The run ends with one line per candidate: `authored <path>`, or `declined <code>`.
 
 ## No Execution Mode (contrast with Work)
 

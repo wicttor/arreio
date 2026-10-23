@@ -1,0 +1,16 @@
+{
+  "skills": [
+    "learn"
+  ],
+  "query": "/learn maintain",
+  "files": [
+    "fixtures/store-good (as docs/learn, with atomic-config-write citing a path that no longer exists)"
+  ],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "Dedup compares only entries inside the same type and domain bucket and leaves the already-superseded entry alone",
+    "The cited path that no longer exists is reported under stale-references and the entry is not edited or pruned",
+    "Autopilot pauses before any prune; the offered default is de-index (status obsolete, file kept), and a prune candidate listed in another entry's related is not offered",
+    "The rebuilt index excludes obsolete and superseded entries, stamps Last updated, and check-learn.py prints PASS before index-coherent is recorded true"
+  ]
+}

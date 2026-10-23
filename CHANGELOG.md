@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-23
+
+### Added
+
+- **Learn: entry discipline.** New `skills/learn/references/entry-discipline.md` defines what may become an entry: a six-point durability test, the evidence every entry must cite (a real commit sha, a candidate key, or the user's own words), reproducible rubrics for `applicability`, `confidence` and `priority`, a rule against filling sections the input does not support (they are asked for, or the entry is left out), and decline codes. Capture applies it while drafting and Refine re-applies it before accepting. A run that authors nothing is reported, not an error.
+- **Learn: candidate keys and `work-id` refs.** Every candidate gets a key (`<report-id>#<finding-id | task-id:gate | cN>`) stored in the entry's `source.reference` or `also-seen-in`, so `/learn <ref>` skips candidates already captured instead of re-offering them. `/learn <work-id>` (the ref Work chains with) now resolves to every Work and Review Report of that work. Autopilot authors every not-yet-captured candidate that passes the durability test; Detailed and Smart ask one selection question.
+- **Learn: stale-reference check.** Maintain's refresh reports repository paths an entry cites that no longer exist (`stale-references`) without editing or pruning it.
+- **Learn gate script and evals.** `skills/learn/scripts/check-learn.py` (Python 3, standard library only) checks entry frontmatter, body sections per type, evidence format, lineage links, and `docs/learn/index.md` against the entries (five-field records, derived applicability enum, By Category counts and rows, By Domain coverage). Index and Maintain run it before recording `index-coherent`. `skills/learn/evals/` holds five scenario evals and good/bad store fixtures.
+
+### Changed
+
+- **`summary` is a required frontmatter field**, copied verbatim into the index record. The schema said optional while Refine and the orchestrator required it; the index could be written with a body-derived summary the entry did not carry.
+- **Refine-time merge folds the draft into the existing entry.** The old text had the draft and the analog swap roles in different documents (and the example contradicted itself). Now the existing entry is the canonical one: no new file, nothing de-indexed, the draft's reference appended to a new optional `also-seen-in`. Base-wide merges in Maintain still de-index the analog and keep its file with `superseded-by`.
+- **`update-existing` keeps lineage.** The overwrite carries over `created_at`, `related`, `migrated-from` and `also-seen-in` instead of resetting them. Re-authoring an obsolete slug offers revive or a new slug rather than silently writing over it.
+- **Index coherence counts active entries.** The YAML length is compared with entry files that are not obsolete or superseded; the old rule compared with every file, which fails after the first de-index. `Last updated` is stamped on every upsert and rebuild.
+- **Prune no longer deadlocks.** A superseded entry was never prunable because the merge itself adds it to the canonical's `related`; only references from other entries now block a prune.
+- **Dedup compares inside a type + domain bucket** instead of every pair; the schema's `domain`-must-be-in-`tags` rule (contradicted by its own examples) and the slug-equals-title rule are replaced by "the slug describes the title".
+
+### Fixed
+
+- **Empty index seed.** `arreio-init`'s Learn index template was a stub the learn skill could not parse; it now matches the empty seed in `index-format.md` (`entries: []`), which is also what Pre-Flight self-healing writes.
+- **Project-specific text.** Removed the hard-coded "28 entries" and links to this repository's own `docs/learn` entries that dangle in any other project.
+
 ## [1.4.0] - 2026-10-23
 
 ### Added

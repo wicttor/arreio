@@ -30,9 +30,10 @@ frontmatter:                              # authored per entry-schema.md; Captur
   priority: important | normal | null
   applicability: { current_project: <0-10>, general: <0-10> }
   tags: [tag-1, ...]
+  summary: <1-2 sentences, at most 240 characters>
   created_at: ISO-8601
   updated_at: ISO-8601
-  source: { type: commit | candidate | user, reference: <sha | report-id#finding-id | text>, extracted_at: ISO-8601 }
+  source: { type: commit | candidate | user, reference: <sha | candidate key | quoted text>, extracted_at: ISO-8601 }
   confidence: high | medium | low | null
   # Lineage fields intentionally absent at capture (set by Maintain/Index on merge/migrate).
 
@@ -47,8 +48,15 @@ body: |                                   # the per-type section template per en
 
   ## ...remaining sections for the type... (Decision Rationale / When to Apply / Solution-Prevention / Why / Application / Example / Related Learnings / Source)
 
-source-candidate: | null                  # the picked Work/Review candidate (type, domain, source {finding-id}, summary),
+source-candidate: | null                  # the picked Work/Review candidate (key, type, domain, source, summary),
                                            # or null for explicit input; carried for source traceability
+durability:                                # one line per test in entry-discipline.md; every answer must be `pass`
+  actionable: pass
+  conclusion-not-event: pass
+  one-conclusion: pass
+  evidence: pass
+  not-derivable: pass
+  recurs-or-costly: pass
 inferred: true | false                     # true when drafted from a short description or candidate (a pause trigger);
                                            # false when grounded in a concrete ref/file the user provided
 ```
@@ -64,9 +72,10 @@ In `detailed` mode only, also save the Captured Entry Artifact to `docs/learn/.c
 - **status:** Required. `complete`.
 - **target-type:** Required. One of `decision` / `pattern` / `gotcha` / `workflow`.
 - **slug:** Required. Proposed kebab-case; globally unique namespace; descriptive. Refine uniqueness-checks.
-- **frontmatter:** Required. Authored per [entry-schema.md](../../entry-schema.md). Required fields: `type`, `slug`, `domain`, `applicability.current_project`, `applicability.general`, `tags` (2–6), `created_at`, `updated_at`, `source`. Optional: `priority` (default `normal`), `confidence` (default `medium`). Lineage fields (`migrated-from`/`superseded-by`/`related`/`status`) absent at capture.
+- **frontmatter:** Required. Authored per [entry-schema.md](../../entry-schema.md). Required fields: `type`, `slug`, `domain`, `applicability.current_project`, `applicability.general`, `tags` (2–6), `summary`, `created_at`, `updated_at`, `source` (with a `reference` in the format fixed by [entry-discipline.md](../../entry-discipline.md#evidence)). Optional: `priority` (default `normal`), `confidence` (default `medium`). Lineage fields (`migrated-from`/`superseded-by`/`related`/`status`) absent at capture.
 - **body:** Required. The per-type section template per [entry-schema.md](../../entry-schema.md) (e.g., a `decision` body has Problem / Solution / Decision Rationale / Application / Related Learnings). Refine validates the sections are present.
 - **source-candidate:** Required (= the picked candidate) when `input-shape: candidate`; `null` when `input-shape: explicit`. Carried so Refine/Index can set the entry's `source` field pointing back at the Work/Review report + finding id.
+- **durability:** Required. Every answer `pass`; a failing draft is declined, not captured ([entry-discipline.md](../../entry-discipline.md#the-durability-test)).
 - **inferred:** Required. `true` is a Capture Smart pause trigger (the draft was inferred from a short description or candidate — confirm intent).
 
 ## Example (explicit decision, grounded in a commit ref)
@@ -87,6 +96,7 @@ frontmatter:
   priority: normal
   applicability: { current_project: 8, general: 6 }
   tags: [package-management, npm, pnpm, lockfiles]
+  summary: Prefer the lockfile named by package.json's packageManager field when both lockfiles exist.
   created_at: 2026-08-08T14:30:00Z
   updated_at: 2026-08-08T14:30:00Z
   source: { type: commit, reference: "1ee04e2", extracted_at: 2026-08-08T14:30:00Z }
@@ -109,6 +119,7 @@ body: |
   ## Related Learnings
   (none yet)
 source-candidate: null
+durability: { actionable: pass, conclusion-not-event: pass, one-conclusion: pass, evidence: pass, not-derivable: pass, recurs-or-costly: pass }
 inferred: false
 ```
 
@@ -130,9 +141,10 @@ frontmatter:
   priority: important
   applicability: { current_project: 8, general: 7 }
   tags: [redis, ttl, session-store, caching]
+  summary: Pass the TTL on SET ... EX; a separate EXPIRE is lost when the key is overwritten.
   created_at: 2026-08-08T14:35:00Z
   updated_at: 2026-08-08T14:35:00Z
-  source: { type: candidate, reference: "2026-07-10-001-review#F02", extracted_at: 2026-08-08T14:35:00Z }
+  source: { type: candidate, reference: "2026-07-10-001-review#2026-07-10-001-T02a:green", extracted_at: 2026-08-08T14:35:00Z }
   confidence: medium
 body: |
   # Redis TTL Must Propagate to the SET Command
@@ -153,13 +165,14 @@ body: |
   (none yet)
 
   ## Source
-  2026-07-10-001-review#F02 (redis TTL test blocked at Green gate)
+  2026-07-10-001-review#2026-07-10-001-T02a:green (redis TTL test blocked at Green gate)
 source-candidate:
   title: "Redis TTL must be propagated to the SET command, not just the key"
   domain: data-storage
-  source: { type: candidate, reference: "2026-07-10-001-review#F02" }
+  source: { type: candidate, reference: "2026-07-10-001-review#2026-07-10-001-T02a:green" }
   summary: "TTL test failed because SET ... EX must carry the TTL."
   type: gotcha
+durability: { actionable: pass, conclusion-not-event: pass, one-conclusion: pass, evidence: pass, not-derivable: pass, recurs-or-costly: pass }
 inferred: true
 ```
 
@@ -168,5 +181,5 @@ inferred: true
 - Capture is the **allocating phase** for the `learn-id` umbrella (see [id-generation.md](../../id-generation.md)); Refine and Index inherit it unchanged.
 - The `slug` is **proposed** here, not validated — Capture never silently collides; Refine's dedup check resolves any exact/analog match per [dedup-rules.md](../../dedup-rules.md).
 - `inferred: true` (a short description or candidate sourced the draft) is the Capture Smart pause trigger; the user confirms the draft matches intent before Refine runs.
-- The frontmatter's `source.reference` for a candidate points at the Work/Review report + finding id (`<review-id>#<finding-id>`) — the traceability link from the durable entry back to where it was first surfaced.
+- The frontmatter's `source.reference` for a candidate is the candidate key (`<report-id>#<finding-id>`, `<report-id>#<task-id>:<gate>`, or `<report-id>#c<n>`) — the traceability link from the durable entry back to where it was first surfaced, and how a later `/learn <ref>` recognizes the candidate as already captured.
 - Lineage fields are intentionally **absent** at capture — they are set only by Maintain (migration, base-wide merge) or Index (a Refine-time merge), per [entry-schema.md](../../entry-schema.md).

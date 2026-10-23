@@ -1,0 +1,16 @@
+{
+  "skills": [
+    "learn"
+  ],
+  "query": "/learn decision Use pnpm over npm when both lockfiles exist, and fall back to npm only when packageManager says npm",
+  "files": [
+    "fixtures/store-good (as docs/learn)"
+  ],
+  "mode": "smart",
+  "expected_behavior": [
+    "Refine reports dup-status exact against use-pnpm-when-both-lockfiles-exist and pauses with update-existing vs new-slug",
+    "On update-existing the written file keeps created_at 2026-08-08T14:30:00Z and its related and migrated-from fields, and the new draft's source reference is appended to also-seen-in when it differs",
+    "The index keeps exactly one record for the slug and Last updated is re-stamped",
+    "check-learn.py prints PASS"
+  ]
+}

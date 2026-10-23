@@ -12,14 +12,14 @@ Authoritative reference for the **Maintain** phase (Step 1, one-time, self-gatin
 
 ## Core Principle
 
-> **One-time, self-gating, idempotent, lineage-preserving.** The migration runs once (the `.migrated` marker and slug-set parity prevent re-runs); it is idempotent (re-invoking is a no-op); it preserves lineage (each migrated entry records its `migrated-from: docs/learnings/<type>/<file>.md`, so the old path knowledge is not lost — the `path-convention-split` gotcha is the model: a migrated entry carries both the old and new path knowledge, never just the new). The legacy store stays on disk, read-only and superseded, until the user explicitly prunes it (a destructive, confirm-each step in Maintain, never part of the migration itself).
+> **One-time, self-gating, idempotent, lineage-preserving.** The migration runs once (the `.migrated` marker and slug-set parity prevent re-runs); it is idempotent (re-invoking is a no-op); it preserves lineage (each migrated entry records its `migrated-from: docs/learnings/<type>/<file>.md`, so the old path knowledge is not lost — a migrated entry carries both the old and new path knowledge, never just the new). The legacy store stays on disk, read-only and superseded, until the user explicitly prunes it (a destructive, confirm-each step in Maintain, never part of the migration itself).
 
 ## Trigger & Self-Gate
 
 Maintain runs the migration only when **all** are true:
 
 1. `docs/learnings/` exists and is non-empty (legacy store present).
-2. `docs/learn/` does not yet have the `.migrated` marker **and** the on-disk slug-set in `docs/learn/` does **not** match the legacy slug-set (par·ity detection — migration is already complete iff the canonical store has, for every legacy file, a matching slug).
+2. `docs/learn/` does not yet have the `.migrated` marker **and** the on-disk slug-set in `docs/learn/` does **not** match the legacy slug-set (parity detection — migration is already complete iff the canonical store has, for every legacy file, a matching slug).
 
 Otherwise: record `migration: no-op (already migrated)` and skip to Maintain Step 2 (base-wide dedup). A subsequent `/learn maintain` invocation is a clean no-op.
 
@@ -48,6 +48,8 @@ Otherwise: record `migration: no-op (already migrated)` and skip to Maintain Ste
          * confidence   = medium
          * source       = { type: commit, reference: <sha>, extracted_at: <legacy created_at or date> }
          * The legacy `title` becomes the body `# <Title>` heading.
+         * summary     = the legacy summary if present, else the first sentence of the body's
+                         Problem/Convention section; noted as derived, never invented.
          * Mark inferred numerics with a comment/note: `# inferred from legacy severity:important` so
            the inference is explicit, not silent.
    1.4 Rewrite cross-references (the entry's body + its related links):
@@ -76,7 +78,7 @@ Every migrated entry carries:
 - `migrated-from: docs/learnings/<type>/<original-filename>.md` — the old path, so a reader tracking an old `docs/learnings/...` reference in a commit, a doc, or another entry's `related` link can resolve it to the canonical file.
 - The **rewritten cross-references** — any `docs/learnings/...` link in the body becomes `docs/learn/...`, but the link's old form is not erased from the project's history: it is in git, and the `migrated-from` field is the in-file breadcrumb.
 
-This is the deliberate avoid-the-gotcha move: the [path-convention-split](../../../docs/learn/gotcha/2026-08-07-path-convention-split-silently-noops.md) trap is that a convention change silently no-ops. The migration prevents the no-op by (a) recording the old path on every entry, (b) rewriting links so readers land on the new path, and (c) keeping the legacy store on disk so nothing is destroyed mid-migration. The old path knowledge and the new path knowledge **both** live in the canonical entry.
+This is the deliberate avoid-the-trap move: a path-convention change silently no-ops when old references keep pointing at the old location. The migration prevents the no-op by (a) recording the old path on every entry, (b) rewriting links so readers land on the new path, and (c) keeping the legacy store on disk so nothing is destroyed mid-migration. The old path knowledge and the new path knowledge **both** live in the canonical entry.
 
 ## Slug Derivation Rules (authoritative)
 
@@ -109,9 +111,9 @@ Slug-set parity is computed by listing the canonical files' slugs and the legacy
 
 ## Smart Pause Triggers
 
-The migration rewrite is destructive (it rewrites 28 entry paths + every cross-reference). It pauses in Smart mode and **always surfaces in Autopilot** (per [interaction-mode-propagation.md](interaction-mode-propagation.md) — destructive never silent):
+The migration rewrite is destructive (it rewrites every legacy entry path and cross-reference). It pauses in Smart mode and **always surfaces in Autopilot** (per [interaction-mode-propagation.md](interaction-mode-propagation.md) — destructive never silent):
 
-- The migration will run for the first time (rewrite 28 entries + cross-refs) — confirm before starting.
+- The migration will run for the first time (say how many legacy entries it will rewrite) — confirm before starting.
 - A slug collision was detected during derivation (decide the qualifier; likely an analog for Maintain Step 2).
 - An inferred numeric score from a legacy `severity` value is being recorded (the user may want to override the inference).
 

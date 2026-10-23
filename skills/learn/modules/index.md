@@ -22,7 +22,7 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
 2. `interactionMode` is present and valid (default to `smart` if missing; log warning).
 3. Cross-phase consistency: `learn-id`, `capture-id`, `refine-id` match the upstream artifacts; `interactionMode` is identical.
 
-If Refine recorded a `resolution: merge-into-canonical`, Index additionally de-indexes the analog (Step 3) — it does **not** delete the analog's file (lineage preserved per [dedup-rules.md](../references/dedup-rules.md)).
+If Refine recorded a `resolution: merge-into-canonical`, Index rewrites the canonical entry (Step 2) and updates its index record; no analog exists to de-index.
 
 ### Step 1: Derive the Index-Record Applicability Enum
 
@@ -39,9 +39,9 @@ Record the derived enum as `index-applicability` for the index-record. The per-e
 ### Step 2: Write the Entry File (upsert on slug)
 
 1. Resolve the path `docs/learn/<type>/<slug>.md`. Create `docs/learn/<type>/` if missing.
-2. **Upsert** — if the file exists (re-author / update-existing), overwrite it in place; if not, create it. Both operations key on `slug` (idempotent — never a duplicate file).
+2. **Upsert** — if the file exists (re-author / update-existing), overwrite it in place; if not, create it. Both operations key on `slug` (idempotent — never a duplicate file). A `merge-into-canonical` resolution rewrites the **canonical** (existing) entry with the folded body, tags and `also-seen-in`; it writes no new file and de-indexes nothing.
 3. Write the entry as markdown: the frontmatter block, then the per-type body from the Refined Entry.
-4. For a merge resolution: **do not** delete the analog file. Instead, write the analog's `superseded-by: <canonical-slug>` note into the analog's frontmatter (a non-destructive lineage record); the analog's index record is removed in Step 3.
+4. Never delete a file and never write `superseded-by` here; both belong to Maintain's base-wide merge.
 
 ### Step 3: Upsert docs/learn/index.md (canonical format)
 
@@ -50,8 +50,10 @@ Update `docs/learn/index.md` per the authoritative **[index-format.md](../refere
 1. **YAML `entries:` block** — upsert (by `filename`) the one record for this entry: `filename: docs/learn/<type>/<slug>.md`, `domain`, `tags`, `applicability: <derived enum>`, `summary`. If the entry already exists in the block (update-existing), overwrite that record in place; never append a second.
 2. **By Category table** — upsert (by `slug`) the row under the entry's `<type>` section (`### Decision` / `### Pattern` / `### Gotcha` / `### Workflow`). Update the per-type count heading (`### Gotcha (N)`).
 3. **By Domain table** — upsert (by `slug`) the entry under its primary `domain` bullet.
-4. **Merge** — on a `merge-into-canonical` resolution: **remove** the analog's record from the YAML block and both tables (it is de-indexed, not deleted), and ensure the canonical entry's record now reflects the merged content.
-5. **Totals coherence** — the per-type count headings must match the `entries:` block length per type, and the YAML `entries:` block length must match the on-disk entry-file count in `docs/learn/`. If a prior index drifted, Index **reconciles** it (the file tree is the source of truth) — this is a non-destructive reconcile, not a rebuild (rebuild is Maintain).
+4. **Merge** — on a `merge-into-canonical` resolution: the canonical entry's record is upserted like any other (its `tags` and `summary` may have changed); nothing is removed.
+5. **Stamp** `**Last updated:**` with the current time.
+6. **Totals coherence** — the per-type count headings must match the `entries:` block length per type, and the YAML `entries:` block length must match the count of **active** entry files in `docs/learn/` (those without `status: obsolete` or `superseded-by`). If a prior index drifted, Index **reconciles** it (the file tree is the source of truth) — this is a non-destructive reconcile, not a rebuild (rebuild is Maintain).
+7. **Run the coherence gate** — `python skills/learn/scripts/check-learn.py docs/learn` (adjust the path to where the skill is installed). On `FAIL`, fix exactly what it names and re-run; without Python, check the Validation list in [index-format.md](../references/index-format.md). `index-coherent` is `true` only after a `PASS`.
 
 ### Step 4: Allocate the index-id
 
@@ -63,16 +65,16 @@ Produce an **Index Update** block (as markdown) following the schema in [index-u
 
 - `index-id`, inherited `refine-id`, `capture-id`, `learn-id`, `input-shape`, `interactionMode`
 - `entry-path` (`docs/learn/<type>/<slug>.md`), `slug`, `type`, the derived `index-applicability`
-- `index-action` (`created` / `updated` / `merged`), and (for a merge) the analog's `slug` + the de-index action taken
-- `index-coherent: true` — the YAML length matches the on-disk count, totals are consistent (the orchestrator's quality gate #5)
+- `index-action` (`created` / `updated` / `merged`), and (for a merge) the canonical `slug` and the reference added to its `also-seen-in`
+- `index-coherent: true` — the YAML length matches the active entry-file count and check-learn.py printed PASS, totals are consistent (the orchestrator's quality gate #5)
 - `source-candidate` carried through
 
 ### Step 6: Present, Confirm, and Save
 
 Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these index-specific **Smart pause triggers**:
 
-- `index-action: created` on a destructive first write (overwriting an existing `slug` the user may not expect — confirm before overwriting), or
-- `index-action: merged` (a merge de-indexed an analog — confirm the lineage note and de-index before finalizing), or
+- `index-action: updated` (an existing `slug` is overwritten — the user chose it at Refine, so confirm only if Refine did not ask), or
+- `index-action: merged` (the canonical entry was rewritten with the draft folded in — show the diff of the body and tags and confirm), or
 - Totals were incoherent prior to Index and Index had to reconcile (warn the index drifted; suggest `/learn maintain` for a full rebuild).
 
 - **Detailed:** present the Index Update and ask one question with options *(1) Finalize, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–5 reusing the `index-id`. On **Abort**, stop and inform the Orchestrator.
@@ -86,8 +88,9 @@ Then, **in `detailed` mode only**, save the artifact to `docs/learn/.index/<inde
 - Verify that the Index Update is complete and valid: `index-id`, `refine-id`, `capture-id`, `learn-id`, `input-shape`, `interactionMode`, `entry-path`, `slug`, `type`, `index-applicability`, and `index-action`.
 - Verify that the entry file was written to `docs/learn/<type>/<slug>.md` and the upsert keyed on `slug` (no duplicate file).
 - Verify that `docs/learn/index.md` was upserted in **both** the YAML `entries:` block and the By Category / By Domain tables, per [index-format.md](../references/index-format.md).
-- Verify **index coherence** (orchestrator gate #5): the YAML block length matches the on-disk entry-file count; the per-type count headings match; no duplicate index rows.
-- Verify that a merge **de-indexed** (not deleted) the analog and recorded the `superseded-by` lineage in the analog's file — lineage preserved per [dedup-rules.md](../references/dedup-rules.md).
+- Verify **index coherence** (orchestrator gate #5): the YAML block length matches the active entry-file count; the per-type count headings match; no duplicate index rows.
+- Verify that a merge rewrote the canonical entry (body, tags, `also-seen-in`) and wrote no new file — lineage preserved per [dedup-rules.md](../references/dedup-rules.md).
+- Verify that `check-learn.py` printed `PASS` (or the manual checklist was walked) after the upsert.
 - Verify that the derived `index-applicability` enum was **read from** [index-format.md](../references/index-format.md) (the derivation rule) rather than re-encoded inline.
 - Verify that, in `detailed` mode, the artifact is saved to `docs/learn/.index/<index-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 

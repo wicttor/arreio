@@ -1,0 +1,16 @@
+{
+  "skills": [
+    "learn"
+  ],
+  "query": "/learn gotcha Redis TTL lost when EXPIRE is used instead of SET EX; evidence is commit 4c1b7de",
+  "files": [
+    "fixtures/store-good (as docs/learn)"
+  ],
+  "mode": "smart",
+  "expected_behavior": [
+    "Refine reports dup-status analog against redis-ttl-set-vs-expire (same domain, three shared tags, same type, same conclusion) and pauses with merge vs keep-separate",
+    "On merge no new file is written and nothing is de-indexed or marked superseded; the existing entry's body gains the new evidence, its tags are the union capped at 6, and 4c1b7de appears in its also-seen-in",
+    "The index record for redis-ttl-set-vs-expire is upserted and no second record appears",
+    "index-update records index-action merged with new-file-written false, and check-learn.py prints PASS"
+  ]
+}

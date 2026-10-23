@@ -32,16 +32,15 @@ index-applicability: DIRECT | RECOMMENDED | CONTEXTUAL | HISTORICAL | INFORMATIO
 index-action: created | updated | merged      # what Index did
                                               # created: new slug written
                                               # updated: existing slug overwritten (update-existing resolution)
-                                              # merged: merge-into-canonical — analog de-indexed + canonical updated
+                                              # merged: merge-into-canonical — the existing canonical entry rewritten with the draft folded in; no new file
 
 merge:                                        # present ONLY when index-action == merged
-  analog-slug: <the analog being de-indexed>
-  analog-file: "docs/learn/<type>/<analog-slug>.md"
-  analog-deindexed: true                       # its index record + rows removed; file KEPT
-  analog-superseded-note-written: true         # superseded-by + status:obsolete written into the analog's frontmatter
-  canonical-related-updated: true             # analog-slug added to canonical's related list
+  canonical-slug: <the existing entry that was rewritten>
+  also-seen-in-added: "<the draft's source.reference>"   # appended to the canonical's also-seen-in
+  tags-after: [tag-1, ...]                     # the canonical's tags after the union (cap 6)
+  new-file-written: false                      # always false: the draft never becomes a file
 
-index-coherent: true                          # the YAML entries: length == on-disk entry-file count;
+index-coherent: true                          # check-learn.py printed PASS: the YAML entries: length == active entry-file count;
                                               # per-type (N) counts consistent; no duplicate rows; the orchestrator's gate #5
 
 source-candidate: <carried through> | null
@@ -64,11 +63,10 @@ In `detailed` mode only, also save the Index Update Artifact to `docs/learn/.ind
 - **index-applicability:** Required. The **derived** enum, per [index-format.md](../../index-format.md) (not re-encoded inline here; the artifact records the result of applying the derivation rule to the frontmatter's numeric scores).
 - **index-action:** Required. `created` (new slug), `updated` (existing slug overwritten via `update-existing`), or `merged` (`merge-into-canonical` executed).
 - **merge:** Required when `index-action: merged`; absent otherwise. On a merge:
-  - `analog-deindexed: true` — the analog's record was removed from the YAML block + By Category / By Domain tables.
-  - `analog-superseded-note-written: true` — `superseded-by: <canonical-slug>` and `status: obsolete` written into the analog file's frontmatter.
-  - `canonical-related-updated: true` — the analog's `slug` added to the canonical's `related` list.
-  - The analog **file is never deleted** (lineage preservation per [dedup-rules.md](../../dedup-rules.md)).
-- **index-coherent:** Required. `true` — the post-upsert invariants hold (YAML length == on-disk count; per-type counts consistent; no duplicate rows). If `false`, Index reconciled in-place (non-destructive) and flagged it; the orchestrator's quality gate #5 requires `true` to finalize the run.
+  - `also-seen-in-added` — the draft's reference was appended to the canonical entry's `also-seen-in`.
+  - `new-file-written: false` — a Refine-time merge never creates a file and never de-indexes anything.
+  - No file is deleted (lineage preservation per [dedup-rules.md](../../dedup-rules.md)).
+- **index-coherent:** Required. `true` — the post-upsert invariants hold (YAML length == active entry-file count; per-type counts consistent; no duplicate rows). If `false`, Index reconciled in-place (non-destructive) and flagged it; the orchestrator's quality gate #5 requires `true` to finalize the run.
 - **entry-written, index-updated:** Required. `true` on success; `status: failed` would cover a write failure.
 
 ## Example (created — new decision entry)
@@ -93,7 +91,7 @@ entry-written: true
 index-updated: true
 ```
 
-## Example (merged — analog de-indexed, canonical updated, lineage preserved)
+## Example (merged — canonical updated, draft folded in)
 
 ```yaml
 index-id: 2026-08-08-002-index
@@ -104,22 +102,21 @@ input-shape: candidate
 interactionMode: smart
 status: complete
 timestamp: 2026-08-08T14:42:00Z
-entry-path: docs/learn/gotcha/ttl-must-propagate-to-redis-set.md
-slug: ttl-must-propagate-to-redis-set
+entry-path: docs/learn/gotcha/redis-ttl-set-vs-expire.md
+slug: redis-ttl-set-vs-expire
 type: gotcha
 index-applicability: DIRECT                  # current_project=8, general=7 → DIRECT
 index-action: merged
 merge:
-  analog-slug: redis-ttl-set-vs-expire
-  analog-file: docs/learn/gotcha/redis-ttl-set-vs-expire.md
-  analog-deindexed: true
-  analog-superseded-note-written: true
-  canonical-related-updated: true
+  canonical-slug: redis-ttl-set-vs-expire
+  also-seen-in-added: "2026-07-10-001-review#2026-07-10-001-T02a:green"
+  tags-after: [redis, ttl, session-store, caching]
+  new-file-written: false
 index-coherent: true
 source-candidate:
   title: "Redis TTL must be propagated to the SET command"
   domain: data-storage
-  source: { type: candidate, reference: "2026-07-10-001-review#F02" }
+  key: "2026-07-10-001-review#2026-07-10-001-T02a:green"
   summary: "TTL test failed because SET ... EX must carry the TTL."
   type: gotcha
 entry-written: true
@@ -130,6 +127,6 @@ index-updated: true
 
 - Index is the **sole authoring-phase writer** of the entry file and the index; the upsert on `slug` is idempotent (a re-author overwrites, never duplicates).
 - The `index-applicability` enum is **derived** from the frontmatter's numeric scores per [index-format.md](../../index-format.md); the artifact records the **result** of that derivation — it does not re-encode the derivation rule (no second formula).
-- A `merged` action de-indexes the analog **without deleting its file** — the analog carries `superseded-by` + `status: obsolete`, and the canonical's `related` list links the analog's `slug`. The reader can walk either direction. This honors the [dedup-rules.md](../../dedup-rules.md) lineage-preservation rule (the `path-convention-split` gotcha is the model: a merged entry carries both the old and new knowledge, never just the new).
+- A `merged` action rewrites the existing canonical entry only. Base-wide merges of two existing entries (which de-index the analog and keep its file with `superseded-by`) are Maintain's, recorded in the Maintain Log.
 - `index-coherent: true` is the orchestrator's quality gate #5; the Index phase is responsible for leaving the index coherent (the YAML block, the per-type `(N)` counts, and the By Domain bullets are all in lockstep with the on-disk file tree).
 - This artifact is the authoring run's **final** output. The Orchestrator marks the run complete; the durable knowledge entry now lives at `entry-path` and is discoverable via `docs/learn/index.md` (the source-of-truth index Plan/Work/Review search).

@@ -31,6 +31,7 @@ frontmatter:                                   # validated per entry-schema.md; 
   priority: important | normal
   applicability: { current_project: <0-10>, general: <0-10> }
   tags: [tag-1, ..., tag-6]                     # 2-6 tags validated
+  summary: <1-2 sentences>                      # validated: non-empty, <= 240 characters
   created_at: ISO-8601                          # preserved from Capture
   updated_at: ISO-8601                          # stamp of Refine's validation
   source: { type, reference, extracted_at }
@@ -50,10 +51,15 @@ resolution: update-existing | new-slug | merge-into-canonical | keep-separate | 
                                                # chosen by the user per dedup-rules.md; none when dup-status==none
 
 lineage:                                        # set ONLY when resolution == merge-into-canonical
-  analog-slug: <the entry being merged-away>   # the entry Refine matched (matched-slug) when merging
-  canonical-slug: <slug>                        # the canonical slug; same as the entry's slug above
-  analog-kept: true                             # the analog file is KEPT (de-indexed, not deleted) per dedup-rules.md
+  merged-into: <existing canonical slug>        # the existing entry is the canonical one; same as `slug` above
+  also-seen-in-added: <source.reference>        # the draft's reference, appended to the canonical's also-seen-in
   rationale: "<why merge, in one line>"
+
+preserved:                                      # set ONLY for update-existing / revive: carried over from the existing file
+  created_at: ISO-8601
+  related: [<slug>, ...]
+  migrated-from: <path> | null
+  also-seen-in: [<source.reference>, ...]
 
 source-candidate: <carried from Capture> | null
 ```
@@ -70,11 +76,12 @@ In `detailed` mode only, also save the Refined Entry Artifact to `docs/learn/.re
 - **slug:** Required. The **resolved** slug; kebab-case; globally unique (Refine confirmed no exact collision unless `resolution: new-slug`/`update-existing`).
 - **frontmatter:** Required. Every required field validated per [entry-schema.md](../../entry-schema.md); `tags` length 2–6; numeric scores 0–10; `confidence`/`priority` in enums; `created_at` preserved, `updated_at` stamped.
 - **body:** Required. The per-type section template present in full (Refine flagged any missing section as a pause trigger; auto-fill is forbidden).
-- **dup-status:** Required. `exact`, `analogs`, or `none`.
+- **dup-status:** Required. `exact`, `analog`, or `none`.
 - **matched-slug:** Required (= the existing slug) when `dup-status` is `exact` or `analog`; `null` when `none`.
 - **match-evidence:** Required when `dup-status` is `exact` or `analog`; the shared signals (slug match, or domain+tags+type+conclusion overlap) so the user can confirm the match is real.
 - **resolution:** Required. Must be one of `update-existing`, `new-slug`, `merge-into-canonical`, `keep-separate`, `none`; `none` only when `dup-status: none`.
-- **lineage:** Required when `resolution: merge-into-canonical` (`analog-slug`, `canonical-slug`, `analogs-kept: true`, `rationale`); absent otherwise. `analogs-kept: true` is mandatory — Refine may not authorize deletion (the analog is de-indexed, not deleted, per [dedup-rules.md](../../dedup-rules.md)).
+- **lineage:** Required when `resolution: merge-into-canonical` (`merged-into`, `also-seen-in-added`, `rationale`); absent otherwise. No file is created, deleted or de-indexed by a Refine-time merge.
+- **preserved:** Required when `resolution: update-existing` (or a revive of an obsolete entry); absent otherwise.
 - **source-candidate:** Carried through from Capture (setter of the entry's `source.reference` traceability).
 
 ## Example (explicit decision, no duplicate)
@@ -113,7 +120,7 @@ resolution: none
 source-candidate: null
 ```
 
-## Example (analog → merge-into-canonical, lineage preserved)
+## Example (analog → merge-into-canonical, the existing entry is the canonical)
 
 ```yaml
 refine-id: 2026-08-08-002-refine
@@ -124,38 +131,39 @@ interactionMode: smart
 status: complete
 timestamp: 2026-08-08T14:40:00Z
 type: gotcha
-slug: ttl-must-propagate-to-redis-set     # the canonical stays (older entry here)
+slug: redis-ttl-set-vs-expire             # the EXISTING entry's slug; the draft never becomes a file
 frontmatter:
   type: gotcha
-  slug: ttl-must-propagate-to-redis-set
+  slug: redis-ttl-set-vs-expire
   domain: data-storage
   priority: important
   applicability: { current_project: 8, general: 7 }
   tags: [redis, ttl, session-store, caching]
-  created_at: 2026-07-10T00:00:00Z         # preserved (older entry's created_at retained on merge)
+  summary: Pass the TTL on SET ... EX; a separate EXPIRE is lost when the key is overwritten.
+  created_at: 2026-07-10T00:00:00Z         # the existing entry's, preserved
   updated_at: 2026-08-08T14:40:00Z
-  source: { type: candidate, reference: "2026-07-10-001-review#F02", extracted_at: 2026-08-08T14:35:00Z }
+  source: { type: commit, reference: "9f3c2ab", extracted_at: 2026-07-10T00:00:00Z }
+  also-seen-in: ["2026-07-10-001-review#2026-07-10-001-T02a:green"]
   confidence: medium
 body: |
   # Redis TTL Must Propagate to the SET Command
   ## Problem
   ...
-  ## Trap / Solution / Prevention / Source ...
+  ## Trap / Solution / Prevention / Source ...  (the draft's evidence consolidated into the existing sections)
 dup-status: analog
-matched-slug: redis-ttl-set-vs-expire       # the older lower-priority analog
+matched-slug: redis-ttl-set-vs-expire
 match-evidence: |
   same domain (data-storage) + 3 shared tags (redis, ttl, session-store) + same type (gotcha)
-  + same conclusion (SET ... EX must carry the TTL); different slug.
+  + same conclusion (SET ... EX must carry the TTL); different proposed slug.
 resolution: merge-into-canonical
 lineage:
-  analog-slug: redis-ttl-set-vs-expire
-  canonical-slug: ttl-must-propagate-to-redis-set
-  analog-kept: true
-  rationale: "Same gotcha, same prevention; redis-ttl-set-vs-expire folds into the canonical with lineage."
+  merged-into: redis-ttl-set-vs-expire
+  also-seen-in-added: "2026-07-10-001-review#2026-07-10-001-T02a:green"
+  rationale: "Same gotcha, same prevention; the new evidence is folded into the existing entry."
 source-candidate:
+  key: "2026-07-10-001-review#2026-07-10-001-T02a:green"
   title: "Redis TTL must be propagated to the SET command"
   domain: data-storage
-  source: { type: candidate, reference: "2026-07-10-001-review#F02" }
   summary: "TTL test failed because SET ... EX must carry the TTL."
   type: gotcha
 ```
@@ -164,5 +172,5 @@ source-candidate:
 
 - Refine is the **validator + conflict resolver**; it does not write the entry file (Index does) and does not coerce frontmatter silently (a wrong field surfaces as a pause trigger, never a silent fix).
 - The `slug` here is the **resolved** slug — it may differ from Capture's proposal only when a conflict chose `new-slug` (Capture proposed → existing collision → user renamed) or `update-existing` (Capture proposed → existing match → keep existing slug).
-- The `lineage` block is the **single** place the merge's bookkeeping lives at Refine-time; Index reads it to perform the de-index + `superseded-by` write + `related` link on the canonical. `analogs-kept: true` is mandatory — Refine may not authorize deletion (de-index only, per [dedup-rules.md](../../dedup-rules.md)).
-- `created_at` on a merge is the **older** entry's timestamp (the canonical's, often the existing entry's); `updated_at` stamps the merge. This preserves chronology across the absorption.
+- The `lineage` block is the **single** place the merge's bookkeeping lives at Refine-time; Index reads it to rewrite the canonical entry with the folded body, tags and `also-seen-in`. Refine may not authorize deletion or de-indexing; those belong to Maintain (per [dedup-rules.md](../../dedup-rules.md)).
+- `created_at` on a merge or an `update-existing` is the **existing** entry's timestamp (see `preserved`); `updated_at` stamps the change. This preserves chronology across the absorption.

@@ -15,7 +15,7 @@ Orchestrates the project's durable knowledge base. Authors durable **knowledge e
 This skill is invoked by prompting:
 
 - `/learn <type> <text>` — **explicit author.** `<type>` is one of `decision` / `pattern` / `gotcha` / `workflow`; `<text>` is the content (prose, a reference to a file/commit, or a short description to expand). Runs the Capture → Refine → Index pipeline and writes one durable entry to `docs/learn/<type>/`.
-- `/learn <candidate-ref>` — **curate a candidate.** `<candidate-ref>` points at a Work `review-id` (the Work Report's `learnings-to-capture` list) or a Review `report-id` (the Review Report's `learnings-to-capture` list). Capture refines each candidate into a durable entry; the user confirms which to author.
+- `/learn <candidate-ref>` — **curate a candidate.** `<candidate-ref>` points at a Work `review-id` (the Work Report's `learnings-to-capture` list), a Review `report-id` (the Review Report's `learnings-to-capture` list), or a `work-id` (every Work and Review Report of that work). Capture tests each candidate for durability, skips those already captured, and refines the rest into entries; the user confirms which to author (Autopilot authors every one that passes).
 - `/learn maintain` — **on-demand maintenance.** Runs the Maintain phase standalone: dedup, refresh, prune stale entries, and (once) migrate the legacy `docs/learnings/` store into the canonical `docs/learn/` store. Does not author new entries.
 - `/learn` (no args) — ask: "What would you like to capture? Provide a type (decision/pattern/gotcha/workflow) and text, a candidate ref, or `maintain`."
 
@@ -30,7 +30,7 @@ Before starting the workflow, ask the user to choose an interaction mode:
 
 - **Detailed** — Confirm at each phase transition and before each destructive write (entry creation, index rewrite, prune). Maximum control. Best for authoritative decisions or sensitive maintenance.
 - **Autopilot** — All phases run automatically; only the final outcome is reported. Fastest. Best for routine, well-scoped entries.
-- **Smart** — Phases run automatically; pause only on destructive or ambiguous operations (a likely-duplicate detected at Refine; a prune that would delete an entry at Maintain; a migration that would rewrite 28 legacy paths).
+- **Smart** — Phases run automatically; pause only on destructive or ambiguous operations (a likely-duplicate detected at Refine; a section the input does not support; a prune that would delete an entry at Maintain; a migration that would rewrite the legacy paths).
 
 Store in the context object:
 
@@ -51,7 +51,7 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 - Receives a context object from the user, a saved prompt, a document, or a combination.
 - **Three input shapes:**
   1. **Explicit** — `/learn <type> <text>`. Capture drafts an entry of the named type from the text. The canonical path for authoring a decision/pattern/gotcha/workflow.
-  2. **Candidate** — `/learn <candidate-ref>`. The ref resolves to a Work `review-id` (`docs/plans/.work/.review/<id>.md`) or a Review `report-id` (`docs/review/.report/<id>.md`); Capture reads its `learnings-to-capture` list and, for each candidate, drafts the corresponding entry. The user confirms which candidates become durable entries.
+  2. **Candidate** — `/learn <candidate-ref>`. The ref resolves to a Work `review-id` (`docs/plans/.work/.review/<id>.md`), a Review `report-id` (`docs/review/.report/<id>.md`), or a `work-id` (all reports of that work); Capture reads the `learnings-to-capture` lists, skips candidates already captured (matched on the candidate key), declines those that fail the durability test, and drafts an entry for each remaining one the user (or Autopilot) picks.
   3. **Maintain** — `/learn maintain`. Runs only the Maintain phase (dedup / refresh / prune); bypasses Capture → Refine → Index (no new entry is authored).
 - **If no context is provided**, ask: "What would you like to capture? Provide a type and text, a candidate ref, or `maintain`."
 - **Unified key:** downstream phases key off a `learn-id` umbrella (`YYYY-MM-DD-NNN`), allocated by Capture. For Maintain-only runs, Maintain allocates its own `maintain-id` (no `learn-id` umbrella — there is no newly authored entry).
@@ -61,10 +61,10 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 
 Before starting the learn pipeline, the orchestrator verifies that required folders exist:
 
-- `docs/learn/` — must exist for writing entries and the index; the seed `docs/learn/index.md` must exist (empty `entries:` block is valid — the legacy migration populates 28 entries)
+- `docs/learn/` — must exist for writing entries and the index; the seed `docs/learn/index.md` must exist (the empty `entries: []` seed in [index-format.md](references/index-format.md#empty-index-seed) is valid)
 - `docs/learn/.capture/`, `docs/learn/.refine/`, `docs/learn/.index/`, `docs/learn/.maintain/` — **`detailed` mode only**, for saving the phase artifacts; do not create them in `smart`/`autopilot`
 
-**Self-Healing:** If any are missing, the orchestrator automatically creates them (`mkdir -p`), and seeds `docs/learn/index.md` from the [index-format.md](references/index-format.md) template. This allows the Learn skill to run even if `arreio-init` wasn't explicitly run.
+**Self-Healing:** If any are missing, the orchestrator automatically creates them (`mkdir -p`), and seeds `docs/learn/index.md` from the [empty index seed](references/index-format.md#empty-index-seed). This allows the Learn skill to run even if `arreio-init` wasn't explicitly run.
 
 For **explicit** input, verify `<type>` is one of the four; if not, ask to pick from the four. For **candidate** input, verify the ref resolves to a non-empty `learnings-to-capture` list; if the list is empty, inform the user (no candidates to curate). For **maintain** input, verify `docs/learn/` exists; if only the legacy `docs/learnings/` exists, the migration runs first as part of Maintain.
 
@@ -86,8 +86,8 @@ Between phases, the orchestrator validates the output artifact before passing it
 1. **Schema validation** — required fields present and well-formed (see [error-handling.md](references/error-handling.md) for the per-type field list).
 2. **Cross-phase consistency** — IDs (`learn-id`, `capture-id`, `refine-id`, `index-id`, `maintain-id`) match the upstream artifacts; `interactionMode` is identical across artifacts.
 3. **Status check** — the artifact's `status` is `complete` (not `pending` or `failed`).
-4. **Entry coherence (after Refine)** — the candidate entry has a valid `type` (one of the four), a unique `slug`, and all required frontmatter fields (`domain`, `tags`, `applicability`, `summary`); the per-entry frontmatter and the index-record shape agree with [entry-schema.md](references/entry-schema.md); no exact duplicate was detected per [dedup-rules.md](references/dedup-rules.md).
-5. **Index idempotency (after Index)** — `docs/learn/index.md` was updated by upserting on the entry's `slug` (YAML block entry + By Category / By Domain rows); the YAML `entries:` length matches the on-disk entry-file count; no duplicate index rows; totals (Decision/Pattern/Gotcha/Workflow counts) are consistent.
+4. **Entry coherence (after Refine)** — the candidate entry has a valid `type` (one of the four), a unique `slug`, and all required frontmatter fields (`domain`, `tags`, `applicability`, `summary`); the per-entry frontmatter and the index-record shape agree with [entry-schema.md](references/entry-schema.md); the draft passes [entry-discipline.md](references/entry-discipline.md) (durability, evidence in the fixed format, nothing invented); no exact duplicate was left unresolved per [dedup-rules.md](references/dedup-rules.md).
+5. **Index idempotency (after Index)** — `docs/learn/index.md` was updated by upserting on the entry's `slug` (YAML block entry + By Category / By Domain rows); the YAML `entries:` length matches the active entry-file count; no duplicate index rows; totals (Decision/Pattern/Gotcha/Workflow counts) are consistent. `scripts/check-learn.py` prints `PASS` (manual checklist in [index-format.md](references/index-format.md#coherence-gate) without Python).
 
 If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).
 
@@ -97,7 +97,7 @@ The **Index phase** is the skill's only index writer for authored entries; the *
 
 | Phase    | Registers To                       | Update                                                                                                       |
 | -------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Index    | `docs/learn/<type>/<slug>.md` + `docs/learn/index.md` | Write the entry file; upsert the YAML `entries:` block record **and** the By Category / By Domain markdown rows, keyed on `slug`. Idempotent on `slug`. |
+| Index    | `docs/learn/<type>/<slug>.md` + `docs/learn/index.md` | Write the entry file (or rewrite the canonical entry on a merge); upsert the YAML `entries:` block record **and** the By Category / By Domain markdown rows, keyed on `slug`. Idempotent on `slug`. |
 | Maintain | `docs/learn/index.md`              | Rebuild the index from the on-disk file tree (full reconcile): re-scan `docs/learn/<type>/*.md`, regenerate the YAML block + tables, and (once) migrate legacy `docs/learnings/` entries. Idempotent. |
 
 **Idempotency rule:** re-authoring the same decision upserts on `slug` (overwrites the entry file and its index record, never duplicates). Refine rejects an exact duplicate (same `slug`) and asks to either update the existing entry or pick a new slug — never silently two entries (per [dedup-rules.md](references/dedup-rules.md)).
@@ -106,7 +106,8 @@ The **Index phase** is the skill's only index writer for authored entries; the *
 
 - **Entry file:** Saved to `docs/learn/<type>/<slug>.md` with the [entry-schema.md](references/entry-schema.md) frontmatter (`type`, `domain`, `tags`, `applicability`, `summary`, plus `created_at`/`updated_at`, `source`, `confidence`, and `related`).
 - **Index:** `docs/learn/index.md` updated — a YAML `entries:` block (the `filename` / `domain` / `tags` / `applicability` / `summary` record per entry — the **read contract** that Plan/Work/Review's [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md) parses) plus the human-readable By Category / By Domain tables.
-- **Maintain Log (if `/learn maintain`, `detailed` mode only):** Saved to `docs/learn/.maintain/<maintain-id>.md`, recording the dedup/refresh/prune operations performed and any migration applied.
+- **Maintain Log (if `/learn maintain`, `detailed` mode only):** Saved to `docs/learn/.maintain/<maintain-id>.md`, recording the dedup/refresh/prune operations performed, stale references flagged, and any migration applied.
+- **Closing line (every mode):** one line per entry or candidate: `authored <path>`, `merged into <slug>`, or `declined <code>` (codes in [entry-discipline.md](references/entry-discipline.md#reasons-to-decline-record-do-not-write)). A run that authors nothing is a successful run.
 - **Not produced:** This skill produces **no session log, no event transcript, no "what we did."** Only durable entries and the index.
 
 ## References
@@ -122,6 +123,8 @@ The orchestrator and phase modules share these reference files:
 | [dedup-rules.md](references/dedup-rules.md)                                     | Refine + Maintain (duplicate detection, merge, lineage preservation) |
 | [index-format.md](references/index-format.md)                                   | Index (the canonical `docs/learn/index.md` format — YAML block + tables) |
 | [migration-bootstrap.md](references/migration-bootstrap.md)                     | Maintain (one-time `docs/learnings/` → `docs/learn/` migration) |
+| [entry-discipline.md](references/entry-discipline.md)                           | Capture + Refine (what may become an entry: durability test, evidence, scoring rubrics, do-not-invent, decline codes) |
+| [scripts/check-learn.py](scripts/check-learn.py)                                | Index + Maintain (coherence gate over `docs/learn/`; Python 3, standard library only) |
 
 Artifact templates live in [references/templates/artifacts/](references/templates/artifacts/):
 
@@ -135,7 +138,7 @@ Artifact templates live in [references/templates/artifacts/](references/template
 
 ### Write side vs read side (single source of truth)
 
-> The Learn skill **owns the write side** — the per-entry frontmatter schema ([entry-schema.md](references/entry-schema.md)) and the `docs/learn/index.md` format ([index-format.md](references/index-format.md)). The Plan skill **owns the read side** — the keyword/relevance search in [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md), reused cross-skill by Work and Review. The two contracts share the **index-record shape** (`filename`, `domain`, `tags`, `applicability`, `summary` + the `applicability` enum). Learn **guarantees** its index satisfies that shape; it does **not** re-encode the search algorithm (honoring the secondary-spec-contradicts-authoritative-matrix gotcha — one algorithm lives in Plan's gate-logic, one schema lives here; see `docs/learn/gotcha/2026-08-07-secondary-spec-contradicts-authoritative-matrix.md` post-migration).
+> The Learn skill **owns the write side** — the per-entry frontmatter schema ([entry-schema.md](references/entry-schema.md)) and the `docs/learn/index.md` format ([index-format.md](references/index-format.md)). The Plan skill **owns the read side** — the keyword/relevance search in [learnings-gate-logic.md](../plan/references/learnings-gate-logic.md), reused cross-skill by Work and Review. The two contracts share the **index-record shape** (`filename`, `domain`, `tags`, `applicability`, `summary` + the `applicability` enum). Learn **guarantees** its index satisfies that shape; it does **not** re-encode the search algorithm (one algorithm lives in Plan's gate-logic, one schema lives here, so the two can never contradict each other).
 
 ## Execution Rules
 
@@ -152,9 +155,10 @@ Follow these literally; they exist to keep runs consistent across agents.
 
 - **Source of Truth, Not Memory:** `docs/learn/` is the project's durable, authoritative knowledge base. Plan/Work/Review search it; this skill authors and maintains it. Not a session memory, not an event log.
 - **Store Decisions, Not Logs; Knowledge, Not Sessions:** Every entry is a conclusion a future skill needs — a decision, a confirmed pattern, a recurring gotcha, or a workflow convention. Never an ephemeral "what we did this session."
+- **Evidence Over Assertion:** An entry cites where its conclusion was confirmed, and fills a section only from that evidence or the user's answer. It never carries a guess, a secret, or a retelling of a session. Declining an entry is a valid, reported outcome.
 - **One Entry per Conclusion; Four Types:** `decision` (authoritative choices), `pattern` (confirmed, reusable), `gotcha` (recurring traps + prevention), `workflow` (conventions). One entry carries one conclusion.
 - **Idempotent Writes:** Authoring a known `slug` upserts the entry file and its index record — never duplicates. Maintain rebuilds the index from the file tree and is idempotent. Re-running a normal `/learn` over the same content merges, it does not pile up.
-- **Dedup Welcomed, Lineage Preserved:** Decisions don't duplicate, but analogs exist; dedup merges an analog into the canonical entry and records the merge (the path-convention-split entry is the model — a migrated entry carries both the old and new path knowledge, not just the new; see `docs/learn/gotcha/2026-08-07-path-convention-split-silently-noops.md` post-migration).
+- **Dedup Welcomed, Lineage Preserved:** Decisions don't duplicate, but analogs exist; dedup merges an analog into the canonical entry and records the merge (a migrated entry carries both the old and new path knowledge, not just the new).
 - **Write Side / Read Side Split:** Learn owns the entry schema and the index format; Plan owns the search algorithm. Both agree on the index-record shape. Never re-encode the other side's logic inline.
 - **Lean Persistence:** Phase artifacts hit disk only in `detailed` mode; `smart`/`autopilot` pass them in context to save tokens and time.
 - **Transparent Artifacts:** Each phase produces an explicit output artifact for the next phase.

@@ -1,0 +1,14 @@
+{
+  "skills": [
+    "learn"
+  ],
+  "query": "/learn gotcha the build sometimes fails because of the cache",
+  "files": [],
+  "mode": "smart",
+  "expected_behavior": [
+    "Capture does not write a Trap, Solution or Prevention from the one-line text; it asks one question per missing section and offers 'leave the entry out'",
+    "Asked for evidence, and given none, the run stops with a no-evidence decline and writes no file and no index record",
+    "When the user supplies a concrete cache path and a fix, source.type is user with the user's own words as the reference, and applicability/confidence follow the rubric in entry-discipline.md",
+    "No entry contains an absolute path, a secret, or the words 'this session'"
+  ]
+}

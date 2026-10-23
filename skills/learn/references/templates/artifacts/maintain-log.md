@@ -37,6 +37,9 @@ refresh:
   normalized-count: <N>                     # entries with non-destructive fixes applied (priority default, casing, updated_at)
   flagged-for-review-count: <N>             # entries with destructive changes needed (field-rewrite, missing sections) — NOT auto-applied
   flagged-entries: [ "<slug>", ... ]
+  stale-references:                         # read-only: repository paths an entry cites that no longer exist; never auto-edited or pruned
+    - { slug: <slug>, path: "<repo-relative path>" }
+    []
 
 prune:                                      # each prune was explicitly confirmed (destructive never silent, even in Autopilot)
   - slug: <slug>
@@ -49,7 +52,7 @@ rebuild:
   entries-indexed: <N>                      # the count of on-disk non-de-indexed entries in the rebuilt index
   coherence-fixes-applied: <N>              # any (YAML length vs file count) drift reconciled (should be 0 on a clean store)
 
-index-coherent: true                        # the rebuilt YAML entries: length == on-disk entry-file count;
+index-coherent: true                        # check-learn.py printed PASS: the rebuilt YAML entries: length == active entry-file count;
                                            # per-type (N) counts consistent; no duplicate rows; the orchestrator's gate #5
 
 summary:                                    # a one-line human-readable summary
@@ -65,10 +68,10 @@ In `detailed` mode only, also save the Maintain Log Artifact to `docs/learn/.mai
 - **status:** Required. `complete` (a partial maintain is `failed`; the user re-runs `/learn maintain` — runs are idempotent).
 - **migration:** Required. `ran: false` with `result: "no-op (already migrated)"` (self-gated; the fast path is the `.migrated` marker, the robust path is slug-set parity per [migration-bootstrap.md](../../migration-bootstrap.md)). When `ran: true`: `result: "<N> entries migrated"`, `marker-written: true`. `legacy-store-deleted` is **always false** — the migration never deletes `docs/learnings/` (its removal is a separate prune the user explicitly runs if desired).
 - **merges:** Required (may be `[]`). Each merge has `analog-slug`, `canonical-slug`, `analog-file`, `analog-kept: true`, `analog-superseded-note-written: true`, `canonical-related-updated: true`. **The analog file is never deleted** (lineage preserved per [dedup-rules.md](../../dedup-rules.md)).
-- **refresh:** Required. `normalized-count` (non-destructive fixes; counted), `flagged-for-review-count`, `flagged-entries` (the slug list needing destructive changes — these are **not** auto-applied; the user decides).
+- **refresh:** Required. `normalized-count` (non-destructive fixes; counted), `flagged-for-review-count`, `flagged-entries` (the slug list needing destructive changes — these are **not** auto-applied; the user decides), `stale-references` (may be `[]`; entries citing repository paths that no longer exist — only reported).
 - **prune:** Required (may be `[]`). Each prune has `slug`, `action` (`deleted` or `de-indexed`), and a `reason`. Each prune was **explicitly confirmed** by the user (destructive never silent, even in Autopilot). A deleted entry's file is gone; a de-indexed entry's file is kept with `status: obsolete`.
 - **rebuild:** Required. `ran: true`, `entries-indexed: <N>` (the count of non-de-indexed on-disk entries), `coherence-fixes-applied: <N>` (should be 0 on a clean store; the rebuild reconciles any prior drift).
-- **index-coherent:** Required. `true` — the orchestrator's quality gate #5; the rebuilt `docs/learn/index.md` YAML block length matches the on-disk entry-file count, per-type `(N)` counts are consistent, and no duplicate rows.
+- **index-coherent:** Required. `true` — the orchestrator's quality gate #5; the rebuilt `docs/learn/index.md` YAML block length matches the active entry-file count (`check-learn.py` printed `PASS`), per-type `(N)` counts are consistent, and no duplicate rows.
 - **summary:** Required. A one-line human-readable record of what Maintain did.
 
 ## Example (first-run maintain after the legacy store exists — migration + a merge + a prune)
@@ -94,6 +97,8 @@ refresh:
   normalized-count: 14                       # the older-layout pattern/workflow entries normalized to the canonical schema
   flagged-for-review-count: 2
   flagged-entries: [ cross-phase-id-chaining-2026-07-04, capability-described-not-tool-named-2026-08-07 ]
+  stale-references:
+    - { slug: cross-phase-id-chaining-2026-07-04, path: "skills/plan/modules/old-phase.md" }
 prune:
   - slug: deprecated-skill-format-2026-06-01
     action: de-indexed                       # the recommended default — file kept, status:obsolete, index record removed
@@ -123,6 +128,7 @@ refresh:
   normalized-count: 0
   flagged-for-review-count: 0
   flagged-entries: []
+  stale-references: []
 prune: []
 rebuild:
   ran: true

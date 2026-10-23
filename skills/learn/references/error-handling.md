@@ -75,7 +75,9 @@ Only applies to the Capture phase (Step 0) when resolving a Learn Input Artifact
 | All three input shapes empty or ambiguous           | Ask: "What would you like to capture? Type + text, candidate ref, or `maintain`." | No         |
 | Explicit `<type>` not one of the four                | Ask the user to pick from the four                          | No         |
 | Explicit `<text>` is a bare ref that cannot be read (file/commit) | Ask the user to supply the decision in prose         | No         |
-| Candidate `ref` does not resolve to a report file    | Ask the user to pick a valid Work `review-id` / Review `report-id` | No         |
+| Candidate `ref` does not resolve (a Work `review-id`, a Review `report-id`, or a `work-id`) | Ask the user to pick a valid ref; list the reports found under `docs/plans/.work/.review/` and `docs/review/.report/` | No         |
+| Candidate `ref` is a `work-id` that matches reports of both kinds, or several Work Reports | Use all of them; candidate keys keep the report id so they stay distinct | No         |
+| Every candidate is `already-captured` or declined    | Report each with its code; write nothing; this is a successful run | No         |
 | Candidate report's `learnings-to-capture` list is empty | Inform the user (no candidates to curate); stop       | No         |
 | Maintain requested but `docs/learn/` and `docs/learnings/` are both absent | Inform the user; the store must exist (or legacy) before a maintain | No |
 
@@ -108,11 +110,16 @@ Errors related to `interactionMode` propagation.
 | Trigger                                              | Recovery Action                                                    | Terminate? |
 | ---------------------------------------------------- | ------------------------------------------------------------------ | ---------- |
 | Refine: a required body section is missing            | Ask the user to add it (never auto-fill silently)                  | No         |
+| Refine: the draft fails the durability test or has no evidence | Decline with the code from [entry-discipline.md](entry-discipline.md); write nothing | No |
+| Refine: `summary` missing or over 240 characters      | Ask the user for a replacement; never index an empty summary       | No         |
+| Refine: exact `slug` match is an `obsolete` entry     | Offer revive vs new-slug (see [dedup-rules.md](dedup-rules.md))     | No         |
+| Index: `check-learn.py` reports errors after the upsert | Fix exactly what it names (the file tree is the truth), re-run; if it still fails, mark the artifact `failed` and tell the user | Yes, after 1 retry |
 | Refine: a frontmatter field has a wrong type/value    | Surface the field, suggest the fix, ask the user; never coerce      | No         |
 | Refine: exact `slug` found (a re-author)              | Smart pause: update-existing vs new-slug; never silently two       | No         |
 | Index: `index-coherent: false` after the upsert       | Reconcile (the file tree is source of truth); warn; suggest `/learn maintain` | No |
-| Maintain: a prune candidate's canonical reference is live in `related` | Do not prune; it is referenced (lineage would break) — surface to user | No |
+| Maintain: a prune candidate is listed in the `related` of an entry other than its own canonical | Do not prune; it is referenced (lineage would break) — surface to user | No |
 | Maintain: rebuild left `index-coherent: false`        | Re-run Step 5 (the rebuild); if still failing, terminate          | Yes, after 1 retry |
+| Maintain: an entry cites a repository path that no longer exists | Flag it as `stale-references` for the user; do not edit or prune it | No         |
 
 ## Recovery Workflow
 

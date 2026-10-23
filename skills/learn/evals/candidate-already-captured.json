@@ -1,0 +1,19 @@
+{
+  "skills": [
+    "learn"
+  ],
+  "query": "/learn 2026-07-10-001",
+  "files": [
+    "fixtures/work-report.md (as docs/plans/.work/.review/2026-07-10-001-review.md)",
+    "fixtures/store-good (as docs/learn)"
+  ],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "The bare work-id resolves to the Work Report (and any Review Report carrying that work-id) without asking for a different ref",
+    "The TTL candidate is reported as declined: already-captured, because its key 2026-07-10-001-review#2026-07-10-001-T02a:green is in redis-ttl-set-vs-expire's also-seen-in; it is not offered or re-authored",
+    "The typo candidate is declined with a durability code (not-durable or one-off) and writes nothing",
+    "The temp-file-and-rename candidate becomes a pattern with source.type candidate and reference 2026-07-10-001-review#2026-07-10-001-T04:green, and Refine reports an analog or exact match with atomic-config-write rather than writing a second entry",
+    "The closing lines name each candidate as authored, merged into <slug>, or declined <code>",
+    "check-learn.py prints PASS on the resulting store"
+  ]
+}

@@ -28,7 +28,7 @@ Run the one-time migration defined canonically in **[migration-bootstrap.md](../
 
 1. **Self-gate:** if `docs/learnings/` does not exist, or `docs/learn/` already contains the migrated entries (detected by a `docs/learn/.migrated` marker or by slug-set parity), record `migration: no-op (already migrated)` and skip to Step 2.
 2. Otherwise: copy each `docs/learnings/<type>/<file>.md` to `docs/learn/<type>/<slug>.md` (slug = normalized from the legacy filename: kebab-case, date kept as suffix when the legacy file used it), rewrite any legacy `docs/learnings/...` cross-references in the entry **and its `related` links** to the canonical `docs/learn/...` paths, then write the `docs/learn/.migrated` marker.
-3. **Lineage preserved:** each migrated entry's frontmatter records `migrated-from: docs/learnings/<type>/<file>.md` so the old path knowledge is not lost (the `path-convention-split` gotcha is the model — a migrated entry carries both the old and new path).
+3. **Lineage preserved:** each migrated entry's frontmatter records `migrated-from: docs/learnings/<type>/<file>.md` so the old path knowledge is not lost (a migrated entry carries both the old and new path).
 4. Record `migration: <N> entries migrated` in the log.
 
 > Maintain does **not** delete `docs/learnings/` after migration. The legacy store stays on disk (read-only, superseded) until the user explicitly removes it — a destructive prune (Step 4) the user confirms. The canonical `docs/learn/` is the source of truth going forward; `docs/learnings/` is vestigial.
@@ -37,7 +37,7 @@ Run the one-time migration defined canonically in **[migration-bootstrap.md](../
 
 Apply the analog detection from **[dedup-rules.md](../references/dedup-rules.md)** across **all** entries in `docs/learn/` — not just one (Refine applied it per-entry; Maintain applies it base-wide):
 
-1. Scan all `docs/learn/<type>/*.md`; for each pair of entries with the same `domain` + overlapping `tags` + the same decision/pattern/gotcha/workflow conclusion, flag an analog pair.
+1. Scan the **active** entries of `docs/learn/<type>/*.md`, bucketed by `type` + `domain` (compare pairs only inside a bucket); for each pair with ≥2 overlapping `tags` and the same conclusion, flag an analog pair.
 2. For each analog pair, propose a **merge into canonical** (pick the canonical `slug` — prefer the older/higher-priority entry; the analog carries `superseded-by`).
 3. Confirm each merge with the user (a destructive dedup Smart pause trigger — Step 7); on confirmation, fold the analog's evidence into the canonical entry, write `superseded-by: <canonical-slug>` into the analog file (de-index, keep file), and record the lineage link in the canonical entry's `related`.
 4. Record each merge in the log (`merge: <analog-slug> → <canonical-slug>`).
@@ -47,15 +47,16 @@ Apply the analog detection from **[dedup-rules.md](../references/dedup-rules.md)
 Re-validate every entry's frontmatter against the current **[entry-schema.md](../references/entry-schema.md)** — the schema may have evolved since the entry was written:
 
 1. For each entry: check every required field is present and well-typed; check the per-type body sections are present.
-2. **Non-destructive fixes** allowed without confirmation: add a missing default (`priority: normal`, `confidence: medium`), normalize casing (`applicability` enum), stamp `updated_at` if any field was normalized.
+2. **Non-destructive fixes** allowed without confirmation: add a missing default (`priority: normal`, `confidence: medium`), derive a missing `summary` from the body (noted as derived), normalize casing (`applicability` enum), stamp `updated_at` if any field was normalized.
 3. **Destructive changes** (rewriting a field's value, deleting a section) require confirmation — these are flagged, not auto-applied. The user decides.
-4. Record `refresh: <N> entries normalized, <M> entries flagged for review`.
+4. **Staleness check (read-only).** Collect the repository-relative paths an entry cites in its `Application`, `Example`, `How` and `Source` sections; list those that no longer exist in the repository as `stale-references: [<slug>: <path>]`. Staleness is only flagged: the entry is not edited or pruned here; the user decides (update it with `/learn`, de-index it in Step 4, or keep it).
+5. Record `refresh: <N> entries normalized, <M> entries flagged for review, <K> entries with stale references`.
 
 ### Step 4: Prune (destructive, confirm each)
 
 Remove obsolete entries. **Obsolescence is explicit, never inferred silently:**
 
-1. An entry is **obsolete** iff: the user marks it obsolete, **or** it is `superseded-by` another entry **and** no other entry references it in `related` (a fully-absorbed analog).
+1. An entry is **obsolete** iff: the user marks it obsolete (a stale-reference flag is a prompt to ask, not a reason), **or** it is `superseded-by` another entry **and** no entry other than that canonical lists it in `related` (a fully-absorbed analog; the canonical's own `related` link is the lineage and does not block).
 2. For each prune candidate, ask the user one question: keep (de-index only — the recommended default) **or** delete the file (truly destructive). Never delete without explicit confirmation.
 3. On **delete**: remove the file. On **de-index**: remove the index record, keep the file with `status: obsolete` in frontmatter. Both remove the entry from `docs/learn/index.md`.
 4. Record `prune: <slug> (deleted | de-indexed)` in the log.
@@ -70,7 +71,8 @@ Rebuild `docs/learn/index.md` from the on-disk file tree — the file tree is th
 2. Regenerate the YAML `entries:` block per [index-format.md](../references/index-format.md) — re-derive each record's `index-applicability` enum from the per-entry numeric scores (the same derivation Index Step 1 uses).
 3. Regenerate the By Category / By Domain markdown tables; recompute the per-type count headings.
 4. **Exclude** de-indexed entries (those with `status: obsolete` or a `superseded-by` note whose canonical entry is present) from the YAML block and tables.
-5. Write `docs/learn/index.md`. Record `rebuild: <N> entries indexed` and any coherence fixes applied.
+5. Stamp `**Last updated:**` and write `docs/learn/index.md`. Record `rebuild: <N> entries indexed` and any coherence fixes applied.
+6. Run `python skills/learn/scripts/check-learn.py docs/learn` (adjust the path to where the skill is installed). `index-coherent` is `true` only after a `PASS`; on `FAIL` fix exactly what it names and re-run once, else terminate (Category 6). Without Python, walk the Validation list in [index-format.md](../references/index-format.md).
 
 ### Step 6: Allocate the maintain-id
 
@@ -83,16 +85,16 @@ Produce a **Maintain Log** block (as markdown) following the schema in [maintain
 - `maintain-id`, `interactionMode`, `status`
 - `migration` (`no-op` | `<N> entries migrated`)
 - `merges` — the list of `analog-slug → canonical-slug` merges performed
-- `refresh` — entries normalized vs flagged-for-review counts + the flagged list
+- `refresh` — entries normalized vs flagged-for-review counts + the flagged list, and the `stale-references` list
 - `prune` — each `slug (deleted | de-indexed)`
 - `rebuild` — `<N> entries indexed`, coherence fixes applied
-- `index-coherent: true` — the rebuilt YAML length matches the on-disk count
+- `index-coherent: true` — the rebuilt YAML length matches the active entry-file count and check-learn.py printed PASS
 
 ### Step 8: Present, Confirm, and Save
 
 Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these maintain-specific **Smart pause triggers**:
 
-- The migration would rewrite legacy paths (Step 1) — confirm before running (it rewrites 28 entry paths + cross-refs), or
+- The migration would rewrite legacy paths (Step 1) — confirm before running (state how many legacy entries it rewrites), or
 - A prune would delete or de-index an entry (Step 4) — confirm each prune candidate, or
 - A merge would absorb an entry (Step 2) — confirm each analog merge, or
 - `index-coherent: false` after rebuild (a bug — the rebuild did not reconcile; re-run Step 5).
@@ -109,7 +111,7 @@ Then, **in `detailed` mode only**, save the artifact to `docs/learn/.maintain/<m
 - Verify that the migration (if it ran) preserved lineage (`migrated-from` per entry) and did not delete the legacy store.
 - Verify that every merge recorded lineage (`superseded-by` in the analog; `related` link in the canonical) — de-indexed, not deleted — per [dedup-rules.md](../references/dedup-rules.md).
 - Verify that every prune was explicitly confirmed (no silent deletion); a delete leaves no file; a de-index keeps the file with `status: obsolete`.
-- Verify **index coherence** (orchestrator gate #5): the rebuilt `docs/learn/index.md` YAML length matches the on-disk entry-file count; per-type totals consistent; no duplicate rows.
+- Verify **index coherence** (orchestrator gate #5): the rebuilt `docs/learn/index.md` YAML length matches the active entry-file count and `check-learn.py` printed `PASS`; per-type totals consistent; no duplicate rows.
 - Verify that the rebuild was **applied from** [index-format.md](../references/index-format.md) (and the applicability-enum derivation) rather than re-encoded inline.
 - Verify that, in `detailed` mode, the artifact is saved to `docs/learn/.maintain/<maintain-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 
