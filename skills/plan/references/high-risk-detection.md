@@ -2,17 +2,17 @@
 title: High-Risk Area Detection
 description: "Scan the task description and scoped context for high-risk keywords across six areas: Security, Payments, APIs, Migrations, Complex Logic, and Infrastructure."
 type: reference
-version: 1.1
-timestamp: "2026-08-07"
+version: 1.2
+timestamp: "2026-10-23"
 ---
 
 # High-Risk Area Detection
 
-This file documents the keyword-based detection system for identifying high-risk areas during the research phase. It includes the risk keyword table, area definitions, and the heuristic for mapping detected areas to risk levels.
+This file documents how the research phase identifies high-risk areas. Keywords only **nominate candidates**; the agent then **confirms or dismisses each candidate by the real consequence of failure**. Only confirmed areas count toward the risk level. A keyword match alone never sets a risk level.
 
-## Risk Keywords Table
+## Step A: Nominate candidates (keywords)
 
-Scan the task description and scoped context for these keywords to identify high-risk areas:
+Scan the task description and scoped context for these keywords. Each hit nominates an area; it does not confirm it:
 
 | Area           | Keywords                                                                                               | Risk Category |
 | -------------- | ------------------------------------------------------------------------------------------------------ | ------------- |
@@ -23,6 +23,26 @@ Scan the task description and scoped context for these keywords to identify high
 | Complex Logic  | algorithm, analysis, processing, computation, ml, analytics, optimization                              | HIGH          |
 | Infrastructure | deploy, kubernetes, docker, scaling, network, cdn, load-balance, failover, disaster-recovery           | HIGH          |
 
+## Step B: Confirm or dismiss each candidate
+
+For every nominated area, decide `confirmed` or `dismissed` and write one line of evidence. Judge the consequence of failure in this project, not the word.
+
+| Area | Confirm only when the work really involves | Typical dismissals (keyword used in a general sense) |
+| ---- | ------------------------------------------ | ---------------------------------------------------- |
+| Security | Authentication, authorization, secrets, or protecting data from other people | "session" = a game or editor session; "audit" = a code review; "permission" = a file mode |
+| Payments | Real money, a payment provider, billing, or financial records | "transaction" = an in-process state change or a database transaction; "card" = a UI card; "subscription" = an event subscription |
+| APIs | A public or third-party interface other systems call | "api" = an internal engine/library call; "integration" = wiring two local modules |
+| Migrations | Changing data or schemas that already exist in use and must keep working | "schema"/"version"/"data" for a new local format with no existing data to migrate |
+| Complex Logic | Algorithms where a subtle bug is costly and hard to detect | "processing"/"analysis" as plain data handling |
+| Infrastructure | Deployment, networks, or operational environments the change alters | "network" for an in-game concept; "deploy" for a local build step |
+
+Rules:
+
+- **Confirmed** needs evidence you can cite: a file, a requirement quote, or a named external system. "The word appears" is not evidence.
+- **Critical** (Security, Payments) additionally needs the cited evidence to show the real consequence (money moves, access control changes, secrets are handled). Without it, dismiss or downgrade to the next area it honestly fits.
+- A source of truth that already specifies the behavior, its tests, and its failure handling lowers uncertainty but does not by itself dismiss an area; judge the consequence.
+- Record every candidate, confirmed or dismissed, with its reason in the Research Findings (`High-Risk Detection`). A dismissal is cheap; an unexplained Critical is not allowed.
+
 ## Area Definitions
 
 ### Security (CRITICAL)
@@ -31,7 +51,7 @@ Involves authentication, authorization, session management, encryption, or crede
 
 - **Examples:** JWT implementation, OAuth integration, session cookies, SSL certificates, password hashing
 - **Why critical:** Security breaches can compromise the entire system
-- **Escalation:** Always recommend external research unless extensive local patterns exist
+- **Escalation:** Recommend external research unless extensive local patterns exist (see the matrix below)
 
 ### Payments (CRITICAL)
 
@@ -39,7 +59,7 @@ Involves payment processing, billing, invoicing, or financial transactions.
 
 - **Examples:** Stripe integration, checkout flow, refund logic, subscription management
 - **Why critical:** Payment systems have strict compliance requirements (PCI DSS); errors cause financial loss
-- **Escalation:** Always recommend external research; verify compliance requirements
+- **Escalation:** Recommend external research unless extensive local patterns exist; verify compliance requirements
 
 ### APIs (HIGH)
 
@@ -75,23 +95,23 @@ Involves deployment, container orchestration, scaling, or network architecture.
 
 ## Risk Level Determination
 
-After identifying which areas the task touches, assign a risk level using this logic:
+After Step B, assign a risk level from the **confirmed** areas only:
 
 ```
-risk_level = determine_risk(areas_detected, high_risk_count)
+risk_level = determine_risk(areas_confirmed, high_risk_count)
 
-if any_area_is_security_or_payments:
+if any_confirmed_area_is_security_or_payments:
   risk_level = CRITICAL
-  reason = "Critical area detected: " + critical_area
+  reason = "Critical area confirmed: " + critical_area + " (" + evidence + ")"
 elif high_risk_count >= 2:
   risk_level = HIGH
-  reason = "Multiple high-risk areas: " + areas_detected.join(", ")
-elif any_area_is_api_migration_logic_infra:
+  reason = "Multiple high-risk areas confirmed: " + areas_confirmed.join(", ")
+elif any_confirmed_area_is_api_migration_logic_infra:
   risk_level = MEDIUM
-  reason = "High-risk area detected: " + area_name
+  reason = "High-risk area confirmed: " + area_name
 else:
   risk_level = LOW
-  reason = "No high-risk areas detected"
+  reason = "No high-risk areas confirmed"
 ```
 
 ## Mapping to Research Decision
@@ -103,9 +123,11 @@ Use risk level to determine if external research should be recommended:
 | Risk Level | Patterns Found | Decision           | Notes                                        |
 | ---------- | -------------- | ------------------ | -------------------------------------------- |
 | CRITICAL   | 0-2            | Recommend external | Insufficient local patterns; must research   |
-| CRITICAL   | 3+             | Recommend external | Critical area; external research required    |
+| CRITICAL   | 3+             | Optional external  | Strong local patterns; external optional     |
 | HIGH       | 0-2            | Recommend external | Insufficient local patterns; must research   |
-| HIGH       | 3+             | Optional external  | Strong local patterns; external optional     |
+| HIGH       | 3+             | Skip external      | Strong local patterns; local code is enough  |
 | MEDIUM     | 0-1            | Recommend external | Limited local examples; external recommended |
 | MEDIUM     | 2+             | Optional external  | Adequate local patterns; external optional   |
 | LOW        | any            | Skip external      | Low risk; no external research needed        |
+
+External research informs the plan; it never overrides the source of truth. When research disagrees with an accepted source document, record the difference in `Open Decisions` instead of changing the source or adding units.

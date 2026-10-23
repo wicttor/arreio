@@ -21,7 +21,7 @@ Shared ID algorithm for the `scope`, `research`, `design`, and `generate` phases
 
 `<kebab-name>` is the plan title in lowercase-hyphen form (no stopwords).
 
-> **Persistence by mode.** The "Saved to" column and the directory-listing algorithm below apply **only in `detailed` mode**. In `smart`/`autopilot` mode phase artifacts are not written, so no directory is listed: Allocate the plan-id `YYYY-MM-DD-NNN` once at Scope by counting today's final plan files in `docs/plans/` (excluding hidden dirs); every phase id is `<plan-id>-<phase>` (e.g. `2026-09-02-001-scope`). See [Artifact Persistence](interaction-mode-propagation.md#artifact-persistence).
+> **Persistence by mode.** The "Saved to" column and the directory-listing algorithm below apply to every phase in `detailed` mode. In `smart`/`autopilot` mode only the Research artifact is not written (Scope and Design are), so ids are allocated from the final plans instead of a directory listing: allocate the plan-id `YYYY-MM-DD-NNN` once at Scope by counting today's final plan files in `docs/plans/` (excluding hidden dirs); every phase id is `<plan-id>-<phase>` (e.g. `2026-09-02-001-scope`). See [Artifact Persistence](interaction-mode-propagation.md#artifact-persistence).
 
 ## Algorithm (new artifact)
 

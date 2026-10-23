@@ -14,8 +14,10 @@ This file documents how to generate targeted external research queries when high
 
 External research is recommended when:
 
-- One or more high-risk areas identified (see high-risk-detection.md)
+- One or more high-risk areas **confirmed** (see high-risk-detection.md), and the risk × patterns matrix there returns "Recommend external"
 - Fewer than 3 similar local implementations found
+
+External research informs the plan; it never overrides the source of truth. A disagreement goes to `Open Decisions`.
 
 ## Generating Targeted Queries
 

@@ -100,7 +100,7 @@ Creates the organizational spine for Arreio artifacts:
 - `docs/plans/.research/` — Stores Research phase artifacts
 - `docs/plans/.design/` — Stores Design phase artifacts
 
-**Rationale:** The `plan/SKILL.md` orchestrator writes intermediate phase artifacts to these hidden directories **only when the user picks `detailed` interaction mode**. In `smart`/`autopilot` they are passed in context.
+**Rationale:** The `plan/SKILL.md` orchestrator writes the Scope and Design artifacts (the audit trail for plan scope) to `.scope/` and `.design/` in **every** interaction mode. The Research artifact goes to `.research/` **only in `detailed` mode**; in `smart`/`autopilot` it is passed in context.
 
 **Action:** Do **not** create them. The plan skill creates them lazily on first `detailed` run.
 
@@ -208,7 +208,7 @@ After initialization, verify:
 - ✓ Always-written report directories exist:
   - `docs/plans/.work/.review/` (Work Reports), `docs/review/.report/` (Review Reports)
   - `docs/review/index.md` (review reports registry)
-- ✓ Intermediate phase-artifact directories (`.scope/`, `.research/`, `.design/`, `.triage/`, `.prepare/`, `.execute/`, `.analyze/`, `.capture/`, `.refine/`, `.index/`, `.maintain/`) are **not** created — skills create them lazily, only in `detailed` interaction mode
+- ✓ Intermediate phase-artifact directories (`.scope/`, `.research/`, `.design/`, `.triage/`, `.prepare/`, `.execute/`, `.analyze/`, `.capture/`, `.refine/`, `.index/`, `.maintain/`) are **not** created — skills create them lazily (in `detailed` interaction mode, except plan's `.scope/` and `.design/`, which are created in every mode)
 - ✓ End-session skill hidden artifact directory exists:
   - `docs/plans/.end-session/`
 - ✓ Learn category folders exist:
@@ -220,7 +220,7 @@ After initialization, verify:
 
 Downstream skills (plan, learn, work, review) automatically create missing folders and indexes if arreio-init wasn't explicitly run:
 
-- **plan** skill creates missing `docs/plans/` core folders; creates `docs/plans/.scope/`, `.research/`, `.design/` only in `detailed` mode.
+- **plan** skill creates missing `docs/plans/` core folders; creates `docs/plans/.scope/` and `.design/` in every mode and `.research/` only in `detailed` mode.
 - **work** skill creates `docs/plans/.work/.review/` on first execution; creates `.triage/`, `.prepare/`, `.execute/` only in `detailed` mode.
 - **review** skill creates `docs/review/.report/` and the `index.md` registry on first review; creates `.scope/`, `.prepare/`, `.analyze/` only in `detailed` mode.
 - **learn** skill creates the `docs/learn/` category folders on first learning capture; creates `.capture/`, `.refine/`, `.index/`, `.maintain/` only in `detailed` mode.

@@ -2,8 +2,8 @@
 title: Scope
 description: Gather context, check existing plans and learnings, validate domain, and return a scoped context object for downstream modules (research, design, generate).
 type: module
-version: 1.1
-timestamp: "2026-08-07"
+version: 1.2
+timestamp: "2026-10-23"
 ---
 
 # Phase 1 - Scope & Context Gathering
@@ -80,16 +80,23 @@ Evaluate if context is "rich enough" by confirming the **User Input Artifact** c
 
 Always search for project learnings (in `docs/learn/index.md`) for entries matching the task description. For details on keyword matching, relevance rating, gap identification, and examples, see **[learnings-gate-logic.md](../references/learnings-gate-logic.md)**. Add HIGH and MEDIUM relevance learnings to `Related Learnings`; identify and document any learning gaps.
 
-### Step 5: Requirements Search
+### Step 5: Source of Truth and Requirements Search
 
-1. Search `docs/` for files whose names or content match the task description.
+1. **Search for requirements.** Search `docs/` and any documentation path named in the User Input for files whose names or content match the task description.
    - Keywords: exact match on filename, grep content for relevant terms
    - If the directory does not exist, skip silently
-   - ignore files in `docs/archives/`,`docs/plans/`, and `docs/learn/` (already handled in previous steps)
-2. **For each match:**
-   - Extract the title and a 1-2 sentence relevant excerpt
-   - Add to `Requirements Found` list
-3. If no matches found, set `Requirements Found` to empty.
+   - Ignore files in `docs/archives/`, `docs/plans/`, and `docs/learn/` (already handled in previous steps)
+   - For each match, extract the title and a 1–2 sentence relevant excerpt into `Requirements Found`; leave it empty if nothing matches.
+2. **Identify the source of truth** (see [plan-coverage-rules.md](../references/plan-coverage-rules.md)): the document section that already defines the work, such as a milestone's numbered steps, a spec section, or an issue checklist.
+   - If the User Input names a document or section, use it and confirm it exists.
+   - Otherwise, if exactly one `Requirements Found` match defines the work as a list of items, propose it.
+   - If there are several candidates or none, **ask one question in every mode, including Autopilot**, with the candidate paths as options plus *"No document: the prompt is the only source"*. Never choose silently.
+   - Record `source: <path>#<section-anchor>` (or `source: prompt`).
+3. **Build the Source Inventory** from the source, using its own IDs, titles, and wording:
+   - `source_items`: each numbered step/item, with the test IDs it names (if any).
+   - `exclusions`: everything the source says is out of scope ("Not in …", deferred items, cut lists).
+   - For `source: prompt`, derive the items from the Success Criteria; do not add any.
+   - Do not rename, merge, reorder, or add items. Ambiguities go to the user, not into the inventory.
 
 ### Step 6: Generate the Scoped Context Artifact
 
@@ -104,18 +111,20 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 
 - 3+ learning gaps identified, or
 - Domain flagged non-software (Step 2), or
-- Conflicting requirements detected in the User Input.
+- Conflicting requirements detected in the User Input, or
+- The source of truth could not be identified without asking (Step 5.2).
 
 - **Detailed:** present the Scoped Context Artifact and ask one question with options *(1) Proceed to Research, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 2–6 reusing the `scope-id`. On **Abort**, stop and inform the Orchestrator.
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
-Then, **in `detailed` mode only**, save the artifact to `docs/plans/.scope/<scope-id>.md` (ensure `interactionMode` is included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Research). In `smart` and `autopilot` mode, do **not** write the file; pass the artifact to the next phase in context (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
+Then, **in every mode**, save the artifact to `docs/plans/.scope/<scope-id>.md` (ensure `interactionMode` is included) and return it, with the `interactionMode` value, to the Orchestrator for the transition to Phase 2 (Research). The Scope artifact is small and is the audit trail for what the plan was supposed to cover (see [Artifact Persistence](../references/interaction-mode-propagation.md#artifact-persistence)).
 
 ## Output: Scoped Context Artifact
 
 - Verify that the Scoped Context Artifact is complete and valid, containing all required fields, and it accurately reflects the user's input and any existing plans, learnings, or requirements found.
 - Verify that the `interactionMode` value is set correctly based on the user's selection in the Orchestrator skill.
-- Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.scope/<scope-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
+- Verify that `source` is set (a path with section anchor, or `prompt`) and that the Source Inventory has at least one item, with its IDs copied verbatim from the source.
+- Verify that the artifact is saved to `docs/plans/.scope/<scope-id>.md` in every mode.
 
 > Pass the scoped context to `research` (Phase 2) for the research phase.

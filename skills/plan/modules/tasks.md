@@ -2,8 +2,8 @@
 title: Tasks
 description: Slice the finalized plan into granular, executable, test-driven task files saved to docs/tasks/. One task per Acceptance Criterion; one test per task; ordered by dependency. Optional Phase 5 of the Plan pipeline.
 type: module
-version: 2.0
-timestamp: "2026-08-07"
+version: 2.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 5 - Tasks
@@ -62,7 +62,7 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
 Apply the [task-slicing rules](../references/task-slicing-rules.md):
 
 1. **One task per Acceptance Criterion.** For every criterion on every unit, create one candidate task inheriting the unit's goal, dependencies, and file paths. Each task gets its own dedicated test file in `files.test`.
-2. **Never split within an Acceptance Criterion.** If a criterion would need > 5 files or > 1 day of effort, **split the criterion into two finer sub-criteria** (each its own task) and update the originating unit accordingly — do not slice a task partway through a criterion. Honor the tier's sizing targets (Fast: 1–3 tasks; Standard: 4–8; Deep: 8–15) when choosing how fine to split.
+2. **Never split within an Acceptance Criterion.** If a criterion would need > 5 files or > 1 day of effort, **split the criterion into two finer sub-criteria** (each its own task) and record the split in the task manifest — do not edit the plan or its unit count, and do not slice a task partway through a criterion. Honor the tier's sizing targets (Fast: 1–3 tasks; Standard: 4–8; Deep: 8–15) when choosing how fine to split.
 3. **Sub-IDs only.** If one unit yields multiple criteria/tasks, use sub-identifiers: `U1` → `U1a`, `U1b`. Never renumber original units.
 4. **No merging across criteria.** Do not merge tasks; a task always carries exactly one Acceptance Criterion. (Trivial adjacent units that genuinely share a single criterion are already a single criterion by definition.)
 5. Record slicing decisions for traceability (which criteria were split and why).

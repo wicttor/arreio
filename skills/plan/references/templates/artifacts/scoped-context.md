@@ -48,6 +48,19 @@ action: resume | review | archive | delete | create-new | none
 - docs/brainstorms/XXX.md — [relevant excerpt]
 - docs/requirements/XXX.md — [relevant excerpt]
 - (Empty list if none found)
+
+## Source of Truth
+source: path/to/doc.mdx#section-anchor | prompt
+
+## Source Inventory
+source_items:
+  - id: "[source's own ID, e.g. 2.1]"
+    title: "[source's own title]"
+    tests: [TEST-ID-01..03]        # test IDs the source names; empty list if none
+exclusions:
+  - "[thing the source says is out of scope]"
 ```
 
-In `detailed` mode only, also save the scoped context to `docs/plans/.scope/<scope-id>.md` for future reference or reuse. The `interactionMode` value flows into `research`, `design`, and `generate` artifacts. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
+The Source Inventory is binding: Design maps exactly these items to units and Generate renders them in the plan's `Source Coverage` table. See [plan-coverage-rules.md](../../plan-coverage-rules.md).
+
+Save the scoped context to `docs/plans/.scope/<scope-id>.md` in every mode (it is the audit trail for the plan's scope). The `interactionMode` value flows into `research`, `design`, and `generate` artifacts.

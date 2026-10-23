@@ -2,8 +2,8 @@
 title: Plan Tier Selection
 description: Reference for the Generate phase. Defines the Fast/Standard/Deep tier model, the selection algorithm that combines complexity, risk, and user preference, and the template sections each tier requires.
 type: reference
-version: 1.2
-timestamp: "2026-10-01"
+version: 1.3
+timestamp: "2026-10-23"
 ---
 
 # Plan Tier Selection
@@ -12,13 +12,13 @@ This file documents the tier system used by the **Generate** phase (Phase 4) to 
 
 ## When to Apply
 
-Tier selection happens at the start of the Generate phase, after reading the Design Artifact (which carries the `complexity` field) and the Research Findings (which carry the `risk_level`). The chosen tier determines which sections of the [Final Plan template](templates/artifacts/final-plan.md) are rendered and how much structure the plan contains.
+Tier selection happens at the start of the Generate phase, after reading the Design Artifact (which carries the `complexity` field) and the Research Findings (which carry the `risk_level`, derived from **confirmed** risk areas only — see [high-risk-detection.md](high-risk-detection.md)). The chosen tier determines which sections of the [Final Plan template](templates/artifacts/final-plan.md) are rendered and how much structure the plan contains.
 
 ## The Three Tiers
 
 | Tier         | Use When                                           | Length    | Sections Included                                                |
 | ------------ | -------------------------------------------------- | --------- | ---------------------------------------------------------------- |
-| **Fast**     | Trivial/low complexity, straightforward work       | 1–2 pages | Overview, High-Level Design, Units (single phase), Risks (brief) |
+| **Fast**     | Trivial/low complexity, straightforward work       | 1–2 pages | Overview, Source Coverage, High-Level Design, Units (single phase), Risks (brief), Open Decisions |
 | **Standard** | Medium complexity, typical feature work            | 2–4 pages | All template sections, phased units, full risk table             |
 | **Deep**     | High/very-high complexity, cross-system, high-risk | 4+ pages  | All template sections + alternatives + rollout ops + monitoring  |
 
@@ -91,7 +91,7 @@ The user can force a Deep plan in **any** interaction mode (including Autopilot 
 - `tier_recommended` still holds the algorithm's result, so the override is auditable (`tier: deep`, `tier_recommended: fast`, etc.).
 - Deep only adds structure, so it never violates the risk floor.
 - The Smart-mode "tier is Deep" pause does **not** fire for a `--deep` plan (the user already chose it). CRITICAL-risk pause still applies.
-- Because Design runs before Generate, the Design phase also receives `force_deep` so it produces the material a Deep plan needs (≥ 2 alternatives, rollout draft, integration map) — see [design.md](../modules/design.md) Steps 4–5.
+- Because Design runs before Generate, the Design phase also receives `force_deep` so it produces the material a Deep plan needs (at least one real alternative, rollout draft, integration map) — see [design.md](../modules/design.md) Steps 4–5.
 
 ## Tier Section Requirements
 
@@ -100,9 +100,11 @@ The user can force a Deep plan in **any** interaction mode (including Autopilot 
 Required sections:
 
 - Overview (1–2 sentences)
+- Source Coverage
 - High-Level Technical Design (one of: Mermaid, pseudo-code, or data-flow map)
 - Implementation Units (single phase, 1–3 units)
 - Risk Analysis & Mitigation (brief table, 1–2 rows)
+- Open Decisions (`None.` when empty)
 - Related Learnings
 
 Optional (skip if not applicable): Alternative Approaches, Operational Notes, Learning Gaps.
@@ -112,11 +114,13 @@ Optional (skip if not applicable): Alternative Approaches, Operational Notes, Le
 Required sections (all template sections):
 
 - Overview
+- Source Coverage
 - High-Level Technical Design
 - Implementation Units (phased, 2+ phases)
-- Alternative Approaches Considered (at least 1)
+- Alternative Approaches Considered (at least 1 real alternative)
 - Risk Analysis & Mitigation (full table)
 - Operational / Rollout Notes
+- Open Decisions
 - Related Learnings
 - Learning Gaps
 
@@ -124,13 +128,13 @@ Required sections (all template sections):
 
 Required sections (all Standard sections, plus):
 
-- Alternative Approaches Considered (at least 2, with side-by-side comparison)
+- Alternative Approaches Considered (at least 1 real alternative; a second only when genuinely considered; if the source of truth fixes the approach, say so in one line)
 - Risk Analysis & Mitigation (full table with impact ratings)
 - Operational / Rollout Notes (must include: feature flags, monitoring, data migration, rollback plan, performance baseline)
 - Explicit complexity and tier in frontmatter
 - Cross-system integration map (data-flow or sequence diagram)
 
-**Required does not mean invented.** On a Deep plan forced by `--deep` for a small change, a required item that genuinely does not apply (e.g., data migration for a doc-only change) is written as `Not applicable — <one-line reason>`. Never omit the item and never fabricate content to fill it.
+**Required does not mean invented.** A required item that genuinely does not apply (e.g., data migration for a doc-only change, feature flags for a local-only feature) is written as `Not applicable — <one-line reason>`. When nothing is deployed (no users, data, or services), one such line covers the whole Operational / Rollout Notes section. Never omit the item and never fabricate content to fill it. External research is not part of tier structure: it follows the risk × patterns matrix in [high-risk-detection.md](high-risk-detection.md).
 
 ## Interaction Mode Behavior
 
@@ -146,14 +150,14 @@ Required sections (all Standard sections, plus):
 
 - Selected tier is Deep **and `force_deep` is false** (signals complex work worth a review)
 - User preference conflicts with risk floor (e.g., user wants Fast but risk is HIGH)
-- Research phase reported CRITICAL risk (Security or Payments)
+- Research phase reported CRITICAL risk (a **confirmed** Security or Payments area with cited evidence)
 
 ## Asking the User for Preference
 
 In Detailed mode (or when Smart mode pauses), ask one question. **Build it from the computed values — every `<…>` placeholder below must be replaced; never print an example tier.**
 
 ```
-Design complexity is <complexity> (score <total>/15) and risk level is <risk_level>.
+Design complexity is <complexity> (score <total>/12) and risk level is <risk_level>.
 I recommend the <tier_recommended> tier.
 Which tier would you like for the plan?
   - Fast: Short plan, minimal structure (1-2 pages)
@@ -188,7 +192,7 @@ Record the user's choice as the selected **`tier`** in the final plan frontmatte
 
 ### Example 4: High complexity, high risk, auto
 
-- `complexity = HIGH` (score 8), `risk_level = HIGH`, `user_preference = auto`
+- `complexity = HIGH` (score 7), `risk_level = HIGH`, `user_preference = auto`
 - `recommend_tier` → **Deep** (HIGH complexity → Deep; not Standard). Auto → **Deep** (`tier_recommended: deep`).
 - Smart mode pauses (Deep tier).
 
@@ -216,6 +220,6 @@ Record the user's choice as the selected **`tier`** in the final plan frontmatte
 ## Notes
 
 - Tier choice is recorded in the final plan's frontmatter as `tier: fast | standard | deep`
-- The tier also influences the Tasks phase: Fast tier often produces 1–3 tasks; Standard 4–8; Deep 8+
+- The tier also influences the Tasks phase: Fast tier often produces 1–3 tasks; Standard 4–8; Deep 8+. The tier never changes the number of plan units: that follows the source of truth ([plan-coverage-rules.md](plan-coverage-rules.md)).
 - If the user overrides the tier (explicit choice or `--deep`), preserve the algorithm's recommendation in a `tier_recommended` field for audit
 - Tier selection is the primary "right-sizing" mechanism — Small tasks → short plans; complex work → more structure (per Plan Skill core principles)

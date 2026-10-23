@@ -70,7 +70,7 @@ Every pipeline asks for an interaction mode before it starts:
 | **Smart**     | Phases run automatically; pause only on risky, destructive, or ambiguous events. |
 | **Autopilot** | Phases run automatically; only the final outcome is reported.                    |
 
-Intermediate phase artifacts (scope, research, triage, analyze, etc.) are written to hidden folders **only in Detailed mode**; in Smart/Autopilot they are passed in context. Final deliverables (plans, tasks, reports, learn entries) are always written.
+Intermediate phase artifacts (research, triage, analyze, etc.) are written to hidden folders **only in Detailed mode**; in Smart/Autopilot they are passed in context. The exception is `/plan`'s Scope and Design artifacts, which are always written as the audit trail for what a plan covers. Final deliverables (plans, tasks, reports, learn entries) are always written.
 
 ### Plan
 
@@ -84,9 +84,11 @@ Invoke with `/plan [--deep] <task description>`.
 | 4     | **generate** | Select tier, render plan, save to docs    |
 | 5     | **tasks**    | Slice plan into executable tasks          |
 
-**Plan tiers.** The Generate phase right-sizes the plan: **Fast** (trivial/low complexity), **Standard** (medium), or **Deep** (high/very high complexity, with alternatives and rollout notes). The tier comes from a complexity score (five dimensions, 0–15) combined with the detected risk level; high risk raises the minimum tier. Choosing `Auto` uses the computed recommendation, which is recorded as `tier_recommended`.
+**Plan tiers.** The Generate phase right-sizes the plan: **Fast** (trivial/low complexity), **Standard** (medium), or **Deep** (high/very high complexity, with alternatives and rollout notes). The tier comes from a complexity score (four dimensions, 0–12) combined with the confirmed risk level; high risk raises the minimum tier. Risk is judged by real consequence (keywords only nominate candidates) and is not counted in the complexity score. Choosing `Auto` uses the computed recommendation, which is recorded as `tier_recommended`.
 
 **`--deep`.** Put `--deep` at the start or end of the input to force a Deep plan in any interaction mode (including Autopilot), without the tier question. The algorithm's own recommendation is still recorded in `tier_recommended`, so the override is auditable.
+
+**Source-bound plans.** A plan implements a *source of truth* (a milestone's numbered steps, a spec section, or the prompt itself). Scope extracts a Source Inventory; Design maps one unit per source item; the plan carries a `Source Coverage` table and an `Open Decisions` section (doubts and missing values, never new gates). `skills/plan/scripts/check-plan.py` (Python 3, standard library only) verifies coverage, unit cap, ordering, and concrete file lists before the plan is registered.
 
 Plan outputs: `docs/plans/YYYY-MM-DD-NNN-<name>.md` (indexed in `docs/plans/index.md`) and, optionally, one task file per acceptance criterion in `docs/tasks/<plan-id>/`.
 

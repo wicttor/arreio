@@ -1,0 +1,15 @@
+{
+  "skills": ["plan"],
+  "query": "/plan Implement the saves milestone (section '8. Saves milestone' in evals/fixtures/milestone-source.md)",
+  "files": ["fixtures/milestone-source.md"],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "Scope records source: evals/fixtures/milestone-source.md#8-saves-milestone and a Source Inventory with exactly items 2.1, 2.2, 2.3 plus the exclusions 'economy rules' and 'networking'",
+    "Risk: 'transaction'/'session'/'schema'-style keyword hits are each confirmed or dismissed with a reason; no Critical risk without cited evidence of money or access control",
+    "Design produces 3 units (one per source item); the unit count never exceeds ceil(1.5 x 3) = 5",
+    "Every unit has a Source field, ascending IDs, earlier-unit dependencies and exact file paths",
+    "The plan has Source Coverage and Open Decisions sections and no contract-review or gate units",
+    "scripts/check-plan.py prints PASS for the saved plan (with --source and --section)",
+    "Scope and Design artifacts exist in docs/plans/.scope and docs/plans/.design even in autopilot"
+  ]
+}

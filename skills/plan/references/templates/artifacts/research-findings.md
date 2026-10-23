@@ -24,8 +24,10 @@ timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 - `path/to/pattern/file` — [pattern description]
 
 ## High-Risk Detection
-- Detected areas: [list]
-- Risk Level: CRITICAL | HIGH | MEDIUM | LOW
+- Candidates:
+  - [Area] — `confirmed` | `dismissed` — [one-line evidence: file, requirement quote, or why the keyword is used in a general sense]
+- Confirmed areas: [list; only these count]
+- Risk Level: CRITICAL | HIGH | MEDIUM | LOW   # from confirmed areas only; CRITICAL needs cited evidence
 - External Research Recommended: YES | NO
 
 ## Tech Stack

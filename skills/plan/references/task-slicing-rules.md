@@ -2,8 +2,8 @@
 title: Task Slicing Rules
 description: Reference for the Tasks phase. Defines how to decompose a plan's implementation units into Acceptance-Criterion-sized task files — one task per AC, one test per task, TDD-ordered, dependency-ordered, and registered in the index.
 type: reference
-version: 2.0
-timestamp: "2026-08-07"
+version: 2.1
+timestamp: "2026-10-23"
 ---
 
 # Task Slicing Rules
@@ -22,7 +22,7 @@ Each **Acceptance Criterion** on an Implementation Unit becomes **exactly one ta
 
 ### Rule 2: Never Split Within an Acceptance Criterion
 
-If a single Acceptance Criterion would need > 5 files or > 1 day of effort, do **not** slice the task partway through the criterion. Instead, **split the criterion into two or more finer sub-criteria** in the originating unit, then create one task per sub-criterion. This keeps the one-task-one-test-one-AC invariant intact.
+If a single Acceptance Criterion would need > 5 files or > 1 day of effort, do **not** slice the task partway through the criterion. Instead, **split the criterion into two or more finer sub-criteria** in the task manifest (the saved plan and its unit count stay unchanged), then create one task per sub-criterion. This keeps the one-task-one-test-one-AC invariant intact.
 
 Split criteria use sub-identifiers: `U2` → `U2a`, `U2b` (letters, not extra digits). Never renumber the original units or criteria.
 

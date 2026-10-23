@@ -2,8 +2,8 @@
 title: Generate
 description: Render the final plan from the Design Artifact by selecting a tier, filling the plan template, and saving it to docs/plans/. Produces a Final Plan Artifact for the optional Tasks phase.
 type: module
-version: 1.1
-timestamp: "2026-08-07"
+version: 1.2
+timestamp: "2026-10-23"
 ---
 
 # Phase 4 - Generate
@@ -18,7 +18,7 @@ This is the Phase 4 pipeline for the Plan Skill. It orchestrates the following s
 
 Run the **[Step 0 verification](../references/error-handling.md)**. Required input: a valid **Design Artifact**. Specifically verify:
 
-1. The Design Artifact exists and contains `design-id`, `scope-id`, `research-id`, `interactionMode`, `complexity`, `tier_recommended`, `Approach`, `High-Level Technical Design`, and `Implementation Units`.
+1. The Design Artifact exists and contains `design-id`, `scope-id`, `research-id`, `interactionMode`, `complexity`, `tier_recommended`, `Approach`, `High-Level Technical Design`, `Implementation Units`, `Source Coverage`, and `Open Decisions`.
 2. The `complexity` field is one of: `TRIVIAL`, `LOW`, `MEDIUM`, `HIGH`, `VERY_HIGH`.
 3. The `interactionMode` is present and valid (default to `smart` if missing; log warning).
 4. Cross-phase consistency: the `scope-id` and `research-id` match the upstream artifacts.
@@ -54,6 +54,7 @@ Render the final plan from the [Final Plan template](../references/templates/art
    type: plan
    title: "[Plan title]"
    status: complete
+   source: path/to/doc.mdx#section-anchor | prompt   # from the Scope phase's Source of Truth
    tier: fast | standard | deep
    tier_recommended: fast | standard | deep
    complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
@@ -72,18 +73,22 @@ Render the final plan from the [Final Plan template](../references/templates/art
    | Section                       | Fast | Standard | Deep |
    | ----------------------------- | :--: | :------: | :--: |
    | Overview                      |  ✅  |    ✅    |  ✅  |
+   | Source Coverage               |  ✅  |    ✅    |  ✅  |
    | High-Level Technical Design   |  ✅  |    ✅    |  ✅  |
    | Implementation Units (Phased) |  ✅  |    ✅    |  ✅  |
    | Alternative Approaches        |  ➖  |    ✅    |  ✅  |
    | Risk Analysis & Mitigation    |  ✅  |    ✅    |  ✅  |
    | Operational / Rollout Notes   |  ➖  |    ✅    |  ✅  |
    | Related Learnings             |  ✅  |    ✅    |  ✅  |
+   | Open Decisions                |  ✅  |    ✅    |  ✅  |
    | Learning Gaps                 |  ➖  |    ✅    |  ✅  |
 
    Legend: ✅ required, ➖ optional (skip if not applicable).
 
 3. **Carry forward content from the Design Artifact:**
-   - `Approach` → Overview
+   - `Approach` → Overview (add `**Out of scope:**` from the Source Inventory's exclusions)
+   - `Source Coverage` → Source Coverage (copy the mapping; do not recompute it)
+   - `Open Decisions` → Open Decisions
    - `High-Level Technical Design` → High-Level Technical Design
    - `Implementation Units` → Implementation Units (Phased)
    - `Alternative Approaches` → Alternative Approaches Considered
@@ -99,9 +104,10 @@ Render the final plan from the [Final Plan template](../references/templates/art
 5. **Build Operational / Rollout Notes** (Standard/Deep only) from the Design's rollout units:
    - Feature flags, monitoring, data migration, rollback plan, performance baseline
    - Skip the section entirely if not applicable (Fast tier, or no rollout units)
-   - **Deep tier:** every required item (feature flags, monitoring, data migration, rollback plan, performance baseline) and the cross-system integration map must appear; write `Not applicable — <reason>` for items that truly do not apply (typical for `--deep` on a small change). Never invent content.
+   - **Deep tier:** every required item (feature flags, monitoring, data migration, rollback plan, performance baseline) and the cross-system integration map must appear; write `Not applicable — <reason>` for items that truly do not apply. When nothing is deployed (no users, data, or services), one `Not applicable — <reason>` line for the whole section is enough. Never invent content.
 
 6. **Right-size:** Per Plan Skill core principles — small tasks → short plans; complex work → more structure. Do not pad a Fast plan with empty sections; do not omit required sections from a Deep plan.
+7. **Template only.** Render exactly the template's sections, in its order, with the title before the Overview. Do not add sections (contract reviews, baselines, execution rules, extra scope lists); anything extra goes to `Open Decisions`.
 
 ### Step 3: Plan ID Generation
 
@@ -129,13 +135,20 @@ Map each answer to its action so save+index **never run before the decision**:
 | **Edit & Retry** | Loop back through Steps 1–3 reusing the `plan-id` (save+index have not run yet). |
 | **Abort** | Stop; inform the Orchestrator; do not save. |
 
-### Step 5: Assemble, Save, and Register
+### Step 5: Assemble, Save, Verify, and Register
 
 Run this step only after confirmation (or any auto-proceed path); never on **Abort** or a pending **Edit & Retry**.
 
-1. **Assemble** the complete plan — frontmatter (Step 2.1) + rendered sections (Step 2.2–2.6) — with `plan-id` set to the assigned id.
+1. **Assemble** the complete plan — frontmatter (Step 2.1) + rendered sections (Step 2.2–2.7) — with `plan-id` set to the assigned id.
 2. **Save** (write or overwrite) the plan to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md`.
-3. **Register** in `docs/plans/index.md`. **Insert or replace** the row by `plan-id` (idempotent on Edit & Retry) — never blind-append. If the index does not exist, create it with a header row. Row format:
+3. **Verify coverage** by running the gate script on the saved file (run it; do not read or re-implement it):
+
+   ```
+   python <skill-dir>/scripts/check-plan.py docs/plans/<plan-file>.md [--source <source-doc> --section "<heading regex>"]
+   ```
+
+   Pass `--source`/`--section` when `source:` is a document path (use the section heading from the Source of Truth). It prints `PASS` or `FAIL` with one `ERROR` line per problem. On `FAIL`, fix the plan (merge units, add the missing `Source`, concrete files, Open Decisions) and re-save; at most 2 fix rounds, then stop and report the remaining errors to the user. Never silence an error by adding units. If Python is unavailable, run the manual checklist in [plan-coverage-rules.md](../references/plan-coverage-rules.md) and state the result.
+4. **Register** in `docs/plans/index.md`, only after the gate prints `PASS`. **Insert or replace** the row by `plan-id` (idempotent on Edit & Retry) — never blind-append. If the index does not exist, create it with a header row. Row format:
 
 ```markdown
 | [YYYY-MM-DD-NNN](YYYY-MM-DD-NNN-<kebab-case-name>.md) | [Plan Title] | [tier] | [tier_recommended] | [complexity] | [risk] | ready |
@@ -151,6 +164,8 @@ Return the Final Plan Artifact to the Orchestrator — `path`, `plan-id`, `tier`
 - Verify that all file paths in the plan are repository-relative (never absolute) and wrapped in backtick code formatting.
 - Verify that `## Related Learnings` is present and references `docs/learn/index.md` entries (or states "No relevant learnings found").
 - Verify that `## Learning Gaps` is present (may be empty).
-- Verify that the plan is saved to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md` and registered in `docs/plans/index.md`.
+- Verify that `source:` is in the frontmatter and that `## Source Coverage` and `## Open Decisions` are present.
+- Verify that `scripts/check-plan.py` printed `PASS` for the saved file (or the manual checklist was completed).
+- Verify that the plan is saved to `docs/plans/YYYY-MM-DD-NNN-<kebab-case-name>.md` and registered in `docs/plans/index.md` (registration only after the gate passed).
 
 > The Final Plan is the primary deliverable of the Plan Skill. Pass it to `tasks` (Phase 5, optional) for task slicing, or mark the plan as complete if the user declines tasks.

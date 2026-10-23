@@ -39,7 +39,7 @@ force_deep: true | false   # true only when `--deep` was passed; default false
 
 `force_deep` lives in the Orchestrator context (not in artifact files). Pass it to **Design** (to produce the material a Deep plan needs) and **Generate** (to select the tier).
 
-**Artifact persistence:** intermediate phase artifacts are written to disk **only in `detailed` mode**. In `smart`/`autopilot` they are passed between phases in context and never written (see `references/interaction-mode-propagation.md#artifact-persistence`). Final deliverables are always written.
+**Artifact persistence:** the **Scope** and **Design** artifacts are written to disk in every mode: they are small, and they are the audit trail for scope drift. The **Research** artifact is written only in `detailed` mode; in `smart`/`autopilot` it is passed in context (see `references/interaction-mode-propagation.md#artifact-persistence`). Final deliverables are always written.
 
 **Propagation:** `interactionMode` flows into `research`, `design`, and `generate` artifacts; each downstream phase reads it to adjust confirmation behaviour (detailed = pause every transition; autopilot = run all; smart = pause only on HIGH-risk).
 
@@ -59,7 +59,8 @@ Before starting the planning pipeline, the orchestrator verifies that required f
 
 - `docs/plans/` — must exist for saving final plan
 - `docs/tasks/` — must exist if task generation is enabled
-- `docs/plans/.scope/`, `.research/`, `.design/` — **`detailed` mode only**, for saving the intermediate phase artifacts; do not create them in `smart`/`autopilot`
+- `docs/plans/.scope/` and `docs/plans/.design/` — all modes (audit trail for the Scope and Design artifacts)
+- `docs/plans/.research/` — **`detailed` mode only**; do not create it in `smart`/`autopilot`
 
 **Self-Healing:** If missing, the orchestrator automatically creates these folders. This allows the plan skill to run even if `arreio-init` wasn't explicitly run.
 
@@ -83,8 +84,9 @@ Between phases, the orchestrator validates the output artifact before passing it
 2. **Cross-phase consistency** — IDs (`scope-id`, `research-id`, `design-id`, `plan-id`) match the upstream artifacts; `interactionMode` is identical across artifacts.
 3. **Status check** — the artifact's `status` is `complete` (not `pending` or `failed`).
 4. **Tier/complexity coherence** (after Design) — `tier_recommended` equals `recommend_tier(complexity, risk_level)` per [plan-tier-selection.md](references/plan-tier-selection.md). Recompute it; do not trust the value blindly. A `HIGH`/`VERY_HIGH` complexity must yield `deep`.
+5. **Source coverage** (after Design, announced in every mode; after Generate, enforced by script) — every item in the Scope phase's `Source Inventory` is covered by a unit or explicitly excluded with a reason, every unit cites a source item, and unit count stays within 1.5× the covered items. After Design, announce one line: `Coverage: N source items -> M units (xR), K excluded`. After Generate, run [scripts/check-plan.py](scripts/check-plan.py) (see Generate Step 5); it must print `PASS` before the plan is registered. If Python is unavailable, perform the same checks by hand against [plan-coverage-rules.md](references/plan-coverage-rules.md).
 
-If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).
+If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)). A coverage failure goes back to Design: merge units, drop the unsourced unit, or move the doubt to `Open Decisions`; never fix it by adding more units.
 
 ### Index Registration
 
@@ -123,6 +125,8 @@ The orchestrator and modules share these reference files:
 | [design-complexity-assessment.md](references/design-complexity-assessment.md) | Design (Step 4)                  |
 | [plan-tier-selection.md](references/plan-tier-selection.md)                   | Generate (Step 1)                |
 | [task-slicing-rules.md](references/task-slicing-rules.md)                     | Tasks (Steps 2–3)                |
+| [plan-coverage-rules.md](references/plan-coverage-rules.md)                   | Scope (Step 5), Design (Step 3), Generate (Step 5) |
+| [scripts/check-plan.py](scripts/check-plan.py)                                | Generate (Step 5): coverage gate (run it, do not read it) |
 
 Artifact templates live in [references/templates/artifacts/](references/templates/artifacts/).
 
@@ -135,20 +139,23 @@ Follow these literally; they exist to keep runs consistent across agents.
 3. **Compute, don't copy.** Values defined by an algorithm (`complexity`, `tier_recommended`, `tier`) must be evaluated with the real inputs. Example values in references are illustrations, never defaults.
 4. **One question at a time**, with 2–4 concrete options; build the question text from the current values.
 5. **Announce phase transitions in one line** (e.g., "Phase 3/5 Design complete: complexity HIGH, tier_recommended deep") so the user can follow progress, even in Autopilot.
-6. **Honor write rules:** hidden phase artifacts only in `detailed` mode; the final plan, index row, and (if accepted) task files always.
+6. **Honor write rules:** the Scope and Design artifacts in every mode, the Research artifact only in `detailed` mode; the final plan, index row, and (if accepted) task files always.
+7. **Stay inside the source of truth.** The plan covers exactly the Source Inventory from Scope: no extra units, no new gates, no changes to accepted documents. Doubts and missing details go to `Open Decisions` with a recommended default; the user decides.
+8. **Ask when the source is unclear.** If no source of truth can be identified (Scope Step 5), ask one question, even in Autopilot.
 
 ## Core Principles
 
 - **Deterministic Pipeline:** Phases always execute in sequence (no agent switching, no fallback paths).
 - **Error Handling:** Fail explicitly, not silently; each phase has clear error handling with recovery suggestions.
 - **Focus on Decisions:** Capture approach, structure, risks, and sequencing (not code simulation).
-- **Right-Size:** Small tasks → short plans; complex work → more structure.
+- **Source-Bound:** A plan implements its source of truth; it never extends, corrects, or reorders it. One unit per source item is the default; merging is encouraged, splitting needs a written reason.
+- **Right-Size:** Small tasks → short plans; complex work → more structure. Structure follows real risk and real complexity, not keyword matches.
 - **Separate Planning from Execution:** NEVER simulate implementation during planning.
 - **Be Concrete:** Use specific files, components, and dependencies.
 - **Stay Portable:** Use repository-relative paths only.
-- **Lean Persistence:** Phase artifacts hit disk only in `detailed` mode; `smart`/`autopilot` pass them in context to save tokens and time.
+- **Lean Persistence:** Scope and Design artifacts always hit disk (small, auditable); the larger Research artifact only in `detailed` mode, otherwise it is passed in context.
 - **Transparent Artifacts:** Each phase produces an explicit output artifact for the next phase.
 - **Interaction Mode Propagation:** `interactionMode` is read at the start of each subsequent phase and determines whether confirmation steps execute.
 - **Single Source of Truth:** This skill defines all its own rules; it does not depend on any external agent rule file.
 - **Behavior-Described, Tool-Agnostic:** Steps describe required capabilities ("search the codebase", "ask the user one question"), not specific tool names; each agent maps to its native tools.
-- **Test-Driven Tasks:** One Acceptance Criterion per task; one test per AC; each task's Steps follow Red → Green → Refactor (write the failing test first and confirm it fails, implement the minimum code to pass, then refactor with the test green).
+- **Test-Driven Tasks (Tasks phase only):** The plan's units state criteria and tests, not execution steps. Splitting and TDD sizing happen when task files are generated, never by adding units to the plan. One Acceptance Criterion per task; one test per AC; each task's Steps follow Red → Green → Refactor (write the failing test first and confirm it fails, implement the minimum code to pass, then refactor with the test green).

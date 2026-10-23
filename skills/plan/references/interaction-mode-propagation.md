@@ -2,8 +2,8 @@
 title: Interaction Mode Propagation
 description: Reference for how `interactionMode` propagates through the Plan pipeline (Scope → Research → Design → Generate → Tasks). Set at Orchestrator; each phase reads and applies mode-specific behavior.
 type: reference
-version: 1.1
-timestamp: "2026-08-07"
+version: 1.2
+timestamp: "2026-10-23"
 ---
 
 # Interaction Mode Propagation
@@ -22,9 +22,9 @@ Reference for how `interactionMode` propagates through the Plan pipeline (Scope 
 
 | Phase        | Detailed                                         | Smart                                                                                                  | Autopilot                         |
 | ------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| **Scope**    | Present artifact; ask Proceed/Edit/Abort         | Auto-proceed; pause if 3+ learning gaps, non-software domain, or conflicting requirements              | Auto-proceed                      |
+| **Scope**    | Present artifact; ask Proceed/Edit/Abort         | Auto-proceed; pause if 3+ learning gaps, non-software domain, conflicting requirements, or the source of truth had to be asked | Auto-proceed (still asks if the source of truth is unclear) |
 | **Research** | Show findings; ask Proceed/Edit/Abort           | Auto-proceed; pause if HIGH/CRITICAL risk with <3 patterns, or zero patterns found                    | Auto-proceed                      |
-| **Design**   | Show units; ask Proceed/Edit/Abort              | Auto-proceed; pause if VERY_HIGH complexity, HIGH risk + <3 patterns, 3+ scope gaps, or Novelty=3      | Auto-proceed                      |
+| **Design**   | Show units; ask Proceed/Edit/Abort              | Auto-proceed; pause if VERY_HIGH complexity, HIGH risk + <3 patterns, 3+ scope gaps, Novelty=3, unit count over the coverage cap, or Open Decisions blocking 3+ units | Auto-proceed; announces the coverage line |
 | **Generate** | Show plan; ask Proceed/Edit/Skip/Abort          | Auto-proceed; pause if tier=Deep (not when forced by `--deep`), tier preference conflicts with risk floor, or CRITICAL risk          | Auto-proceed                      |
 | **Tasks**    | Ask Create/Review/No (full file content shown)  | Ask Create/Review/No (summary shown)                                                                   | Ask Create/Review/No (always asks) |
 
@@ -80,20 +80,20 @@ status: pending | complete | failed
 
 ## Artifact Persistence
 
-Phase artifacts (Scope, Research, Design) are **handoff data between phases**, not deliverables. Whether they are written to disk depends on `interactionMode`:
+Phase artifacts (Scope, Research, Design) are **handoff data between phases**, not deliverables. The Scope and Design artifacts are also the audit trail for scope drift (what the plan was supposed to cover, and how that became units), so they are small and always kept. Whether each is written depends on the phase and `interactionMode`:
 
-| Mode          | Phase artifacts (`docs/plans/.scope/`, `.research/`, `.design/`)          | Phase handoff                                  |
-| ------------- | ---------------------------------------- | ---------------------------------------------- |
-| **Detailed**  | Written to the hidden directories (audit trail; creating the directory on first use) | Artifact is written, shown, then passed on     |
-| **Smart**     | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
-| **Autopilot** | **Not written**                          | Artifact is held in context and passed in-memory to the next phase |
+| Artifact | Detailed | Smart | Autopilot |
+| -------- | -------- | ----- | --------- |
+| **Scope** (`docs/plans/.scope/`) | Written, shown, then passed on | **Written**, then passed on | **Written**, then passed on |
+| **Research** (`docs/plans/.research/`) | Written, shown, then passed on | **Not written**; held in context | **Not written**; held in context |
+| **Design** (`docs/plans/.design/`) | Written, shown, then passed on | **Written**, then passed on | **Written**, then passed on |
 
-**Always written, in every mode:** the final plan in `docs/plans/` (+ `docs/plans/index.md`) and any task files in `docs/tasks/<plan-id>/`.
+**Always written, in every mode:** the Scope and Design artifacts, the final plan in `docs/plans/` (+ `docs/plans/index.md`), and any task files in `docs/tasks/<plan-id>/`.
 
 **Rules:**
 
 - The artifact schema, quality gates, cross-phase ID checks, and pause triggers are **unchanged** — only the disk write is skipped. Validate and pass the in-memory artifact exactly as you would the file.
-- Never create the hidden directories in `smart`/`autopilot`; no placeholder or empty files.
+- Never create `docs/plans/.research/` in `smart`/`autopilot`; no placeholder or empty files. `.scope/` and `.design/` are created on first use in every mode.
 - **ID allocation without files:** Allocate the plan-id `YYYY-MM-DD-NNN` once at Scope by counting today's final plan files in `docs/plans/` (excluding hidden dirs); every phase id is `<plan-id>-<phase>` (e.g. `2026-09-02-001-scope`).
-- If the user switches to `detailed` mid-run, write the artifacts produced so far, then continue writing.
-- Because nothing is on disk, **Edit & Retry** reuses the in-memory artifact and its id (no file to overwrite).
+- If the user switches to `detailed` mid-run, write the Research artifact produced so far, then continue writing.
+- **Edit & Retry** reuses the artifact's id and overwrites its file (Scope and Design in every mode, Research in `detailed`) or reuses the in-memory artifact (Research in `smart`/`autopilot`).

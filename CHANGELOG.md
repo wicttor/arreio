@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-23
+### Added
+
+- **Source-bound planning.** Scope now identifies a *source of truth* (a milestone's numbered steps, a spec section, or the prompt) and extracts a binding Source Inventory, asking one question in every mode when the source is unclear. Design maps one unit per source item (merge before split, unit cap of 1.5× covered items); every unit declares a `Source`. Plans gain `source:` frontmatter, a `Source Coverage` table, and an `Open Decisions` section for doubts the source does not settle (no new gates, no edits to accepted documents). See `skills/plan/references/plan-coverage-rules.md`.
+- **Coverage gate script.** `skills/plan/scripts/check-plan.py` (Python 3, standard library only) checks source coverage, unit traceability, the unit cap, unit order and dependencies, concrete file lists, `Open Decisions`, and (optionally) the source's test IDs. Generate runs it on the saved plan and registers the plan only on `PASS`; a manual checklist covers environments without Python.
+- **Plan evals.** `skills/plan/evals/` holds three scenario evals and good/bad fixtures that exercise the gate.
+
+### Changed
+
+- **Risk is judged by consequence, not keywords.** Keywords only nominate candidate areas; each is confirmed or dismissed with cited evidence, and only confirmed areas set the risk level (e.g. an in-process "transaction" or a game "session" no longer counts as Payments/Security). External research follows a relaxed risk × patterns matrix and never overrides the source of truth.
+- **Complexity no longer double counts risk.** The complexity score has four dimensions (0–12; thresholds 3/6/9); risk only sets the tier floor.
+- **Deep plans stay honest.** Deep requires at least one real alternative (never invented) and allows a single `Not applicable` line for rollout notes when nothing is deployed.
+- **Scope and Design artifacts are always written** (all modes) as the audit trail; Research stays `detailed`-only. Design announces `Coverage: N source items -> M units (xR), K excluded` in every mode.
+- **Plan template fixes.** Title precedes the Overview; render only template sections; `Files` must be exact paths; unit IDs ascend in document order (letter suffixes are reserved for Tasks).
+- **Tasks no longer edit the plan.** Splitting a criterion into finer tasks is recorded in the task manifest, never as new plan units.
+
 ## [1.2.1] - 2026-10-09
 
 ### Changed

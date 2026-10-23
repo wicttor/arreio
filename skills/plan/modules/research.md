@@ -2,8 +2,8 @@
 title: Research
 description: Research the task and gather relevant information, requirements, and constraints. Produces a Research Findings Artifact for downstream phases.
 type: module
-version: 1.1
-timestamp: "2026-08-07"
+version: 1.2
+timestamp: "2026-10-23"
 ---
 
 # Phase 2 - Research
@@ -69,8 +69,12 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
 
 ### Step 2: High-Risk Area Detection
 
-- Scan the task description and scoped context for high-risk keywords across six areas: Security, Payments, APIs, Migrations, Complex Logic, and Infrastructure.
-- For details on the risk keyword table, area definitions, and heuristics for assigning risk levels, see **[high-risk-detection.md](../references/high-risk-detection.md)**.
+1. **Nominate:** scan the task description and scoped context for high-risk keywords across six areas: Security, Payments, APIs, Migrations, Complex Logic, and Infrastructure.
+2. **Confirm or dismiss every candidate** by the real consequence of failure, with one line of cited evidence (a file, a requirement quote, or a named external system). A keyword hit alone (e.g., "transaction" for an in-process state change, "session" for a game session) is dismissed, not counted.
+3. **Assign `risk_level` from the confirmed areas only.** Critical needs cited evidence of real consequence; without it, dismiss or downgrade.
+4. Record all candidates with `confirmed`/`dismissed` and the reason in `High-Risk Detection`.
+
+For the keyword table, confirmation rules, and the risk-level logic, see **[high-risk-detection.md](../references/high-risk-detection.md)**.
 
 ### Step 3: External Research Decision
 
@@ -104,7 +108,7 @@ For query templates, formatting guidance, and examples for each high-risk area, 
 
 Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these research-specific **Smart pause triggers**:
 
-- Risk level is HIGH or CRITICAL **and** fewer than 3 patterns found (external research recommended), or
+- Confirmed risk level is HIGH or CRITICAL **and** fewer than 3 patterns found (external research recommended), or
 - Zero patterns found in the codebase.
 
 - **Detailed:** present the Research Findings Artifact and ask one question with options *(1) Proceed to Design, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–6 reusing the `research-id`. On **Abort**, stop and inform the Orchestrator.

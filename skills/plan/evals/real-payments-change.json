@@ -1,0 +1,13 @@
+{
+  "skills": ["plan"],
+  "query": "/plan Add Stripe refunds to the checkout service: POST /orders/{id}/refund must call Stripe and update the invoice",
+  "files": [],
+  "mode": "smart",
+  "expected_behavior": [
+    "Payments is confirmed with cited evidence (Stripe, refund, invoice) and risk_level is CRITICAL",
+    "tier_recommended is deep and external research is recommended (Stripe integration guidance)",
+    "Smart mode pauses at Generate because of the CRITICAL confirmed risk",
+    "Units trace to the prompt's requirements; unknown values (e.g. partial refunds) are listed in Open Decisions with a recommended default instead of invented units",
+    "scripts/check-plan.py prints PASS"
+  ]
+}

@@ -2,8 +2,8 @@
 title: Error Handling & Recovery
 description: Reference for error handling and recovery strategies in the Plan Skill phases. Provides guidance on how to handle missing or malformed artifacts, invalid user input, and other common errors.
 type: reference
-version: 1.2
-timestamp: "2026-08-07"
+version: 1.3
+timestamp: "2026-10-23"
 ---
 
 # Error Handling & Recovery
@@ -33,10 +33,10 @@ Every phase receives an artifact from the previous phase (or the Orchestrator, f
 | Artifact Type | Required Fields                                                                                                                                                                                                                            | Produced By  |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
 | `user-input`  | `type`, `timestamp`, `source`, `status`, Task Description, Intended Behavior                                                                                                                                                               | Orchestrator |
-| `scope`       | `type`, `scope-id`, `domain`, `status`, `interactionMode`, Problem, Intended Behavior, Success Criteria                                                                                                                                    | Scope        |
+| `scope`       | `type`, `scope-id`, `domain`, `status`, `interactionMode`, Problem, Intended Behavior, Success Criteria, Source of Truth, Source Inventory                                                                                                                                    | Scope        |
 | `research`    | `research-id`, `scope-id`, `status`, `interactionMode`, Patterns Found, High-Risk Detection, Tech Stack                                                                                                                                    | Research     |
-| `design`      | `design-id`, `scope-id`, `research-id`, `status`, `interactionMode`, `complexity`, `tier_recommended`, Approach, High-Level Technical Design, Implementation Units (each with Acceptance Criteria), Alternative Approaches, Complexity | Design       |
-| `plan`        | `plan-id`, `type`, `title`, `status`, `tier`, `tier_recommended`, `complexity`, `risk`, `scope-id`, `research-id`, `design-id`, `interactionMode`, `created`, `updated`, `version`, High-Level Design, Implementation Units, Risk Analysis | Generate     |
+| `design`      | `design-id`, `scope-id`, `research-id`, `status`, `interactionMode`, `complexity`, `tier_recommended`, Approach, High-Level Technical Design, Implementation Units (each with Acceptance Criteria), Source Coverage, Alternative Approaches, Open Decisions, Complexity | Design       |
+| `plan`        | `plan-id`, `type`, `title`, `status`, `source`, `tier`, `tier_recommended`, `complexity`, `risk`, `scope-id`, `research-id`, `design-id`, `interactionMode`, `created`, `updated`, `version`, High-Level Design, Source Coverage, Implementation Units, Risk Analysis, Open Decisions | Generate     |
 
 ## Error Categories
 
@@ -72,6 +72,7 @@ Only applies to the Scope phase (Step 0) when validating the User Input Artifact
 | Intended Behavior empty or unobservable             | Ask: "What should happen after this is implemented?" | No         |
 | Context Source is not a valid enum value            | Infer from input origin; ask if ambiguous            | No         |
 | Task Description AND Intended Behavior both missing | Abort; ask user to return with more context          | Yes        |
+| Source of truth missing or ambiguous (Scope Step 5) | Ask one question in every mode: candidate paths, or "the prompt is the only source" | No         |
 
 ### Category 4: File System Errors
 
@@ -146,6 +147,8 @@ In addition to per-phase verification, the Orchestrator should verify consistenc
 | `plan-id` references the correct design artifact     | Reject generate; re-run from design         |
 | `interactionMode` is identical across all artifacts  | Log warning; use earliest non-default value |
 | `tier_recommended` equals `recommend_tier(complexity, risk_level)` | Recompute; use the recomputed value; log warning |
+| Every Source Inventory item is covered or excluded, every unit has a `Source`, unit count within the cap | Return to Design; merge units or move the doubt to Open Decisions (see [plan-coverage-rules.md](plan-coverage-rules.md)) |
+| `scripts/check-plan.py` prints `PASS` on the saved plan | Fix the plan and re-save (max 2 rounds); do not register a failing plan |
 
 ## Notes
 

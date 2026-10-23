@@ -2,8 +2,8 @@
 title: Design Artifact
 description: Template for the Design Artifact produced by the Design phase. Captures the chosen approach, implementation units, complexity assessment, and alternatives considered for downstream generation.
 type: template
-version: 1.1
-timestamp: "2026-08-07"
+version: 1.2
+timestamp: "2026-10-23"
 ---
 
 # Design Artifact
@@ -33,10 +33,18 @@ tier_recommended: fast | standard | deep
 ## High-Level Technical Design
 [ONE of: Mermaid diagram, pseudo-code sketch, or data-flow map — directional guidance, not implementation specification]
 
+## Source Coverage
+| Source item | Title | Units / Outcome |
+| --- | --- | --- |
+| [source ID] | [source title] | U1 · or · Excluded — [reason quoted from the source] |
+
+Justification: [only when the unit cap is exceeded or a source item is split across units]
+
 ## Implementation Units (Phased)
 
 ### Phase 1: Foundation
 - U1. **[Unit Name]**
+  - Source: [source item ID(s)]
   - Goal: [What this unit accomplishes]
   - Dependencies: None
   - Files:
@@ -48,6 +56,7 @@ tier_recommended: fast | standard | deep
     - [Scenario]: [Input -> Expected Outcome]
 
 - U2. **[Unit Name]**
+  - Source: [source item ID(s)]
   - Goal: [What this unit accomplishes]
   - Dependencies: U1
   - Files:
@@ -59,6 +68,7 @@ tier_recommended: fast | standard | deep
 
 ### Phase 2: Integration
 - U3. **[Unit Name]**
+  - Source: [source item ID(s)]
   - Goal: [What this unit accomplishes]
   - Dependencies: U1, U2
   - Files:
@@ -70,6 +80,7 @@ tier_recommended: fast | standard | deep
 
 ### Phase 3: Rollout (if applicable)
 - U4. **[Unit Name]**
+  - Source: [source item ID(s)]
   - Goal: [What this unit accomplishes]
   - Dependencies: U3
   - Files:
@@ -80,15 +91,19 @@ tier_recommended: fast | standard | deep
 ## Complexity Assessment
 - scope_breadth: 0-3
 - integration_surface: 0-3
-- risk_level: LOW | MEDIUM | HIGH | CRITICAL   # Inherited from Research phase
 - novelty: 0-3
 - data_migration: 0-3
-- total: [sum]
+- total: [sum of the four scores, 0-12]
+- risk_level: LOW | MEDIUM | HIGH | CRITICAL   # Inherited from Research phase; NOT scored, used only for the tier floor
 - complexity: TRIVIAL | LOW | MEDIUM | HIGH | VERY_HIGH
 
 ## Alternative Approaches Considered
 - **[Approach Name]**: [Description] → **Rejected because:** [Rationale]
 - **[Approach Name]**: [Description] → **Rejected because:** [Rationale]
+
+## Open Decisions
+- OD1: [question the source does not settle] — Recommended: [default and why] — Affects: U3
+- (`None.` when empty; never a gate unit, never an edit to accepted source documents)
 
 ## Related Learnings
 - docs/learn/XXX.md — [1-line applicability note]
@@ -98,15 +113,17 @@ tier_recommended: fast | standard | deep
 - [Gap name] — [Follow-up action via /learn]
 ```
 
-In `detailed` mode only, also save the design artifact to `docs/plans/.design/<design-id>.md` for future reference or reuse. The `interactionMode` and `complexity` values flow into the Generate artifact for tier selection. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
+Save the design artifact to `docs/plans/.design/<design-id>.md` in every mode (it is the audit trail from Source Inventory to units). The `interactionMode` and `complexity` values flow into the Generate artifact for tier selection.
 
 ## Validation Rules
 
 - **Approach:** Required. Must reference the scoped context and research findings (not invented in isolation).
 - **High-Level Technical Design:** Required. Must be ONE of: Mermaid diagram, pseudo-code sketch, or data-flow map. Directional only — not an implementation specification.
-- **Implementation Units:** Required. At least one unit (U1). Each unit must have a Goal, Dependencies, Files, and **Acceptance Criteria** (at least one; each criterion becomes exactly one task and one test in the Tasks phase). Test Scenarios required for units in phases 1–2; optional for rollout-only units.
-- **Complexity Assessment:** Required. All five dimensions scored 0–3; `total` must equal the sum; `complexity` must match the threshold mapping.
-- **Alternative Approaches:** Required for MEDIUM+ complexity; at least 1 alternative. For HIGH/VERY_HIGH, at least 2 alternatives. For TRIVIAL/LOW, may be empty.
+- **Implementation Units:** Required. At least one unit (U1). Each unit must have a **Source** (an item ID from the Source Inventory), Goal, Dependencies (earlier units only), concrete Files (no "as needed" / "if required" / "etc."), and **Acceptance Criteria** (at least one; each criterion becomes exactly one task and one test in the Tasks phase). Test Scenarios required for units in phases 1–2; optional for rollout-only units.
+- **Source Coverage:** Required. Every Source Inventory item appears with units or `Excluded — <reason>`; units listed must match the units' `Source` fields; unit count ≤ 1.5 × covered items unless a `Justification:` line explains it. See [plan-coverage-rules.md](../../plan-coverage-rules.md).
+- **Complexity Assessment:** Required. All four dimensions scored 0–3; `total` must equal the sum (0–12); `complexity` must match the threshold mapping; `risk_level` is recorded but not scored.
+- **Alternative Approaches:** Required for MEDIUM+ complexity; at least 1 real alternative (never invented to fill a count). For TRIVIAL/LOW, may be empty.
+- **Open Decisions:** Required (may be `None.`). Each has a recommended default and the affected units.
 - **Related Learnings:** Required (may be empty list). Must reference `docs/learn/index.md`.
 - **Learning Gaps:** Required (may be empty list). Inherited from Scope phase; updated if design reveals new gaps.
 - **scope-id / research-id:** Required. Must match the upstream artifacts for cross-phase consistency (see [error-handling.md](../../error-handling.md)).
@@ -127,8 +144,9 @@ If the Design Artifact is incomplete at validation, use this recovery workflow:
 | Approach                    | Non-empty, references context    | Re-run Design phase; ask user to clarify approach                                                  |
 | High-Level Technical Design | One of three formats present     | Ask user to choose diagram, pseudo-code, or data-flow map                                          |
 | Implementation Units        | At least U1 with Goal/Files      | Re-run Design decomposition step                                                                   |
-| Complexity Assessment       | All 5 dimensions + total + level | Recompute from units; see [design-complexity-assessment.md](../../design-complexity-assessment.md) |
-| Alternative Approaches      | Count matches complexity tier    | Ask user for additional alternatives if below threshold                                            |
+| Complexity Assessment       | All 4 dimensions + total + level | Recompute from units; see [design-complexity-assessment.md](../../design-complexity-assessment.md) |
+| Alternative Approaches      | At least 1 for MEDIUM+           | Add the real alternative that was considered; never invent one                                     |
+| Source Coverage             | Matches inventory and units      | Re-run Design step 3: map items to units, merge extras, move doubts to Open Decisions              |
 | scope-id / research-id      | Matches upstream artifacts       | Reject; ask Orchestrator to re-run from the mismatched phase                                       |
 
 **Note:** If the Approach or Implementation Units cannot be produced, abort planning and ask the user to revisit the research phase — the scoped context may be insufficient for design.

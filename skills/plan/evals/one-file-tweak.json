@@ -1,0 +1,12 @@
+{
+  "skills": ["plan"],
+  "query": "/plan Rename the 'color' option to 'colour' in src/cli/options.ts and update its test",
+  "files": [],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "Scope asks one question for the source of truth (no document matches) and accepts 'the prompt is the only source'; source: prompt",
+    "Complexity is TRIVIAL or LOW (four-dimension score 0-2) and tier_recommended is fast",
+    "The plan has 1-3 units, a short risk table (1-2 rows), Source Coverage and Open Decisions ('None.'), and no Alternative Approaches or rollout section",
+    "scripts/check-plan.py prints PASS"
+  ]
+}
