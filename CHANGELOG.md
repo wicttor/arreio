@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-23
+
+### Fixed
+
+- **README.** Project structure now shows `/plan`'s `.scope/` and `.design/` folders as always created; documents the optional Python 3 requirement for the coverage gate; Quick Start mentions source-bound plans.
+
 ## [1.3.0] - 2026-10-23
 
 ### Added
