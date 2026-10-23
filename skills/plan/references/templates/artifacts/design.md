@@ -33,6 +33,11 @@ tier_recommended: fast | standard | deep
 ## High-Level Technical Design
 [ONE of: Mermaid diagram, pseudo-code sketch, or data-flow map — directional guidance, not implementation specification]
 
+## Codebase Trace
+| Source item | Touches (existing files) | Layer | Overlaps / discrepancies |
+| --- | --- | --- | --- |
+| [id] | `path` | [layer] | [one line or `none`] |
+
 ## Source Coverage
 | Source item | Title | Units / Outcome |
 | --- | --- | --- |
@@ -88,6 +93,19 @@ Justification: [only when the unit cap is exceeded or a source item is split acr
   - Acceptance Criteria:
     - [Single, verifiable criterion]
 
+## Integrity Checks
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | Layering | ok · or · fixed in U3 · or · OD1 |
+| 2 | Seams and interfaces | ... |
+| 3 | Effect owners (time, IDs, I/O, persistence) | ... |
+| 4 | Hook points in existing code | ... |
+| 5 | Data and content (schemas, assets, bakers) | ... |
+| 6 | State that must survive (writer and reader) | ... |
+| 7 | Old versus new types | ... |
+| 8 | Numbers and snippets | ... |
+| 9 | Preconditions | ... |
+
 ## Complexity Assessment
 - scope_breadth: 0-3
 - integration_surface: 0-3
@@ -121,6 +139,7 @@ Save the design artifact to `docs/plans/.design/<design-id>.md` in every mode (i
 - **High-Level Technical Design:** Required. Must be ONE of: Mermaid diagram, pseudo-code sketch, or data-flow map. Directional only — not an implementation specification.
 - **Implementation Units:** Required. At least one unit (U1). Each unit must have a **Source** (an item ID from the Source Inventory), Goal, Dependencies (earlier units only), concrete Files (no "as needed" / "if required" / "etc."), and **Acceptance Criteria** (at least one; each criterion becomes exactly one task and one test in the Tasks phase). Test Scenarios required for units in phases 1–2; optional for rollout-only units.
 - **Source Coverage:** Required. Every Source Inventory item appears with units or `Excluded — <reason>`; units listed must match the units' `Source` fields; unit count ≤ 1.5 × covered items unless a `Justification:` line explains it. See [plan-coverage-rules.md](../../plan-coverage-rules.md).
+- **Codebase Trace / Integrity Checks:** Required. The trace has a row per Source Inventory item; the checks table has all nine rows, each `ok`, `fixed in U<n>` or `OD<n>`, never open.
 - **Complexity Assessment:** Required. All four dimensions scored 0–3; `total` must equal the sum (0–12); `complexity` must match the threshold mapping; `risk_level` is recorded but not scored.
 - **Alternative Approaches:** Required for MEDIUM+ complexity; at least 1 real alternative (never invented to fill a count). For TRIVIAL/LOW, may be empty.
 - **Open Decisions:** Required (may be `None.`). Each has a recommended default and the affected units.

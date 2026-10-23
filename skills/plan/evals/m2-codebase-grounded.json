@@ -1,0 +1,19 @@
+{
+  "skills": ["plan"],
+  "query": "/plan Implement milestone M2 (Souls and saves) from the project's Implementation Plan",
+  "files": [],
+  "mode": "autopilot",
+  "notes": "Regression replay of the soulcrystals M2 plan 2026-10-23-003, whose review found seven blocking defects. Run against a project with a layered module architecture (rules module that must not depend on persistence), source steps that list files, and existing gameplay hooks.",
+  "expected_behavior": [
+    "Research writes a Codebase Trace row for every source item, citing opened files (damage application, death handling, input binding, data-asset definitions and baker, player character/controller), not only pattern matches",
+    "Design records the layer rule (rules module depends only on core; persistence depends on rules) and the Integrity Checks table has all nine rows, none open",
+    "A rules-side interface for the journal (a port) is placed in the rules layer before the pipeline and ledger units; the pipeline never depends on the persistence module",
+    "The file-system seam lists append, create-directory and move-with-overwrite (or an Open Decision says why not), and the save-then-rotate order is stated",
+    "A production clock has a named owner unit outside the rules module",
+    "Soul content changes list the data-asset header, the baker, the shipped assets and the editing constraint (exclusive locks), and the damage/death hooks and the controller binding appear in Modify lists",
+    "Every piece of state said to survive a restart (rotation cursor, assignments) has a writer delta and a reader handler, or an Open Decision",
+    "Unit count stays at or below ceil(1.5 x 9) = 14 without a justification, never above 18",
+    "The plan is saved with status: ready and does not state a file count that disagrees with its lists",
+    "scripts/check-plan.py prints PASS, run from the project root so Modify/Create paths are checked against the repository"
+  ]
+}

@@ -19,7 +19,7 @@ This is the Phase 3 pipeline for the Plan Skill. It orchestrates the following s
 Run the **[Step 0 verification](../references/error-handling.md)**. Required inputs:
 
 1. **Scoped Context Artifact** with `scope-id`, `domain`, `Problem`, `Intended Behavior`, `Success Criteria`, `Source of Truth`, and a non-empty `Source Inventory`.
-2. **Research Findings Artifact** with `research-id`, `Patterns Found`, `High-Risk Detection` (with `risk_level`), `Tech Stack`.
+2. **Research Findings Artifact** with `research-id`, `Patterns Found`, `Codebase Trace` (a row per Source Inventory item), `High-Risk Detection` (with `risk_level`), `Tech Stack`. A missing or empty trace sends the run back to Research.
 3. `interactionMode` present (default to `smart` if missing; log warning).
 4. Cross-phase consistency: the research artifact's `scope-id` matches the scope output.
 5. `force_deep` (boolean from the Orchestrator context; default `false`). It never changes `complexity` or `tier_recommended`; it only raises the amount of material this phase must produce (Steps 4–5).
@@ -82,6 +82,22 @@ Break the approach into **phased implementation units** that cover the Scope pha
 
 4. **Dependency check:** Verify no cycles exist. A unit may only depend on units in earlier phases. If a cycle is detected, restructure the units.
 
+### Step 3b: Integrity Checks
+
+A plan can cover every source item and still be unbuildable. Before the units are final, run these checks against the **Codebase Trace** from Research and record each result in the `Integrity Checks` table. Do the work; a row is `ok`, `fixed in U<n>` (the unit now carries the fix), or `OD<n>`. None may stay open.
+
+1. **Layering.** For every unit dependency and every cross-module call a unit introduces, confirm the direction is allowed by the layer rule in the trace. When a lower layer needs to be called by code that the higher layer owns (a rule that uses a service which depends on the rules), add the interface or port to the lower layer, inside the earliest unit that can own it. Never build a dependency the rule forbids.
+2. **Seams and interfaces.** For every interface, seam or port a unit introduces, list the operations each consumer unit needs from it (name the consumer). Any needed operation the seam lacks becomes an acceptance criterion on the unit that owns the seam.
+3. **Effect owners.** Every unit that needs time, randomness, IDs, file or network I/O, or persistence names the unit whose files hold the production implementation (a test fake is not enough). No owner means a missing file entry or an Open Decision.
+4. **Hook points.** Every behavior wired into existing code (damage, death, input, lifecycle, save/load) has the existing call site from the trace in some unit's `Modify` list, and the unit that listens or feeds is named.
+5. **Data and content.** Every unit that changes a data shape lists the schema, the content or asset files, and the importer or baker that must change, and records any editing constraint from the trace. A shape change with no consumer update is a defect.
+6. **State that must survive.** For each piece of state a unit says persists across restarts or replays, name the unit that writes it and the unit that reads it back. A writer without a reader, or the reverse, is a defect.
+7. **Old versus new types.** For each overlap in the trace, state the relation (replace, wrap, coexist) in the unit that introduces the new type, and make criteria that depend on a field the old type lacks explicit.
+8. **Numbers and snippets.** Do not write file or test counts in prose; the gate recounts them. Example snippets and test scenarios use the field names and shapes of the schemas they cite, copied from the source or the code.
+9. **Preconditions.** If the source lists a step, manual check or decision that must be done first and the trace shows it is still pending, the dependent unit says so in its Dependencies or the plan raises an Open Decision.
+
+If a check needs a fact the trace does not contain, go back to the code and read it; do not guess. A fix must not add a unit that no source item backs: extend an existing unit's files and criteria, or write an Open Decision.
+
 ### Step 4: Complexity Assessment
 
 Score the design across four dimensions (0–3 each) and compute the complexity level. For the scoring table, dimension definitions, and threshold mapping, see **[design-complexity-assessment.md](../references/design-complexity-assessment.md)**.
@@ -121,7 +137,7 @@ Format: `**[Approach Name]**: [Description] → **Rejected because:** [Rationale
 
 2. Produce a **Design Artifact** block (as markdown) following the schema in [design.md](../references/templates/artifacts/design.md).
    - Include the generated `design-id`, inherited `scope-id` and `research-id`, `interactionMode`, `complexity`, and `tier_recommended` (the value computed in Step 4.5 — never re-derive it from complexity alone).
-   - Include the `Source Coverage` mapping (inventory item → units or exclusion) and the `Open Decisions` list.
+   - Include the `Source Coverage` mapping (inventory item → units or exclusion), the compact `Codebase Trace` (item → touched files and layer, copied from Research), the `Integrity Checks` table, and the `Open Decisions` list.
    - **Announce the coverage line in every mode:** `Coverage: N source items -> M units (xR), K excluded`.
 
 ### Step 7: Present, Confirm, and Save
@@ -133,7 +149,8 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - 3+ learning gaps carried from Scope, or
 - The selected approach has no local pattern precedent (Novelty = 3), or
 - The unit count exceeds the coverage cap (Step 3.3), or
-- Open Decisions block 3+ units.
+- Open Decisions block 3+ units, or
+- An Integrity Check is resolved as an Open Decision for a blocking layering or persistence problem.
 
 - **Detailed:** present the Design Artifact and ask one question with options *(1) Proceed to Generate, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–6 reusing the `design-id`. On **Abort**, stop and inform the Orchestrator.
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
@@ -143,9 +160,10 @@ Then, **in every mode**, save the artifact to `docs/plans/.design/<design-id>.md
 
 ## Output: Design Artifact
 
-- Verify that the Design Artifact is complete and valid, containing all required fields: `design-id`, `scope-id`, `research-id`, `interactionMode`, `complexity`, `tier_recommended`, Approach, High-Level Technical Design, Implementation Units (each with Source and Acceptance Criteria), Source Coverage, Complexity Assessment, Alternative Approaches, Open Decisions, Related Learnings, and Learning Gaps.
+- Verify that the Design Artifact is complete and valid, containing all required fields: `design-id`, `scope-id`, `research-id`, `interactionMode`, `complexity`, `tier_recommended`, Approach, High-Level Technical Design, Codebase Trace, Implementation Units (each with Source and Acceptance Criteria), Integrity Checks, Source Coverage, Complexity Assessment, Alternative Approaches, Open Decisions, Related Learnings, and Learning Gaps.
 - Verify the coverage: every Source Inventory item is covered or excluded with a reason, every unit has a `Source`, the unit count is within the cap (or justified), unit IDs ascend, and every dependency is an earlier unit.
-- Verify that no `Files` entry says "as needed", "if required", or "etc.".
+- Verify that no `Files` entry says "as needed", "if required", or "etc.", that every `Modify` path appears in the Codebase Trace or was opened, and that no file is created by two units.
+- Verify that `Integrity Checks` has all nine rows, none left open.
 - Verify that the `complexity` value matches the threshold mapping from the four dimension scores.
 - Verify that `tier_recommended` equals `recommend_tier(complexity, risk_level)` per [plan-tier-selection.md](../references/plan-tier-selection.md) (e.g., `complexity: HIGH` → `deep`, not `standard`).
 - Verify that, when `force_deep` is true, the artifact contains the rollout/integration drafts from Step 4.6 and at least one real alternative.

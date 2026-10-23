@@ -16,7 +16,7 @@ This document contains the planning template supported by the Plan skill. Render
 plan-id: YYYY-MM-DD-NNN
 type: plan
 title: "[Plan title]"
-status: complete
+status: ready
 source: path/to/doc.mdx#section-anchor | prompt
 tier: fast | standard | deep
 tier_recommended: fast | standard | deep
@@ -178,7 +178,7 @@ User Input → Validation → Processing → Storage → Event Bus → Notificat
 plan-id: 2026-05-01-001
 type: plan
 title: "Migrate Session Storage from In-Memory to Redis"
-status: complete
+status: ready
 source: prompt
 tier: deep
 tier_recommended: deep

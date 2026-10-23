@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-23
+
+### Added
+
+- **Plan: Codebase Trace (Research Step 1b).** Research now traces the real code per Source Inventory item: touch points found by symbol and opened, the layer and allowed dependency direction (from architecture docs or build files), overlapping existing types, data and content files with their editing constraints, and discrepancies against file lists in the source. Unfound touch points are recorded as `not found` for Design to turn into Open Decisions. Required in every mode; tech-stack detection and query table gained C++/Unreal and C#/.NET.
+- **Plan: Integrity Checks (Design Step 3b).** Nine checks run against the trace before units are final: layering (add a port in the lower layer instead of inverting a dependency), seam operations per consumer, effect owners (time, IDs, I/O, persistence), hook points in existing code, data and content, state that must survive (writer and reader), old versus new types, numbers and snippets, preconditions. Results go into the Design artifact; Generate rejects a design with an open row.
+- **Plan gate: repository checks.** `check-plan.py` now verifies `Modify` paths exist (or are created by an earlier unit), `Create` paths do not exist and are created by one unit only, and file counts stated in prose match the lists. `--repo` sets the root (default: nearest `.git` ancestor), `--no-fs` skips these checks.
+- **Plan gate: hard unit ceiling.** Units above 2x covered source items (`--hard-ratio`) fail even with a `Justification:`. The 1.5x cap stays a justified warning.
+- **Plan evals.** `plan-files-bad.md` with `repo-stub`, and `m2-codebase-grounded.json` replaying the soulcrystals M2 plan review.
+
+### Changed
+
+- **Generated plans start as `status: ready`**, not `complete`; the gate warns on `complete`. Generate marks earlier `ready` plans for the same `source:` as `superseded by <plan-id>` in the index and in their frontmatter.
+
+### Why
+
+Plan 003 for soulcrystals M2 matched the source one-to-one but its review found seven blocking defects (inverted dependency, under-specified seam, missing clock, incomplete content files, unplanned damage/death hooks, wrong input files, rotation not persisted). The 1.3-1.5 fixes bounded scope; nothing grounded the plan in the code. Replaying `check-plan.py` against that plan now reports the nonexistent `Modify` paths, the 81-versus-90 file count and the 2.33x unit ratio.
+
 ## [1.5.0] - 2026-10-23
 
 ### Added

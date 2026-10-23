@@ -23,7 +23,7 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
 1. **Read the scoped context** to understand the task and extract key terms (domain, feature, technology area).
 
 2. **Detect tech stack** from config files in repository root:
-   - Check for: `package.json` (Node.js), `pyproject.toml` (Python), `go.mod` (Go), `Cargo.toml` (Rust), `Gemfile` (Ruby), `composer.json` (PHP), `pom.xml` (Java), `build.gradle` (Java/Kotlin)
+   - Check for: `package.json` (Node.js), `pyproject.toml` (Python), `go.mod` (Go), `Cargo.toml` (Rust), `Gemfile` (Ruby), `composer.json` (PHP), `pom.xml` (Java), `build.gradle` (Java/Kotlin), `*.uproject` / `*.Build.cs` / `CMakeLists.txt` (C++/Unreal), `*.sln` / `*.csproj` (C#/.NET)
    - Record detected tech stack and versions for Step 5
    - If multiple tech stacks detected, prioritize primary language
    - **If NO config files match:** Record "Unknown/Multi-language" and proceed to Step 3 using generic search queries (e.g., "architecture", "pattern", "implementation") instead of tech-specific table. Note: This may result in broader matches and lower confidence.
@@ -37,6 +37,8 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
    | Go         | "middleware", "handler", "auth", "gin"             | "handler", "route", "gin", "endpoint"         |
    | Rust       | "middleware", "guard", "auth", "actix"             | "handler", "route", "actix", "endpoint"       |
    | Java       | "filter", "interceptor", "security", "spring"      | "controller", "endpoint", "spring", "mapping" |
+   | C++ / Unreal | "UCLASS", "Subsystem", "AttributeSet", "GameplayEffect" | "Interface", "Delegate", "Seam", "Port" |
+   | C# / .NET  | "interface", "service", "middleware"               | "controller", "handler", "repository"         |
 
 4. **Search in two phases** (hybrid approach):
 
@@ -66,6 +68,24 @@ Run the **[Step 0 verification](../references/error-handling.md)**. Required inp
    - Relevant code snippet or line range (if available)
 
 7. **Output:** Compile patterns found into `Patterns Found` section of Research Findings Artifact with confidence levels.
+
+### Step 1b: Codebase Trace
+
+Pattern search finds look-alikes; it does not show what the change touches. Trace the real code **before** Design decomposes anything. This step is required in every mode and does not depend on the pattern confidence from Step 1.
+
+For each Source Inventory item (or each Success Criterion when `source: prompt`):
+
+1. **Locate the touch points by symbol, not by keyword.** Search for the exact types, functions, assets or config keys the item names or implies, then open each hit and read the relevant region. Do not infer a file's role from its name.
+2. **Record, with `path` (and line when useful):**
+   - **Touches:** existing files the item must change, and the call sites that must feed or consume the new behavior (e.g. where damage is applied, where an entity dies, where input is bound, where state is saved).
+   - **Layer and allowed direction:** the module or layer each file belongs to and which layers may depend on which, read from the architecture document or the build files (module dependency lists, workspace manifests, import rules, lint rules). State the rule you found and where.
+   - **Overlaps:** existing types or files with the same job as something the item introduces (name both and their relation: replace, wrap, or coexist).
+   - **Data and content files:** schemas, assets, generated or binary files, baked or imported data, and config the item changes. Note how they may be edited (tooling, locks, regeneration) when the project says so.
+   - **Source file lists:** where the source names files, check each exists (to be modified) or not (to be created) and record every discrepancy.
+3. **Mark gaps honestly.** A touch point you could not find is recorded as `not found`; Design turns it into an Open Decision. Never fill it with a plausible guess.
+4. **Keep it a table of facts** (`item | touches | layer | overlaps | data/content | discrepancies`); no design opinions here.
+
+Output: the `Codebase Trace` section of the Research Findings Artifact.
 
 ### Step 2: High-Risk Area Detection
 
@@ -102,6 +122,7 @@ For query templates, formatting guidance, and examples for each high-risk area, 
 
 2. Produce a **Research Findings Artifact** block (as markdown) following the schema in [research-findings.md](../references/templates/artifacts/research-findings.md):
    - Include the generated `research-id` and the inherited `scope-id`.
+   - Include the `Codebase Trace` from Step 1b.
    - Write a 2–3 sentence **Findings Summary** overview of the Patterns Found, risk level, and constraints.
 
 ### Step 7: Present, Confirm, and Save
@@ -109,7 +130,8 @@ For query templates, formatting guidance, and examples for each high-risk area, 
 Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these research-specific **Smart pause triggers**:
 
 - Confirmed risk level is HIGH or CRITICAL **and** fewer than 3 patterns found (external research recommended), or
-- Zero patterns found in the codebase.
+- Zero patterns found in the codebase, or
+- The Codebase Trace has a `not found` touch point or a source file-list discrepancy that affects 3+ source items.
 
 - **Detailed:** present the Research Findings Artifact and ask one question with options *(1) Proceed to Design, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–6 reusing the `research-id`. On **Abort**, stop and inform the Orchestrator.
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
@@ -120,6 +142,7 @@ On any proceed/skip path: in `detailed` mode only, save the artifact to `docs/pl
 ## Output: Research Findings Artifact
 
 - Verify that the Research Findings Artifact is complete and valid, containing all required fields, and it accurately reflects the user's input and any existing plans, learnings, or requirements found.
+- Verify that the `Codebase Trace` has a row for every Source Inventory item, that each cited path was opened (not inferred), and that every `not found` is listed for Design.
 - Verify that the `interactionMode` value is set correctly based on the user's selection in the Orchestrator skill.
 - Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.research/<research-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 

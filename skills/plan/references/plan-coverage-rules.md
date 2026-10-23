@@ -2,13 +2,13 @@
 title: Plan Coverage Rules
 description: Reference for Scope, Design, and Generate. Defines the source of truth, the Source Inventory, the unit-per-source-item mapping, the unit cap, concrete-file rules, Open Decisions, and the checks that scripts/check-plan.py enforces.
 type: reference
-version: 1.0
+version: 1.1
 timestamp: "2026-10-23"
 ---
 
 # Plan Coverage Rules
 
-A plan implements a **source of truth**. These rules keep the plan the same size and shape as that source. [scripts/check-plan.py](../scripts/check-plan.py) enforces rules 1–8 mechanically; run it, do not re-implement it.
+A plan implements a **source of truth**. These rules keep the plan the same size and shape as that source. [scripts/check-plan.py](../scripts/check-plan.py) enforces rules 1–8 mechanically (rule 7 reads the working tree, so run it from the project or pass `--repo`); run it, do not re-implement it.
 
 ## Contents
 
@@ -42,10 +42,10 @@ Never invent items, never rename IDs, never reorder items that the source orders
 1. **One unit per source item is the default.** Each unit carries `Source: <item id>`; every unit has one.
 2. **Every item is covered or excluded.** An excluded item needs a reason that quotes or points at the source (e.g. `Excluded — source says "Not in M2"`).
 3. **Merge before you split.** Merge units that share one source item and one file set. Split one item into several units only when a single unit would exceed 5 files or about one day; write the reason in the Source Coverage table.
-4. **Unit cap.** Units ≤ 1.5 × covered source items (rounded up). Above the cap, merge, or add a `Justification:` line under the Source Coverage table. Never exceed it silently.
+4. **Unit cap.** Units ≤ 1.5 × covered source items (rounded up). Above the cap, merge, or add a `Justification:` line under the Source Coverage table. Never exceed it silently. Above 2 × covered items (rounded up) the gate fails even with a justification: merge, or move the surplus work to Open Decisions.
 5. **Unit IDs follow document order** (`U1`, `U2`, … ascending). Letter suffixes (`U2a`) are reserved for the Tasks phase. If a unit must be added late, renumber the plan before saving; IDs are stable only after the plan is saved.
 6. **Dependencies point backwards.** A unit depends only on earlier units. Phases are dependency layers; a phase never contains a lower-numbered unit than the phase before it.
-7. **Files are concrete.** Every path in `Files` is an exact repository-relative path. A pattern is allowed only for a generated set, with its count (e.g. `` `tests/M2/*Tests.cpp` (6 files) ``). The phrases "as needed", "if required", "where needed", "etc." are not allowed. If a path is unknown, put it in Open Decisions.
+7. **Files are concrete and true.** Every path in `Files` is an exact repository-relative path. `Modify` paths exist in the repository (or are created by an earlier unit); `Create` paths do not exist yet and are created by exactly one unit. A file or test count stated in prose must equal what the lists contain, or be left out. A pattern is allowed only for a generated set, with its count (e.g. `` `tests/M2/*Tests.cpp` (6 files) ``). The phrases "as needed", "if required", "where needed", "etc." are not allowed. If a path is unknown, put it in Open Decisions.
 8. **Tests are named once.** Each source test ID belongs to the unit that owns its behaviour. A closing gate unit may list all test IDs; any other duplicate is a warning.
 9. **No new gates.** Do not add units or blocking steps for work the source does not contain (contract reviews, spec rewrites, extra research units). Do not change accepted source documents. Put the doubt in Open Decisions.
 10. **Criteria stay verifiable.** A unit has one or more Acceptance Criteria, each a single checkable outcome. The Tasks phase turns each criterion into one task; it does not change the unit count.
@@ -85,5 +85,7 @@ When Python is unavailable, verify the same things by hand and report the result
 - [ ] Table units match unit `Source:` fields
 - [ ] Unit count ≤ ceil(1.5 × covered items), or justified
 - [ ] Unit IDs ascend in document order; every dependency is an earlier unit
-- [ ] No vague phrases in `Files`
+- [ ] No vague phrases in `Files`; every `Modify` path exists; no `Create` path exists or is created twice; stated file counts match the lists
+- [ ] Unit count ≤ ceil(2 × covered items), even with a justification
+- [ ] The Design Artifact's Integrity Checks table has no open row
 - [ ] Every test ID the source names appears in the plan

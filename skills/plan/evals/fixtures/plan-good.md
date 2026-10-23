@@ -2,7 +2,7 @@
 plan-id: 2026-01-01-001
 type: plan
 title: "Saves milestone"
-status: complete
+status: ready
 source: evals/fixtures/milestone-source.md#8-saves-milestone
 tier: standard
 ---

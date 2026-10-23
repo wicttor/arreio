@@ -18,7 +18,7 @@ This is the Phase 4 pipeline for the Plan Skill. It orchestrates the following s
 
 Run the **[Step 0 verification](../references/error-handling.md)**. Required input: a valid **Design Artifact**. Specifically verify:
 
-1. The Design Artifact exists and contains `design-id`, `scope-id`, `research-id`, `interactionMode`, `complexity`, `tier_recommended`, `Approach`, `High-Level Technical Design`, `Implementation Units`, `Source Coverage`, and `Open Decisions`.
+1. The Design Artifact exists and contains `design-id`, `scope-id`, `research-id`, `interactionMode`, `complexity`, `tier_recommended`, `Approach`, `High-Level Technical Design`, `Codebase Trace`, `Implementation Units`, `Integrity Checks`, `Source Coverage`, and `Open Decisions`. Every `Integrity Checks` row is `ok`, `fixed in U<n>`, or `OD<n>`; a row left open sends the artifact back to Design.
 2. The `complexity` field is one of: `TRIVIAL`, `LOW`, `MEDIUM`, `HIGH`, `VERY_HIGH`.
 3. The `interactionMode` is present and valid (default to `smart` if missing; log warning).
 4. Cross-phase consistency: the `scope-id` and `research-id` match the upstream artifacts.
@@ -53,7 +53,7 @@ Render the final plan from the [Final Plan template](../references/templates/art
    plan-id: YYYY-MM-DD-NNN
    type: plan
    title: "[Plan title]"
-   status: complete
+   status: ready                                   # a generated plan is `ready`; Work and Review move it on
    source: path/to/doc.mdx#section-anchor | prompt   # from the Scope phase's Source of Truth
    tier: fast | standard | deep
    tier_recommended: fast | standard | deep
@@ -88,7 +88,7 @@ Render the final plan from the [Final Plan template](../references/templates/art
 3. **Carry forward content from the Design Artifact:**
    - `Approach` → Overview (add `**Out of scope:**` from the Source Inventory's exclusions)
    - `Source Coverage` → Source Coverage (copy the mapping; do not recompute it)
-   - `Open Decisions` → Open Decisions
+   - `Open Decisions` → Open Decisions (Integrity Checks rows resolved as `OD<n>` are already in this list)
    - `High-Level Technical Design` → High-Level Technical Design
    - `Implementation Units` → Implementation Units (Phased)
    - `Alternative Approaches` → Alternative Approaches Considered
@@ -153,6 +153,8 @@ Run this step only after confirmation (or any auto-proceed path); never on **Abo
 ```markdown
 | [YYYY-MM-DD-NNN](YYYY-MM-DD-NNN-<kebab-case-name>.md) | [Plan Title] | [tier] | [tier_recommended] | [complexity] | [risk] | ready |
 ```
+
+5. **Supersede earlier plans.** Any other row whose plan has the same `source:` and status `ready` (or the plan named by `existing_plan.path` on Resume) is set to `superseded by <plan-id>`, and that plan's own frontmatter `status:` is set the same way. Never leave two `ready` plans for one source.
 
 ### Step 6: Return to Orchestrator
 

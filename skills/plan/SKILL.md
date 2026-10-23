@@ -41,6 +41,8 @@ force_deep: true | false   # true only when `--deep` was passed; default false
 
 **Artifact persistence:** the **Scope** and **Design** artifacts are written to disk in every mode: they are small, and they are the audit trail for scope drift. The **Research** artifact is written only in `detailed` mode; in `smart`/`autopilot` it is passed in context (see `references/interaction-mode-propagation.md#artifact-persistence`). Final deliverables are always written.
 
+**Grounding:** Research traces the real code for every source item (`Codebase Trace`) and Design checks the units against that trace (`Integrity Checks`: layering, seams, effect owners, hook points, data and content, persisted state, old versus new types, numbers, preconditions) before the plan is rendered. Both tables live in the Design artifact, which is always saved.
+
 **Propagation:** `interactionMode` flows into `research`, `design`, and `generate` artifacts; each downstream phase reads it to adjust confirmation behaviour (detailed = pause every transition; autopilot = run all; smart = pause only on HIGH-risk).
 
 ## Orchestration Implementation

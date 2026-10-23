@@ -23,6 +23,11 @@ timestamp: ISO-8601 timestamp (e.g., 2026-07-04T14:30:00Z)
 ## Patterns Found
 - `path/to/pattern/file` — [pattern description]
 
+## Codebase Trace
+| Source item | Touches (existing files, call sites) | Layer / allowed direction | Overlaps with existing types | Data and content files | Discrepancies / not found |
+| --- | --- | --- | --- | --- | --- |
+| [id] | `path:line` — [what it does here] | [layer] — rule from `[doc or build file]` | [existing type] — replace / wrap / coexist | `path` — [how it is edited] | [source lists X; repo has Y] |
+
 ## High-Risk Detection
 - Candidates:
   - [Area] — `confirmed` | `dismissed` — [one-line evidence: file, requirement quote, or why the keyword is used in a general sense]

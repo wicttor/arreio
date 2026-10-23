@@ -3,12 +3,15 @@
 
 Checks that a rendered plan stays inside its source of truth: every source item is
 covered or explicitly excluded, every unit traces to a source item, unit count stays
-proportional, unit order and dependencies are valid, file lists are concrete, and
-(optionally) every test ID named in the source appears in the plan.
+proportional, unit order and dependencies are valid, file lists are concrete and agree
+with the repository (Modify paths exist, Create paths do not, no file is created twice,
+stated file counts match the lists), and (optionally) every test ID named in the source
+appears in the plan.
 
 Usage:
     python check-plan.py <plan.md> [--source <doc>] [--section <heading-regex>]
-                         [--item-regex <regex>] [--max-ratio 1.5]
+                         [--item-regex <regex>] [--max-ratio 1.5] [--hard-ratio 2.0]
+                         [--repo <dir>] [--no-fs]
 
 Exit codes: 0 = pass (warnings allowed), 1 = at least one error, 2 = usage/IO error.
 Uses only the Python standard library.
@@ -16,6 +19,7 @@ Uses only the Python standard library.
 
 import argparse
 import math
+import os
 import re
 import sys
 
@@ -29,6 +33,8 @@ UNIT_START = re.compile(r"^\s*-\s+\*{0,2}(U\d+[a-z]?)\b")
 UNIT_ID = re.compile(r"U(\d+)([a-z]?)")
 TEST_ID = re.compile(r"\b([A-Z]{1,5}(?:-[A-Z]{1,5})*)-(\d{2})(?:\.\.(\d{2}))?\b")
 HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
+FILE_LINE = re.compile(r"^\s*(?:[-*]\s+)?\**(Create|Modify|Test)\**:?\**\s*(.*)$", re.I)
+FILE_COUNT_CLAIM = re.compile(r"\b(\d+)\s+planned\s+files\b|\b(\d+)\s+files\s+in\s+total\b|\btotal\s+of\s+(\d+)\s+files\b", re.I)
 
 
 def read_text(path):
@@ -136,7 +142,65 @@ def parse_coverage(text):
     return rows, justification
 
 
-def check(plan_text, args):
+def find_repo_root(plan_path, explicit):
+    """Return the repository root: --repo, else the nearest ancestor of the plan holding .git, else the current directory."""
+    if explicit:
+        return os.path.abspath(explicit)
+    folder = os.path.dirname(os.path.abspath(plan_path))
+    while True:
+        if os.path.exists(os.path.join(folder, ".git")):
+            return folder
+        parent = os.path.dirname(folder)
+        if parent == folder:
+            return os.getcwd()
+        folder = parent
+
+
+def file_entries(unit):
+    """Return (kind, path) pairs from a unit's file lines; globs and non-path tokens (test IDs) are skipped."""
+    entries = []
+    for line in unit["files"]:
+        match = FILE_LINE.match(line)
+        if not match:
+            continue
+        kind = match.group(1).lower()
+        for token in re.findall(r"`([^`]+)`", match.group(2)):
+            if "/" in token and "*" not in token and " " not in token:
+                entries.append((kind, token.replace("\\", "/")))
+    return entries
+
+
+def check_files(units, plan_text, repo, errors, warnings):
+    """Check file lists against the repository and against each other; return (entry count, distinct count)."""
+    created_by = {}
+    entry_total, distinct = 0, set()
+    for unit in units:
+        for kind, path in file_entries(unit):
+            entry_total += 1
+            distinct.add(path)
+            exists = repo is not None and os.path.exists(os.path.join(repo, path))
+            if kind == "create":
+                if path in created_by:
+                    errors.append(f"{unit['id']}: `{path}` is already created by {created_by[path]}; use Modify or drop the duplicate")
+                    continue
+                created_by[path] = unit["id"]
+                if exists:
+                    errors.append(f"{unit['id']}: Create `{path}` already exists in the repository (use Modify, or fix the path)")
+            elif kind == "modify" and repo is not None and not exists and path not in created_by:
+                errors.append(f"{unit['id']}: Modify `{path}` does not exist and no earlier unit creates it")
+    # Stated file counts must match the lists (lines outside the unit file lists only).
+    unit_file_lines = {line for unit in units for line in unit["files"]}
+    for line in plan_text.splitlines():
+        if line in unit_file_lines:
+            continue
+        for claim in FILE_COUNT_CLAIM.finditer(line):
+            stated = int(next(g for g in claim.groups() if g))
+            if stated not in (entry_total, len(distinct)):
+                errors.append(f"plan states {stated} files but the units list {entry_total} entries ({len(distinct)} distinct paths); recount or drop the number")
+    return entry_total, len(distinct)
+
+
+def check(plan_text, args, repo=None):
     """Run all checks; return (errors, warnings, summary)."""
     errors, warnings = [], []
     units = parse_units(plan_text)
@@ -146,6 +210,9 @@ def check(plan_text, args):
         errors.append("frontmatter has no `source:` field (use `source: prompt` when no document applies)")
     if not re.search(r"^##\s+Open Decisions\b", plan_text, re.M | re.I):
         errors.append("missing `## Open Decisions` section (write `None.` when empty)")
+    status = re.search(r"^status:\s*(\S+)", plan_text.split("\n---", 2)[0], re.M)
+    if status and status.group(1).strip("\"'") == "complete":
+        warnings.append("frontmatter `status: complete` on a freshly generated plan; use `ready` (Work and Review move it on)")
     if not units:
         errors.append("no implementation units found (expected lines like `- U1. **Name**`)")
     if rows is None:
@@ -176,6 +243,8 @@ def check(plan_text, args):
             if hit:
                 errors.append(f"{unit['id']}: vague file list (\"{hit}\"): {line.strip()[:80]}")
 
+    entries, distinct_count = check_files(units, plan_text, repo, errors, warnings)
+
     # Traceability: units <-> coverage rows.
     computed = {}
     for unit in units:
@@ -203,6 +272,9 @@ def check(plan_text, args):
         errors.append(f"{len(units)} units for {len(covered)} source items exceeds the cap of {cap} (x{args.max_ratio}); merge units or add `Justification:` in Source Coverage")
     elif len(units) > cap:
         warnings.append(f"{len(units)} units exceed the cap of {cap}; justified: {justification[:80]}")
+    hard = math.ceil(args.hard_ratio * max(len(covered), 1))
+    if len(units) > hard:
+        errors.append(f"{len(units)} units for {len(covered)} source items exceeds the hard ceiling of {hard} (x{args.hard_ratio}) even with a justification; merge units or move work to Open Decisions")
 
     # Optional comparison against the source document itself.
     if args.source:
@@ -231,7 +303,7 @@ def check(plan_text, args):
         if len(owners) > 1:
             warnings.append(f"test ID {test_id} appears in several units: {', '.join(sorted(owners))}")
 
-    summary = f"Coverage: {len(covered)} source items -> {len(units)} units (x{ratio:.2f}), {excluded} excluded"
+    summary = f"Coverage: {len(covered)} source items -> {len(units)} units (x{ratio:.2f}), {excluded} excluded; {entries} file entries, {distinct_count} distinct paths"
     return errors, warnings, summary
 
 
@@ -243,9 +315,13 @@ def main():
     parser.add_argument("--section", help="heading regex selecting the source section (e.g. '^## 8\\. M2')")
     parser.add_argument("--item-regex", default=r"^#{2,4}\s+(\d+(?:\.\d+)+)\b", help="regex whose group 1 captures source item IDs from headings")
     parser.add_argument("--max-ratio", type=float, default=1.5, help="max units per covered source item")
+    parser.add_argument("--hard-ratio", type=float, default=2.0, help="ceiling on units per covered source item; an error even when justified")
+    parser.add_argument("--repo", help="repository root for path checks (default: nearest ancestor of the plan holding .git)")
+    parser.add_argument("--no-fs", action="store_true", help="skip the checks that read the repository (Modify exists, Create does not)")
     args = parser.parse_args()
 
-    errors, warnings, summary = check(read_text(args.plan), args)
+    repo = None if args.no_fs else find_repo_root(args.plan, args.repo)
+    errors, warnings, summary = check(read_text(args.plan), args, repo)
     print(summary)
     for message in warnings:
         print(f"WARN  {message}")
