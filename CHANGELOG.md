@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.3.0] - 2026-10-23
+
 ### Added
 
 - **Source-bound planning.** Scope now identifies a *source of truth* (a milestone's numbered steps, a spec section, or the prompt) and extracts a binding Source Inventory, asking one question in every mode when the source is unclear. Design maps one unit per source item (merge before split, unit cap of 1.5× covered items); every unit declares a `Source`. Plans gain `source:` frontmatter, a `Source Coverage` table, and an `Open Decisions` section for doubts the source does not settle (no new gates, no edits to accepted documents). See `skills/plan/references/plan-coverage-rules.md`.
