@@ -1,0 +1,13 @@
+{
+  "skills": ["review"],
+  "query": "/review 2026-10-23-001",
+  "files": ["fixtures/tasks-after-good/index.md"],
+  "mode": "smart",
+  "expected_behavior": [
+    "Scope classifies the input as task-in-review (three tasks are for-review), records task-files from the Work Report's per-task touched-files, and defaults requirements to the tasks' own Acceptance Criteria",
+    "The only finding (a missing test) is located in T02's files and carries tasks: [T02]",
+    "Report derives one verdict per task: T01 and T03 approved, T02 changes-requested; the run-level status is changes-requested",
+    "T01 and T03 become completed with both checkboxes ticked; T02 becomes blocked with block-reason and blocked-by: review:<report-id> and stays unticked",
+    "The report carries the full findings list with evidence, and check-review.py prints PASS with --registry and --tasks"
+  ]
+}

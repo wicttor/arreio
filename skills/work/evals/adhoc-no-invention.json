@@ -1,0 +1,12 @@
+{
+  "skills": ["work"],
+  "query": "/work Make sessions expire after 30 minutes of inactivity",
+  "files": [],
+  "mode": "smart",
+  "expected_behavior": [
+    "Triage allocates a work-id, treats the prompt as the only source, and resolves exactly one Acceptance Criterion (one stated outcome) into one task",
+    "files.test points at the module's existing test file; files.create/modify are exact paths, never 'as needed'",
+    "Ideas the user did not ask for (a configurable timeout, a cleanup job, docs) appear under suggestions in the Work Report and are not tasks",
+    "Smart mode pauses once for the inferred task list before Prepare"
+  ]
+}

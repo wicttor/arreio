@@ -2,8 +2,8 @@
 title: Work Report Artifact
 description: Template for the Work Report produced by the Review phase. Carries the final task-outcome rollup, simplification/consolidation summary, regression check, scope-creep findings, learnings to capture, and work-state; appended to the task index as the closing status block.
 type: template
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Work Report Artifact
@@ -32,6 +32,9 @@ task-outcome-rollup:
   blocked: <N>
   skipped: <N>
 
+tasks:                                          # per task, so /review can scope to what each task actually changed
+  - { task-id: <work-id>-T<NN>, unit: U<NN>, status: completed | for-review | blocked | skipped, touched-files: [path, ...] }
+
 gate-decision: "[summary of gate outcome; e.g., 'Gate passed: clean regression check, no scope creep' OR 'Gate blocked: regressions-found (3 new failures) + scope-creep in 2 files']"
 
 simplification-summary: "[what was simplified/clipped across completed tasks' changed files]"
@@ -43,6 +46,13 @@ regression-check:
   baseline-state: green | snapshot-and-continue
 
 scope-creep: none | [ { task-id, file, why-exceeds-ac } ]
+deviations: []                                # copied from the Execution Log
+source-coverage:                              # plan-based: per Source Coverage row; ad-hoc: per stated outcome
+  - { item: SC1, tasks: [<task-id>], state: done | open, blocked-by: null | <task-id> }
+decisions: []                                 # Open Decisions resolved at Triage, with who decided
+plan-defects: []
+unreachable-tasks: []                       # not run because a dependency is blocked/skipped
+suggestions: []                               # ad-hoc extras the user did not ask for
 
 learnings-to-capture:
   - title: "[working title]"
@@ -74,6 +84,7 @@ Also save the Work Report to `docs/plans/.work/.review/<review-id>.md`.
 - **Gate decision:** [summary of regression/scope-creep gate outcome]
 - **Regression check:** clean | regressions-found (<N>)
 - **Scope creep:** none | <count> finding(s)
+- **Source coverage:** <done>/<total> items done | n/a
 - **Learnings to capture:** <count> (run `/learn` to persist)
 - **Work Report:** docs/plans/.work/.review/<review-id>.md
 ```
@@ -85,14 +96,16 @@ The block is **append-only** and **idempotent on `review-id`**: a re-run overwri
 - **review-id:** Required. Format `YYYY-MM-DD-NNN-review`.
 - **execute-id, prepare-id, triage-id, work-id, work-branch, input-shape:** Required, inherited (cross-phase consistency).
 - **interactionMode, executionMode:** Both required, identical across Prepare/Execute/Review (orchestrator quality gate #2).
-- **task-outcome-rollup:** Required. Matches the Execution Log's aggregator counts. Now includes `for-review` count (new status).
+- **task-outcome-rollup:** Required. Matches the Execution Log's aggregator counts. Counts are after Review's per-task promotions.
+- **tasks:** Required. One row per task with its final `status` and the `touched-files` recorded by Execute (empty for blocked/skipped). `/review` reads this to scope its change boundary.
 - **gate-decision:** Required. Brief summary of the gate outcome (e.g., "Gate passed: clean regression check, no scope creep" OR "Gate blocked: regressions-found (3 failures) + scope-creep in 2 files").
 - **simplification-summary, consolidations:** Required (consolidations may be `none`).
-- **regression-check.state:** Required. `clean` or `regressions-found`; `failing-tests` present only when `regressions-found`. **Binary threshold**: any test failure = gate blocks.
-- **scope-creep:** Required. `none` or a list of per-task findings. Any scope-creep = gate blocks.
+- **regression-check.state:** Required. `clean` or `regressions-found`; `failing-tests` present only when `regressions-found`. **Binary threshold**: any test failure holds every evaluated task at `for-review`.
+- **scope-creep:** Required. `none` or a list of per-task findings. A task with a finding stays `for-review`; the others are promoted.
+- **source-coverage, decisions, plan-defects, unreachable-tasks, suggestions:** Required (may be empty). Source coverage marks an item `done` only when every task of its units is `completed`.
 - **learnings-to-capture:** Required (may be empty). Each candidate has title/domain/source/summary/type. Work does not write `docs/learn/` directly — these are handed to `/learn`.
 - **learning-gaps:** Required (may be empty). Carries forward the Work Manifest's gaps plus any Review revealed.
-- **work-state:** Required. `for-review` (gate blocked by regressions/scope-creep; tasks await Standalone Review approval) | `complete` (all tasks completed + gate passed) | `partial` (some blocked/skipped, gate passed for non-blocked) | `nothing-done` (empty run or all blocked early).
+- **work-state:** Required. `for-review` (at least one task held by regressions/scope-creep; awaits `/review`) | `complete` (all tasks completed + gate passed) | `partial` (some blocked/skipped, every other task completed) | `nothing-done` (empty run or all blocked early).
 - **index-block-appended:** Required, must be `true`.
 - **status:** Required. `complete`.
 
@@ -113,6 +126,7 @@ timestamp: 2026-08-07T15:45:00Z
 task-outcome-rollup:
   total: 2
   completed: 1
+  for-review: 0
   blocked: 1
   skipped: 0
 simplification-summary: "Extracted shared retry config into src/lib/redis-config.ts (used by T01)."
@@ -122,6 +136,14 @@ regression-check:
   failing-tests: []
   baseline-state: green
 scope-creep: none
+deviations: []
+source-coverage:
+  - { item: SC1, tasks: [2026-07-10-001-T01], state: done, blocked-by: null }
+  - { item: SC2, tasks: [2026-07-10-001-T02a], state: open, blocked-by: 2026-07-10-001-T02a }
+decisions: []
+plan-defects: []
+unreachable-tasks: []
+suggestions: []
 learnings-to-capture:
   - title: "Redis TTL must be propagated to the SET command, not just the key"
     domain: data-storage

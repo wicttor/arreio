@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-23
+
+### Added
+
+- **Source-bound execution.** Triage reads the plan's `source`, `Source Coverage`, and `Open Decisions` and treats the plan (or the prompt, for ad-hoc work) as the source of truth. Open Decisions are resolved before Prepare (asked in Detailed/Smart; the plan's recommended default is recorded in Autopilot, and never invented when absent) and appended to the task index. Review rolls up which source items are done and reports decisions, plan defects, unreachable tasks, and ad-hoc `suggestions`.
+- **Touched-files ledger and deviations.** Execute records the files each task changed; undeclared files are reverted unless the AC cannot pass without them, in which case they are recorded as deviations. Review compares the ledger to the declared files instead of judging scope creep from memory.
+- **Coherence gate script.** `skills/work/scripts/check-work.py` (Python 3, standard library only) checks task statuses, one test per task, index and Acceptance Criteria checkboxes against statuses, duplicate Work Report blocks, and (with `--plan`) source coverage and orphan units. Review runs it after promoting tasks; a manual checklist covers environments without Python.
+- **Work evals.** `skills/work/evals/` holds four scenario evals and good/bad run fixtures that exercise the gate.
+- **Review: task-in-review, end to end.** `/review <work-id>` now scopes to the tasks awaiting review (`for-review`, or `blocked` by an earlier review) from the Work Report's per-task `touched-files`, defaults requirements to those tasks' Acceptance Criteria, attributes every finding to the task(s) it affects, and derives a verdict per task. Approved tasks become `completed` (checkboxes ticked); the others become `blocked` with `block-reason` and `blocked-by: review:<report-id>` and are re-reviewed by running `/review <work-id>` again after the fix. One bad task no longer holds the others. Previously the module set never implemented this shape.
+- **Review: complete reports.** The Review Report now carries the full findings list with evidence (it used to hold only a rollup, and the Findings artifact is not written outside `detailed` mode), plus `task-verdicts`.
+- **Review: finding discipline.** Every finding quotes its evidence and stays inside the change; one finding per root cause; nits roll up past five; security findings need a demonstrated source-to-sink path (a keyword is never a finding); a regression is claimed only with a run against the recorded baseline.
+- **Review: accepted scope-creep.** In Detailed/Smart the user can accept a creep finding with a reason (never in Autopilot); it keeps its severity but no longer forces `changes-requested`.
+- **Review gate script and evals.** `skills/review/scripts/check-review.py` (Python 3, standard library only) checks finding fields and evidence, the rollup against the findings, the approval status against the tallies, per-task verdicts, task statuses and checkboxes, and the registry row and work-index block. `skills/review/evals/` holds five scenario evals and good/bad report fixtures.
+
+### Changed
+
+- **Clean status model.** Execute stops at `for-review` when the gates pass and never writes `completed`; Review promotes each task without findings to `completed` and ticks the checkboxes then. A regression holds every task, a scope-creep finding holds only its task. A dependency counts as satisfied at `completed` or `for-review`. `/review` approval now also ticks the task and index checkboxes.
+- **Execution mode ignores priority.** `P0` no longer forces `inline`; `/plan` marks every Foundation task `P0`, so every plan-based run was forced inline. HIGH-risk is judged by consequence, not keywords. `parallel` requires file-disjoint tasks per wave and runs the regression gate once per wave.
+- **Ad-hoc work stays inside the prompt.** One task per outcome the user stated (no fixed cap), merge before split, the module's existing test file instead of a new one per task, exact file paths; extra ideas become `suggestions`.
+- **Already-satisfied rule.** A test that passes at Red must cite the code that satisfies the AC and cannot mark the task done on that observation alone.
+
+### Fixed
+
+- **Branch setup after `/plan` and on resume.** The dirty-tree check ignores `docs/plans/`, `docs/tasks/`, and `docs/learn/` and is skipped when already on the work branch, so `/work` no longer fails right after `/plan` or on every resume.
+- **Review step numbering.** Removed a duplicated scope-creep step and the contradictory flow that marked tasks `completed` in Execute and reverted them to `for-review` in Review.
+
 ## [1.3.1] - 2026-10-23
 
 ### Fixed

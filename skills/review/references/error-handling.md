@@ -2,8 +2,8 @@
 title: Error Handling & Recovery
 description: Reference for all Review Skill phases (Scope, Prepare, Analyze, Report). Defines the Step 0 artifact verification procedure, per-type required fields, error categories, recovery workflow, retry limits, and cross-phase consistency checks.
 type: reference
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Error Handling & Recovery
@@ -33,10 +33,10 @@ Every phase receives an artifact from the previous phase (or the Orchestrator, f
 | Artifact Type   | Required Fields                                                                                                                                                                                                    | Produced By  |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | `review-input`  | `type`, `timestamp`, `source`, `status`, input shape (`change-set` **or** `work-id`/Work `review-id` **or** `ad-hoc`), `interactionMode`                                                                          | Orchestrator |
-| `review-scope`  | `scope-id`, `review-id`, `input-shape`, `status`, `interactionMode`, `change-boundary` (`required` + `context` + `attribution`), `requirements-source`, `preliminary-scope-creep`                                  | Scope        |
+| `review-scope`  | `scope-id`, `review-id`, `input-shape`, `status`, `interactionMode`, `change-boundary` (`required` + `context` + `attribution`; `task-files` for task-in-review), `requirements-source`, `preliminary-scope-creep`                                  | Scope        |
 | `review-kit`    | `prepare-id`, `scope-id`, `review-id`, `input-shape`, `status`, `interactionMode`, `diffs`, `spec-content` (or `none`), `test-context`, `tool-inventory`                                                          | Prepare      |
 | `findings`      | `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `status`, `interactionMode`, findings list, per-category tallies, per-severity tallies                                                        | Analyze      |
-| `review-report` | `report-id`, `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `status`, `interactionMode`, `approval-status`, findings rollup, `recommendations`, `scope-creep-summary`                       | Report       |
+| `review-report` | `report-id`, `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `status`, `interactionMode`, `approval-status`, `findings` (full list), findings rollup, `task-verdicts` (task-in-review), `recommendations`, `scope-creep-summary`                       | Report       |
 
 ## Error Categories
 
@@ -73,6 +73,8 @@ Only applies to the Scope phase (Step 0) when resolving a Review Input Artifact.
 | Change-set spec parses but the repo is not a git working tree | Ask to switch to ad-hoc input                        | No         |
 | Change-set diff is empty (spec touches no files)      | Record `change-boundary.empty: true`; continue (Report records nothing-to-review) | No |
 | Work-linked `work-id` with no `docs/tasks/<id>/index.md` | Ask to run `/work <work-id>` first, or switch to change-set | No    |
+| Task-in-review `work-id` with no task at `for-review` (or `blocked-by: review`) | Say so and offer a work-linked review of the completed tasks, or a change-set review | No         |
+| Work Report has no `tasks[]` (older run)              | Fall back to declared files; note `attribution: task-files (declared)`                | No         |
 | Work-linked Work `review-id` file missing             | Ask to switch to the `work-id` of that run                 | No         |
 | Ad-hoc description maps to no concrete files/commits  | Ask the user to name a file, module, or path               | No         |
 
@@ -107,6 +109,10 @@ Errors related to `interactionMode` propagation.
 | A finding lacks a `trace` or `scope-creep` flag (coherence) | Reject the findings set; re-run Analyze Steps 1–3                | No         |
 | Tool corroboration fails (tool unavailable/unconfigured) | Proceed without corroboration; note it on the finding (Prepare already warned) | No |
 | Scope-creep category emitted findings with `spec-content: none` | Reject; re-run Analyze — scope-creep requires requirements       | No         |
+
+### Coherence Gate Failures
+
+If `scripts/check-review.py` (Report Step 8) prints `FAIL`, fix exactly what it names — a finding without evidence or with both a trace and a creep flag, a rollup that does not match the findings, an approval status that does not follow from the tallies, a task whose status does not follow from its verdict, or a duplicated registry row or work-index block — and re-run it. Do not change a severity or acceptance to make the derivation pass; severities come from the rubric and acceptance from the user.
 
 ## Recovery Workflow
 

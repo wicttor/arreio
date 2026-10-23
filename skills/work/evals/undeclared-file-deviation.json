@@ -1,0 +1,12 @@
+{
+  "skills": ["work"],
+  "query": "/work 2026-10-23-001",
+  "files": ["fixtures/plan-coverage.md"],
+  "mode": "smart",
+  "expected_behavior": [
+    "When T02's test can only pass after exporting a symbol from an index file that no task declares, Execute keeps that file and records a deviation {task-id, path, why-required}; it does not add a task or edit the AC",
+    "A touched file the AC does not need is reverted at once and is not reported as a deviation",
+    "Review lists the deviation as a scope-creep finding, keeps only T02 at for-review, and promotes the other tasks to completed",
+    "work-state is for-review and the Work Report tells the user to run /review <work-id>"
+  ]
+}

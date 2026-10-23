@@ -2,8 +2,8 @@
 title: Ad-Hoc Input Resolution
 description: Authoritative reference for the Triage phase. Defines how a raw work description is resolved into task-shaped work (one Acceptance Criterion per task, one test per task, Red-first), including problem-frame collection, AC extraction, sizing, dependency ordering, and priority assignment.
 type: reference
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Ad-Hoc Input Resolution
@@ -11,6 +11,8 @@ timestamp: "2026-08-07"
 Authoritative reference for the **Triage** phase (Step 2c). Defines how a raw work description (bug, feature, change) is resolved into the same task-shaped work the `/plan` Tasks phase produces — **one Acceptance Criterion per task, one test per task, Red → Green → Refactor** — so ad-hoc work is fully interchangeable with plan-based work downstream.
 
 ## Core Rule (mirrors `/plan`)
+
+- **The prompt is the source of truth.** Resolve what the user asked for, no more. Extra criteria (hardening, additional edge cases, docs, refactors) are listed as `suggestions` in the manifest and the Work Report; they never become tasks unless the user adds them.
 
 - **One Acceptance Criterion per task.** Each derived task carries exactly one `## Acceptance Criterion` and exactly one `files.test` entry (its own test asserting that criterion).
 - **One test per task.** Never one test asserting multiple criteria. Never one task bundling multiple criteria.
@@ -24,13 +26,13 @@ If the description is missing or vague on either, ask the user one question at a
 
 1. **Problem Frame:** "What problem are you trying to solve? Describe it in 1–2 sentences." (maps to the task's `## Goal`)
 2. **Intended Behavior:** "What should happen after this is implemented? Describe the desired outcome." (maps to the observable outcome)
-3. **Success Criteria:** "How will we know this is complete? What specific outcomes define success?" Collect 1–3 criteria.
+3. **Success Criteria:** "How will we know this is complete? What specific outcomes define success?" Collect the outcomes the user wants (usually 1–3).
 
 If both are present and concrete from the description, extract them and skip the prompts.
 
 ### 2. Extract Acceptance Criteria
 
-Derive 1–3 Acceptance Criteria from the success criteria — **one AC per task**. Phrase each as a single, verifiable outcome (not a bundle). If a criterion would need > 5 files or > 1 day of effort, **split it into finer sub-criteria** (each its own task) rather than slicing a task partway through a criterion (mirror the `/plan` task-slicing Rule 2). Sub-IDs use letters: `U1` → `T01a`, `T01b` (never extra digits).
+Derive one Acceptance Criterion per outcome the user stated — **one AC per task**, with no fixed cap. Do not add criteria the user did not state. Phrase each as a single, verifiable outcome (not a bundle). Merge criteria that a single test can assert before splitting any. If a criterion would need > 5 files or > 1 day of effort, **split it into finer sub-criteria** (each its own task) rather than slicing a task partway through a criterion (mirror the `/plan` task-slicing Rule 2). Sub-IDs use letters: `U1` → `T01a`, `T01b` (never extra digits).
 
 ### 3. Assign Files Per Task
 
@@ -38,9 +40,9 @@ For each task, populate from the description and a read of the codebase:
 
 - `files.create` — new files the implementation needs.
 - `files.modify` — existing files touched.
-- `files.test` — **exactly one** dedicated test file for this task's single AC; resolved repo-relative.
+- `files.test` — **exactly one** test file path for this task's single AC; resolved repo-relative. Use the module's existing test file when there is one (the AC gets its own test case there); create a new test file only when none exists.
 
-At least one of `create`, `modify`, or `test` must be non-empty. All paths repository-relative, backtick-formatted in the task file.
+At least one of `create`, `modify`, or `test` must be non-empty. All paths repository-relative, backtick-formatted in the task file, and exact — read the code to find them; never write "as needed", "if required", or "etc.".
 
 ### 4. Draft Steps (Red → Green → Refactor)
 
@@ -69,6 +71,8 @@ Order tasks so each task's dependencies are satisfied by earlier tasks (topologi
 | P0       | Blocks all other tasks (foundation, infra, schema) |
 | P1       | On the critical path but not blocking              |
 | P2       | Can be deferred or parallelized                    |
+
+Priority orders the work only; it never selects an execution mode (see [execution-mode-selection.md](execution-mode-selection.md)).
 
 ### 7. Infer Tier (for task frontmatter)
 

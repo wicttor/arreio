@@ -1,0 +1,12 @@
+{
+  "skills": ["work"],
+  "query": "/work 2026-10-23-001",
+  "files": ["fixtures/plan-coverage.md"],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "The plan's Open Decisions section lists OD1 (recommended default) affecting U2; Triage records the recommended default with by: recommended-default and appends it to the task index under ## Decisions",
+    "If a decision has no recommended default, Autopilot asks the one question anyway and never invents an answer",
+    "In smart or detailed mode the same scenario asks one question per decision before Prepare",
+    "The Work Report's decisions field shows every decision and who made it"
+  ]
+}

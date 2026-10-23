@@ -1,12 +1,12 @@
 ---
 name: work
-description: "Execute implementation work through a deterministic pipeline of micro-skills: Triage -> Prepare -> Execute -> Review. Consumes /plan task artifacts, a single task file, or ad-hoc work input; runs each task test-first (Red -> Green -> Refactor) and updates task status and the index checklist. No agent dependency, no fallback paths."
+description: "Execute implementation work through a deterministic pipeline of micro-skills: Triage -> Prepare -> Execute -> Review. Consumes /plan task artifacts, a single task file, or ad-hoc work input; runs each task test-first (Red -> Green -> Refactor) against the plan's source of truth, records what each task touched, and promotes verified tasks from for-review to completed. No agent dependency, no fallback paths."
 disable-model-invocation: true
 ---
 
 # Work
 
-Orchestrates a deterministic pipeline of micro-skills: `Triage -> Prepare -> Execute -> Review`. Consumes `/plan` task artifacts, a single task file, **or** ad-hoc work input, executes each task test-first (Red → Green → Refactor), and updates task status and the `docs/tasks/<id>/index.md` checklist. No agent dependency, no fallback paths.
+Orchestrates a deterministic pipeline of micro-skills: `Triage -> Prepare -> Execute -> Review`. Consumes `/plan` task artifacts, a single task file, **or** ad-hoc work input, executes each task test-first (Red → Green → Refactor), and moves each task through `for-review` to `completed` (Review verifies, then ticks the `docs/tasks/<id>/index.md` checklist). No agent dependency, no fallback paths.
 
 ## Skill Invocation
 
@@ -49,9 +49,9 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 
 - Receives a context object (a plan-id, a task file, **or** a raw work description, plus optional goals, constraints, references) from the user, a saved prompt, a document, or a combination.
 - **Three input shapes:**
-  1. **Plan-based** — a `plan-id` referencing `docs/tasks/<plan-id>/index.md`. Executes the full task list in dependency order. Each task carries exactly one Acceptance Criterion, one test file, and Red → Green → Refactor steps (as produced by `/plan`'s Tasks phase).
+  1. **Plan-based** — a `plan-id` referencing `docs/tasks/<plan-id>/index.md`. Executes the full task list in dependency order. Each task carries exactly one Acceptance Criterion, one test file, and Red → Green → Refactor steps (as produced by `/plan`'s Tasks phase). Triage also reads the plan's `source`, `Source Coverage`, and `Open Decisions`: the plan is the source of truth and Work never re-plans.
   2. **Task-file** — a path to a single task file (e.g. `docs/tasks/<plan-id>/T<NN>-<name>.md`) or a task-id (e.g. `<plan-id>-T03`). Executes **only that one task's** Red → Green → Refactor cycle, never its downstream dependents. `work-id` is inherited from the file's folder (the `plan-id`). Before running, Triage checks the task's `dependencies`: if any upstream task is **not** `completed`, it warns and asks the user whether to (a) proceed anyway, (b) run the missing upstream task(s) first, or (c) abort.
-  3. **Ad-hoc** — a raw work description (bug, feature, change). Triage classifies it and resolves it into the same task-shaped work (one AC → one task → one test, Red-first), registered under a fresh `work-id` at `docs/tasks/<work-id>/`.
+  3. **Ad-hoc** — a raw work description (bug, feature, change). Triage classifies it and resolves it into the same task-shaped work (one AC → one task → one test, Red-first), registered under a fresh `work-id` at `docs/tasks/<work-id>/`. The prompt is the source of truth: one task per outcome the user stated, nothing added.
 - **If no context is provided**, ask: "What would you like to work on? Provide a plan-id, a task file, or describe the task."
 - **Unified key:** downstream phases always key off a `work-id`. For plan-based and task-file input, `work-id = plan-id` (the task file's folder). For ad-hoc input, Triage allocates a `work-id` of the form `YYYY-MM-DD-NNN` (counting existing `docs/tasks/YYYY-MM-DD-NNN/` folders for that date), reusing the plan-id format so the `docs/tasks/<id>/` convention holds uniformly. The task manifest differs by shape (full list vs single task vs resolved list), but the artifact and index paths are identical.
 - Output: [Work Input Artifact](references/templates/artifacts/work-input.md)
@@ -77,7 +77,7 @@ Every new feature or plan runs on its own git branch:
 - **Name:** `work/<short-description>` — a kebab-case slug derived from the plan name (plan-based/task-file) or the work description (ad-hoc), capped at 50 characters.
 - **When:** created or checked out in Triage (Step 2d), right after the `work-id` is resolved and **before any task file or index is written**.
 - **Idempotent:** re-running Work resumes on the same branch (already on it → no-op; branch exists → check it out; otherwise create from the default branch).
-- **Dirty working tree:** uncommitted changes fail branch creation with an explicit error — never stashed, committed, or carried silently.
+- **Dirty working tree:** uncommitted changes outside `docs/plans/`, `docs/tasks/`, and `docs/learn/` fail branch creation with an explicit error — never stashed or committed silently. The check is skipped when already on the work branch (a resume carries its own uncommitted work).
 - **Not a git repository:** one explicit warning; the pipeline continues without a branch (`work-branch: null`).
 - **Recording:** the branch name is stored as `work-branch` in the Work Manifest (with `work-branch-base` and `work-branch-state`) and carried through the Prepare/Execute/Review artifacts; the orchestrator's quality gate verifies branch coherence before Execute.
 
@@ -97,8 +97,9 @@ Between phases, the orchestrator validates the output artifact before passing it
 1. **Schema validation** — required fields present and well-formed (see [error-handling.md](references/error-handling.md) for the per-type field list).
 2. **Cross-phase consistency** — IDs (`work-id`, `triage-id`, `prepare-id`, `execute-id`, `review-id`) match the upstream artifacts; `interactionMode` and `executionMode` are identical across artifacts.
 3. **Status check** — the artifact's `status` is `complete` (not `pending` or `failed`).
-4. **Task-status coherence** (after Execute) — every task in the work list is `completed`, `blocked` (with a recorded reason), or `skipped` (with a recorded reason); the `docs/tasks/<work-id>/index.md` checklist state matches the task files' frontmatter `status`. No task is left `in-progress`.
+4. **Task-status coherence** (after Execute) — every task in the work list is `for-review` (or `completed` from an earlier run), `blocked` (with a recorded reason), or `skipped` (with a recorded reason); no checkbox is ticked for a task that is not `completed`. No task is left `in-progress`.
 5. **Branch coherence** (after Triage, before Execute) — when `work-branch` is not `null`, the repository's current branch matches the Work Manifest's `work-branch`; a mismatch returns to Triage with the error context.
+6. **Coherence gate** (after Review) — `scripts/check-work.py docs/tasks/<work-id>` prints `PASS`: valid statuses, checkboxes matching statuses, one test per task, no duplicate Work Report block, and (plan-based) every task's unit covered by a source item. Without Python, the manual checklist in [review-checklist.md](references/review-checklist.md#coherence-gate-manual-checklist) applies.
 
 If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).
 
@@ -109,17 +110,17 @@ Each phase is responsible for its own index updates:
 | Phase   | Registers To                                     | Update                                                                                                                                                                |
 | ------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Triage  | `docs/tasks/<work-id>/index.md`                  | Ad-hoc only: create folder + index with the resolved task checklist (`- [ ]`). Plan-based: read only.                                                                 |
-| Execute | `docs/tasks/<work-id>/index.md` + each task file | Flip frontmatter `status` and the task file's `## Acceptance Criteria` checkbox; tick the index checklist (`- [ ]` → `- [x]`) as tasks complete. Idempotent on retry. |
-| Review  | `docs/tasks/<work-id>/index.md`                  | Append a closing `## Work Report — <review-id>` status block; optionally note learnings to capture via `/learn`.                                                      |
+| Execute | `docs/tasks/<work-id>/index.md` + each task file | Set each task file's frontmatter `status` to `for-review` (or `blocked`/`skipped` with a reason); no checkbox changes. Idempotent on retry. |
+| Review  | `docs/tasks/<work-id>/index.md`                  | Promote clean tasks from `for-review` to `completed` (task AC checkbox + index tick); append a closing `## Work Report — <review-id>` status block; note learnings to capture via `/learn`.                                                      |
 
 **Idempotency rule:** re-running Work resumes from incomplete tasks. The orchestrator reads each task file's `status`; a `completed` task is never re-opened, and index checkboxes are only ticked forward, never reset.
 
 ### FINAL OUTPUT
 
-- **Task files:** Updated at `docs/tasks/<work-id>/T<NN>-<name>.md` with final `status` (`completed` / `blocked` / `skipped`) — frontmatter and the `## Acceptance Criteria` checkbox both updated.
-- **Task index:** `docs/tasks/<work-id>/index.md` checklist ticked to match task outcomes (`- [x]` complete; remaining `- [ ]` for `blocked`/`skipped`).
+- **Task files:** Updated at `docs/tasks/<work-id>/T<NN>-<name>.md` with final `status` (`completed` / `for-review` / `blocked` / `skipped`); a `completed` task has its frontmatter and `## Acceptance Criteria` checkbox both updated.
+- **Task index:** `docs/tasks/<work-id>/index.md` checklist ticked to match task outcomes (`- [x]` complete; remaining `- [ ]` for `for-review`/`blocked`/`skipped`).
 - **Work branch:** `work/<short-description>` created (or checked out) during Triage Step 2d, recorded as `work-branch` in the Work Manifest; re-runs resume on the same branch.
-- **Work Report:** Saved to `docs/plans/.work/.review/<review-id>.md`, with a consolidation/simplification summary, test-regression check, any scope-creep notes, and learnings surfaced for `/learn`.
+- **Work Report:** Saved to `docs/plans/.work/.review/<review-id>.md`, with a consolidation/simplification summary, test-regression check, scope-creep findings and deviations, a source-coverage rollup, decisions taken, and learnings surfaced for `/learn`.
 - **(Optional) Learnings:** New learnings discovered during execution are handed to the Learn skill (`/learn`) to persist — Work does not write `docs/learn/` directly.
 
 ## References
@@ -146,6 +147,13 @@ Artifact templates live in [references/templates/artifacts/](references/template
 | [execution-log.md](references/templates/artifacts/execution-log.md)   | Execute      |
 | [work-report.md](references/templates/artifacts/work-report.md)       | Review       |
 
+## Scripts and Evals
+
+| Path | Purpose |
+| --- | --- |
+| [scripts/check-work.py](scripts/check-work.py) | Review Step 7 coherence gate (Python 3 standard library; optional — a manual checklist covers environments without Python) |
+| [evals/](evals/README.md) | Scenario evals and good/bad run fixtures that exercise the gate |
+
 ## Execution Rules
 
 Follow these literally; they exist to keep runs consistent across agents.
@@ -156,17 +164,21 @@ Follow these literally; they exist to keep runs consistent across agents.
 4. **One question at a time**, with 2–4 concrete options; build the question text from the current values.
 5. **Announce phase transitions in one line** (e.g., "Phase 2/4 Prepare complete: <key result>") so the user can follow progress, even in Autopilot.
 6. **Honor write rules:** intermediate phase artifacts only in `detailed` mode; final deliverables always.
+7. **Stay inside the source.** The plan (or the prompt, for ad-hoc work) bounds the run. Never add, merge, split, or drop tasks; never fill in an Open Decision the plan does not recommend; record anything else as a deviation, plan defect, or suggestion instead of acting on it.
+8. **Statuses move only through the transitions** in [task-execution-rules.md](references/task-execution-rules.md): Execute never writes `completed`, Review never reverts a status.
 
 ## Core Principles
 
 - **Deterministic Pipeline:** Phases always execute in sequence (no agent switching, no fallback paths).
-- **Test-First Execution:** Every task runs Red → Green → Refactor — the failing test is written/confirmed **before** implementation. A task is not `completed` until its single test is green.
+- **Test-First Execution:** Every task runs Red → Green → Refactor — the failing test is written/confirmed **before** implementation. A task reaches `for-review` only when its single test is green; it is `completed` only after Review.
 - **One Acceptance Criterion per Task:** Preserve the `/plan` invariant — one AC → one task → one test. Ad-hoc work is resolved to the same shape by Triage; never bundle criteria during execution.
-- **Work Branch:** Every new feature or plan executes on its own git branch `work/<short-description>` (slug derived from the plan name or work description). The branch is created or checked out in Triage before any artifact is written, the setup is idempotent for resume, and a dirty working tree fails explicitly instead of stashing or carrying changes.
-- **Separate Execution from Planning:** Execute the plan as sliced; do not re-plan during execution. Surface scope changes to the user instead of silently expanding a task.
-- **Quality Gates (Work Review Phase 4):** After Execute completes, Phase 4 Review runs a lightweight pre-check: simplify/consolidate, run regression test (binary: any failure = gate), detect scope-creep (binary: any finding = gate). If gate fails → tasks enter `status: for-review` (not `completed`) and await Standalone Review approval. If gate passes → tasks move to `status: completed`. This decouples execution quality from final approval authority.
+- **Source-Bound Execution:** The plan's `source`, `Source Coverage`, and `Open Decisions` (or the prompt, for ad-hoc) bound the run. Review reports which source items are done; Triage resolves Open Decisions (asking in Detailed/Smart, recorded recommended default in Autopilot) and never invents an answer.
+- **Mechanical Scope Detection:** Execute records a touched-files ledger per task; Review compares it to the declared files instead of judging from memory.
+- **Work Branch:** Every new feature or plan executes on its own git branch `work/<short-description>` (slug derived from the plan name or work description). The branch is created or checked out in Triage before any artifact is written, the setup is idempotent for resume, and uncommitted changes outside the plan/task bookkeeping paths fail explicitly instead of being stashed or committed silently.
+- **Separate Execution from Planning:** Execute the plan as sliced; do not re-plan during execution. Surface scope changes to the user instead of silently expanding a task; anything a task needs beyond its declared files is a recorded deviation, reported at Review.
+- **Quality Gates (Work Review Phase 4):** After Execute completes, Phase 4 Review runs a lightweight pre-check: simplify/consolidate, run the regression test (binary: any failure holds every task), detect scope creep from the ledger (a finding holds only its task). Execute leaves every green task at `status: for-review`; Review promotes each task without findings to `completed` when the regression check is clean. Held tasks await Standalone Review approval. This decouples execution quality from final approval authority.
 - **Learnings Orthogonal to Approval:** Work Report surfaces `learnings-to-capture` candidates (from Execute + Review phases) for later `/learn` invocation. Learnings are separate from approval gates; the Learn skill is the single authoritative source for durable knowledge.
-- **Idempotent Status Updates:** Resume-safe — re-running Work picks up at the first non-`completed` task; `completed` and `for-review` tasks are never reverted (their status is idempotent on `review-id` in Review Phase 4).
+- **Idempotent Status Updates:** Resume-safe — re-running Work runs only `not-started`/`in-progress` tasks; `completed` and `for-review` tasks are never reverted or re-run (`for-review` tasks are re-evaluated by Review).
 - **Error Handling:** Fail explicitly, not silently; each phase has clear error handling with recovery suggestions.
 - **Be Concrete:** Use specific files, components, and dependencies from the task artifacts.
 - **Stay Portable:** Use repository-relative paths only.

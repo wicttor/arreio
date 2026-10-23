@@ -2,13 +2,13 @@
 title: Execute
 description: Run the Execution Plan's ordered task list per the selected execution mode, enforcing each task's Red -> Green -> Refactor gates (definitions authoritative in task-execution-rules), updating task files and the index checklist idempotently, and producing an Execution Log for the Review phase.
 type: module
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 3 - Execute
 
-**Purpose:** Third step in the Work workflow. Reads the [Execution Plan](../references/templates/artifacts/execution-plan.md) from Prepare, runs its `execution-list` according to the selected `executionMode` (`inline` / `serial` / `parallel`), enforces each task's Red → Green → Refactor gates and resume/blocked/skip transitions (definitions authoritative in [task-execution-rules.md](../references/task-execution-rules.md) — this phase enforces them, it does not re-encode them), and updates each task file's status and the `docs/tasks/<work-id>/index.md` checklist idempotently. Returns an [Execution Log](../references/templates/artifacts/execution-log.md) for the Review phase.
+**Purpose:** Third step in the Work workflow. Reads the [Execution Plan](../references/templates/artifacts/execution-plan.md) from Prepare, runs its `execution-list` according to the selected `executionMode` (`inline` / `serial` / `parallel`), enforces each task's Red → Green → Refactor gates and resume/blocked/skip transitions (definitions authoritative in [task-execution-rules.md](../references/task-execution-rules.md) — this phase enforces them, it does not re-encode them), and moves each task to `for-review` (Review promotes it to `completed` and ticks the checklist), recording a touched-files ledger per task. Returns an [Execution Log](../references/templates/artifacts/execution-log.md) for the Review phase.
 
 ## Workflow
 
@@ -48,19 +48,22 @@ Run `execution-list` according to `executionMode`. The mode flows are defined ca
 
 For each runnable task, run the three-phase cycle and enforce the gates. The gate criteria and the retry-limit / blocked / skip thresholds are recorded read-only in the Execution Plan (Prepare read them from [task-execution-rules.md](../references/task-execution-rules.md)) — Execute applies them, it does not redefine them:
 
-1. **Red** — write (or, on resume, confirm) the task's single Acceptance-Criterion test at its `files.test[0]`; run it and confirm it **fails for the right reason** (not a setup/import/compile error). Gate: failing assertion matches the AC. If the test passes immediately (already green), log it and re-check whether the AC is genuinely satisfied — the task may already be done (status `completed` on resume).
+0. **Ledger start** — record the working-tree change list (see the ledger policy in [task-execution-rules.md](../references/task-execution-rules.md)).
+
+1. **Red** — write (or, on resume, confirm) the task's single Acceptance-Criterion test at its `files.test[0]`; run it and confirm it **fails for the right reason** (not a setup/import/compile error). Gate: failing assertion matches the AC. If the test passes immediately, apply the **Already-Satisfied rule** in [task-execution-rules.md](../references/task-execution-rules.md): cite the code that satisfies the AC, confirm the assertion is not weaker than the AC, and make no production change.
 
 2. **Green** — implement the minimum code in the task's `files.create` / `files.modify` to make the AC test pass. Gate: the task's single test is green **and** there is no regression beyond the Step 1 baseline — if `baseline: snapshot-and-continue`, the regression gate ignores the known-failing test set recorded in the Execution Plan.
 
 3. **Refactor** — clean up naming, duplication, and structure while keeping the AC test green. Gate: the test stays green and there is no regression. No behavior change.
 
+4. **Ledger end** — compute `touched-files` (change list now minus ledger start, excluding `docs/tasks/<work-id>/`). Revert any undeclared file the AC does not need; record each undeclared file the AC does need as a **deviation** `{task-id, path, why-required}`. Never expand the task list or the AC to cover it.
+
 ### Step 4: Status Updates (Per Task)
 
-After each task's gates pass (or a transition fires), update its artifacts. Updates are **idempotent** — re-running Execute never resets a `completed` task or a `- [x]` checkbox:
+After each task's gates pass (or a transition fires), update its artifacts. Updates are **idempotent** — re-running Execute never resets a `completed` or `for-review` task or a `- [x]` checkbox:
 
-1. **On `completed`:**
-   - Set the task-file frontmatter `status: completed` and flip the `## Acceptance Criteria` checkbox to `- [x]`.
-   - In `docs/tasks/<work-id>/index.md`, tick that task's row from `- [ ]` to `- [x]`.
+1. **On gates passed:**
+   - Set the task-file frontmatter `status: for-review`. Do **not** flip the `## Acceptance Criteria` checkbox or tick the index row — Review does that when it promotes the task to `completed`. Execute never writes `completed`.
 2. **On `blocked`** (Green gate not reached within the retry-limit recorded in the Execution Plan):
    - Set frontmatter `status: blocked`, record a `reason` (the failing assertion snapshot and which gate failed).
    - Leave the index checkbox as `- [ ]` and append a `— blocked: <reason>` note.
@@ -70,7 +73,7 @@ After each task's gates pass (or a transition fires), update its artifacts. Upda
    - Leave the index checkbox as `- [ ]` and append a `— skipped: <reason>` note.
 4. **Mid-task (`in-progress`):** if Execute is interrupted mid-task, set frontmatter `status: in-progress` so a resume re-enters the cycle at the right gate; do **not** tick the checkbox.
 
-> Task-status coherence: the orchestrator's post-Execute quality gate (#4) requires every task to be `completed`, `blocked`, or `skipped` (with reasons) — none left `in-progress` — and the index checklist state must match the task files' frontmatter. Execute is responsible for leaving the state coherent at the end of the run.
+> Task-status coherence: the orchestrator's post-Execute quality gate (#4) requires every task to be `for-review` (or already `completed` from an earlier run), `blocked`, or `skipped` (with reasons) — none left `in-progress` — and the checkboxes must match the statuses (all unticked until Review promotes). Execute is responsible for leaving the state coherent at the end of the run.
 
 ### Step 5: Generate the Execution Log Artifact
 
@@ -79,8 +82,9 @@ After each task's gates pass (or a transition fires), update its artifacts. Upda
 2. Produce an **Execution Log** block (as markdown) following the schema in [execution-log.md](../references/templates/artifacts/execution-log.md). Include:
    - `execute-id`, inherited `prepare-id`, `triage-id`, `work-id`, `input-shape`
    - `interactionMode` and `executionMode` (both carried)
-   - a per-task result table: `task-id`, `outcome` (`completed` / `blocked` / `skipped`), gate trace (Red/Green/Refactor pass timestamps), and any `reason`
-   - aggregator counts: `completed`/`blocked`/`skipped` counts and the regression-detection summary (any new failures beyond the baseline snapshot)
+   - a per-task result table: `task-id`, `outcome` (`for-review` / `blocked` / `skipped`), gate trace (Red/Green/Refactor pass timestamps), `touched-files`, `already-satisfied`, and any `reason`
+   - `deviations` (undeclared files kept because the AC needed them) and `plan-defects` (tasks blocked because they cannot be done as specified)
+   - aggregator counts: `for-review`/`blocked`/`skipped` counts and the regression-detection summary (any new failures beyond the baseline snapshot)
    - final index-checklist state (matches the task files)
 
 ### Step 6: Present, Confirm, and Save
@@ -88,7 +92,7 @@ After each task's gates pass (or a transition fires), update its artifacts. Upda
 Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these execute-specific **Smart pause triggers** (in addition to the per-task pauses mandated by `inline` mode and by a `blocked` task):
 
 - A task hit the retry-limit and went `blocked` (decide before auto-continuing remaining independent tasks), or
-- A new regression beyond the baseline snapshot appears on a `completed` task's Refactor re-run, or
+- A new regression beyond the baseline snapshot appears on a `for-review` task's Refactor re-run, or
 - `executionMode: parallel` and a blocked task in an earlier wave leaves later dependent tasks unable to run.
 
 - **Detailed:** summarize the Execution Log and ask one question with options *(1) Proceed to Review, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–5 reusing the `execute-id`. On **Abort**, stop and inform the Orchestrator.
@@ -100,9 +104,9 @@ Then, **in `detailed` mode only**, save the artifact to `docs/plans/.work/.execu
 ## Output: Execution Log Artifact
 
 - Verify that the Execution Log is complete and valid: `execute-id`, `prepare-id`, `triage-id`, `work-id`, `input-shape`, `interactionMode`, `executionMode`, the per-task result table, and the aggregator counts.
-- Verify **task-status coherence**: every task in `execution-list` ended `completed`, `blocked` (with reason), or `skipped` (with reason) — none left `in-progress` — and `docs/tasks/<work-id>/index.md` checklist state matches the task files' frontmatter `status`.
-- Verify that each `completed` task has its `## Acceptance Criteria` checkbox flipped to `- [x]` and the index ticked `- [ ] → - [x]` (forward only — never reset).
-- Verify that every `completed` task's single AC test is green with no new regression beyond the recorded baseline snapshot.
+- Verify **task-status coherence**: every task in `execution-list` ended `for-review`, `blocked` (with reason), or `skipped` (with reason) — none left `in-progress` — and no checkbox was ticked (Review ticks them on promotion).
+- Verify that every `for-review` task has a `touched-files` entry and that every touched file outside the task's declared set was reverted or recorded as a deviation.
+- Verify that every `for-review` task's single AC test is green with no new regression beyond the recorded baseline snapshot.
 - Verify that the gate/transition behavior was **enforced from** [task-execution-rules.md](../references/task-execution-rules.md) and [execution-mode-selection.md](../references/execution-mode-selection.md) rather than re-defined inline.
 - Verify that, in `detailed` mode, the artifact is saved to `docs/plans/.work/.execute/<execute-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 

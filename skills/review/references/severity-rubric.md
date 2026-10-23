@@ -2,8 +2,8 @@
 title: Severity Rubric
 description: Authoritative reference for the Analyze phase (severity assignment) and the Report phase (rollup). Defines the four severity levels (blocker / major / minor / nit), their criteria, the borderline-default rule, and how tool corroboration affects severity. Analyze assigns severities from this rubric; Report aggregates them and never re-encodes the levels.
 type: reference
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Severity Rubric
@@ -28,7 +28,7 @@ A `blocker` finding means the change **must not merge as-is**. Assign `blocker` 
 - A **security** hole was introduced: secret leakage, injection, missing authn/authz on a protected path, unsafe deserialization of untrusted input.
 - A **data-loss risk** exists: a destructive migration without safety, a write path that can corrupt state.
 - A **core flow is broken** by the change: the change breaks a previously-working primary user/code path.
-- A **regression** in the `green`-baseline suite (a test that was green is now red because of this change).
+- A **regression** in the `green`-baseline suite (a test that was green is now red because of this change). A regression is claimed only with a run: a test that fails on the change but passes on the baseline (the Work Report's `baseline-state`, or the base ref). Without such a run it is at most `major`, with the missing evidence noted.
 - The change **silently breaks a documented public contract** (consumers will fail at runtime).
 
 ### major
@@ -67,7 +67,7 @@ This is the deliberate counterweight to reviewer tendency to escalate. Examples:
 - A `major`/`minor` borderline → assign `minor`.
 - A `minor`/`nit` borderline → assign `nit`.
 
-The exception to the downward default is the **security** category: a borderline `blocker`/`major` **security** finding defaults to `blocker` (security findings default upward, because the cost of a missed block is far higher than the cost of a false alarm). Document the reasoning on the finding either way.
+The exception to the downward default is the **security** category, and only when the finding shows a concrete path: a borderline `blocker`/`major` **security** finding whose `evidence` names the untrusted source and the sink it reaches inside the change defaults to `blocker` (the cost of a missed block is far higher than a false alarm). A security finding with no demonstrated path is not borderline: it is `minor` at most, as a hardening note. A word such as `password`, `token`, or `eval` in a diff is a reason to look, never a finding by itself. Document the reasoning on the finding either way.
 
 ## Tool Corroboration
 
@@ -103,5 +103,6 @@ Every emitted finding carries a `severity` from this rubric. A finding:
 ## Notes
 
 - This reference is the single source of truth for severity levels, their criteria, and the borderline-default rule. Analyze assigns; Report aggregates and derives approval per [approval-criteria.md](approval-criteria.md); neither re-encodes the levels.
-- The security-upward-default exception is the **only** place severity defaults upward; all other borderline cases default downward.
+- The security-upward-default exception is the **only** place severity defaults upward, and only with a demonstrated path; all other borderline cases default downward.
+- Every `blocker` and `major` finding carries `evidence` (see [review-categories.md](review-categories.md#finding-discipline-authoritative)); a `blocker`/`major` without it is downgraded or dropped.
 - Tallies feed directly into [approval-criteria.md](approval-criteria.md): `blocker` count → `rejected`; otherwise `major` count > 0 → `changes-requested`; otherwise → `approved`.

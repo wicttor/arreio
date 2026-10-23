@@ -1,0 +1,12 @@
+{
+  "skills": ["review"],
+  "query": "/review 2026-10-23-001",
+  "files": ["fixtures/tasks-after-good/index.md"],
+  "mode": "smart",
+  "expected_behavior": [
+    "Work recorded a deviation for T02 (an undeclared barrel export the AC needed); Scope seeds it as a known candidate and Analyze confirms or dismisses it with evidence",
+    "If confirmed as creep, Analyze pauses; the user answers 'accept' with a reason and the finding keeps its severity with accepted: <reason>",
+    "An accepted minor creep no longer forces changes-requested; the same scenario in autopilot accepts nothing and the verdict stays changes-requested",
+    "An accepted finding never changes severity: an accepted blocker still yields rejected"
+  ]
+}

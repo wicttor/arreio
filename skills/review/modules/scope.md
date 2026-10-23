@@ -2,8 +2,8 @@
 title: Scope
 description: Entry point to the Review workflow. Classifies the incoming review target (a git change-set, a /work run via work-id or Work review-id, or an ad-hoc description), resolves it to a concrete change boundary (required + optional-context files), resolves the optional requirements ref, allocates the review-id, runs a scope-creep pre-check against the requirements, and pulls related learnings. Returns a Review Scope for the Prepare phase.
 type: module
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 1 - Scope
@@ -26,13 +26,14 @@ If the input is empty or ambiguous between shapes, ask the user one question: "W
 
 ### Step 1: Classify Input Shape
 
-Determine which of the three input shapes applies, by precedence:
+Determine which of the four input shapes applies, by precedence:
 
-1. **Work-linked** — the input matches an existing `docs/tasks/<work-id>/index.md` (the value is a `YYYY-MM-DD-NNN` work-id), or a Work `review-id` resolving to `docs/plans/.work/.review/<review-id>.md`.
-2. **Change-set** — the input is, or contains, a git ref/range (`<base>..<head>`, `A..B`, `HEAD`, staged, a branch-vs-base diff) or a set of paths/globs.
-3. **Ad-hoc** — a free-text description that matches neither of the above.
+1. **Task-in-review** — the input is a work-id (`YYYY-MM-DD-NNN` with an existing `docs/tasks/<work-id>/index.md`) or a Work `review-id` resolving to one, **and** at least one of its task files has `status: for-review`, or `status: blocked` with `blocked-by: review:<report-id>`.
+2. **Work-linked** — the same work-id / Work `review-id` match, but no task awaits review (every task is `completed`, `skipped`, or plainly `blocked`).
+3. **Change-set** — the input is, or contains, a git ref/range (`<base>..<head>`, `A..B`, `HEAD`, staged, a branch-vs-base diff) or a set of paths/globs.
+4. **Ad-hoc** — a free-text description that matches none of the above.
 
-Record `input-shape: work-linked | change-set | ad-hoc`. If classification is ambiguous (e.g., a string that could be a work-id or a description), ask the user one question with the candidate shapes as options.
+Record `input-shape: task-in-review | work-linked | change-set | ad-hoc`. If classification is ambiguous (e.g., a string that could be a work-id or a description), ask the user one question with the candidate shapes as options. If a work-id has no task awaiting review, tell the user once ("no tasks await review for <work-id>") and continue as work-linked.
 
 ### Step 2: Resolve the Change Boundary (by Shape)
 
@@ -45,13 +46,9 @@ Resolve the classified input into a concrete **change boundary** — `required` 
 3. Seed `context` lightly: for modified files, optionally note immediate callers/importers of changed public symbols (Prepare expands this); leave `context` empty if caller discovery is non-trivial here.
 4. If the diff is empty (spec parses but touches no files), record `change-boundary.empty: true` and proceed — the Review Report will record a nothing-to-review outcome. Do not abort.
 
-#### 2b. Work-linked
+#### 2b. Work-linked and task-in-review
 
-1. Locate the `work-id` (or, given a Work `review-id`, read `docs/plans/.work/.review/<review-id>.md` to recover the `work-id`).
-2. Read `docs/tasks/<work-id>/index.md` and each task file's `files.create` / `files.modify`. The union of these is the `required` set.
-3. Filter by task outcomes from the Work Report: include files from `completed` tasks; include `blocked`/`skipped` tasks' files but mark them `tentative` (their changes may be partial). Never include files from tasks that were not part of the run.
-4. Optionally bound to commits attributable to the run (e.g., commits whose message references the `work-id`) — best-effort heuristic; if not discoverable, fall back to the working-tree diff of the `required` files. Note which source was used (`attribution: commits | working-tree | task-files`).
-5. Seed `context` lightly as in 2a.
+Apply **2b (work-linked)** or **2b-bis (task-in-review)** of [change-set-resolution.md](../references/change-set-resolution.md): read the Work Report's per-task `touched-files` (falling back to each task's declared files for older runs), build `required` from them, and — for task-in-review — record `task-files` (`{task-id: [paths]}`) for the evaluated tasks (`for-review`, plus `blocked-by: review` tasks being re-reviewed). Note which `attribution` was used.
 
 #### 2c. Ad-hoc
 
@@ -67,6 +64,7 @@ Accept an optional requirements ref — a `/plan` plan-id, a task's `## Acceptan
 2. **If absent:** record `requirements-source: none` and continue. Analyze will **skip** the scope-creep-vs-requirements category (noting it) — Scope does not invent requirements.
 3. If the ref is a `plan-id`, read `docs/plans/<plan-id>...` or `docs/tasks/<plan-id>/index.md` for the Acceptance Criteria and expected behaviors.
 4. If the ref resolves ambiguously (multiple candidate specs), this is a Smart pause trigger (Step 7) — ask the user which to use.
+5. **Task-in-review defaults:** with no explicit ref, requirements are the evaluated tasks' own `## Acceptance Criterion` (`task-criterion`), plus the plan when `docs/plans/<plan-id>-*.md` resolves (`plan-id`). Scope-creep detection therefore runs for task-in-review input.
 
 ### Step 4: Scope-Creep Pre-Check
 
@@ -74,7 +72,8 @@ When `requirements-source` is not `none`, run a **preliminary** scope-creep chec
 
 1. Compare the `required` file list and changed behaviors against the resolved requirements.
 2. Flag any changed file/behavior **not traceable to a requirement** as a preliminary scope-creep candidate (file + the candidate reason).
-3. Record `preliminary-scope-creep: [...]` (or `none`). Analyze confirms these with severity in its scope-creep category.
+3. Task-in-review only: add the Work Report's `known-candidates` (its `deviations` and `scope-creep` entries) and every touched file outside its task's declared set.
+4. Record `preliminary-scope-creep: [...]` (or `none`). Analyze confirms these with severity in its scope-creep category.
 
 When `requirements-source: none`, **skip** this step and record `preliminary-scope-creep: skipped (no requirements)`.
 
@@ -95,11 +94,11 @@ Search `docs/learn/index.md` for entries relevant to the review domains (the cha
 
 3. Produce a **Review Scope Artifact** block (as markdown) following the schema in [review-scope.md](../references/templates/artifacts/review-scope.md). Include:
    - `scope-id`, `review-id`, `input-shape`, `interactionMode`
-   - the `change-boundary` (`required` file list with status, plus `context` and `attribution`)
+   - the `change-boundary` (`required` file list with status, plus `context` and `attribution`; `task-files` for task-in-review)
    - `requirements-source` (type + path, or `none`) and the parsed criteria when present
    - `preliminary-scope-creep` (candidates, `none`, or `skipped (no requirements)`)
    - `Related Learnings` (scoped to the change boundary) and `Learning Gaps`
-   - `work-id` carried (work-linked only)
+   - `work-id` carried (work-linked and task-in-review)
 
 ### Step 7: Present, Confirm, and Save
 
@@ -119,7 +118,7 @@ Then, **in `detailed` mode only**, save the artifact to `docs/review/.scope/<sco
 
 - Verify that the Review Scope is complete and valid: `scope-id`, `review-id`, `input-shape`, `interactionMode`, the `change-boundary` (non-empty `required` list or explicitly `empty`), `requirements-source`, and `preliminary-scope-creep`.
 - Verify that the change boundary is in **dependency-safe** form: `required` files are repository-relative and carry a status; `context` is separated from `required`.
-- Verify that `review-id` was allocated (scope is the allocating phase) and that `work-id` is carried for work-linked input.
+- Verify that `review-id` was allocated (scope is the allocating phase) and that `work-id` is carried for work-linked and task-in-review input (task-in-review also records `task-files`).
 - Verify that scope-creep detection was run only when requirements were present (else explicitly skipped with a note), per [scope-creep-detection.md](../references/scope-creep-detection.md).
 - Verify that, in `detailed` mode, the artifact is saved to `docs/review/.scope/<scope-id>.md`; in `smart`/`autopilot` mode, verify that **no** file was written and the artifact was passed to the next phase in context.
 

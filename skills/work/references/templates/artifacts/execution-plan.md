@@ -42,14 +42,15 @@ execution-list:                          # flat for inline/serial; wave-grouped 
       - [  <task-id>, ... ]   # Wave 1 (depends on Wave 0)
 upstream-skipped: false | true           # task-file "Proceed anyway" only
 
-applicable-gates: [red, green, refactor, complete]   # the gates Execute enforces (read-only)
+applicable-gates: [red, green, refactor, ledger, gates-passed]   # the gates Execute enforces (read-only)
 retry-limit: 2                            # task-scoped; authorized in task-execution-rules.md
 
 policy:                                  # recorded read-only from task-execution-rules.md; not re-derived
-  resume: "completed skipped; blocked/skipped carried; in-progress re-enters; not-started runs"
+  resume: "completed/for-review skipped (for-review goes to Review); blocked/skipped carried; in-progress re-enters; not-started runs"
   blocked: "green-not-reached-within-retry-limit -> status blocked + reason; checkbox stays -[]"
   skip: "explicit user confirm only -> status skipped + reason; checkbox stays -[]"
-  complete: "refactor green -> status completed; checkbox -[x]; index tick -[x]"
+  gates-passed: "refactor green -> status for-review; no checkbox change (Review promotes to completed and ticks)"
+  ledger: "touched-files per task; undeclared files reverted or recorded as deviations"
   regression: "snapshot-and-continue ignores known-failing-snapshot; green requires no NEW failure"
 
 work-state: ready | nothing-ready         # echoes the Work Manifest if carried through
@@ -93,13 +94,14 @@ execution-list:
   - 2026-07-10-001-T02a
   - 2026-07-10-001-T02b
 upstream-skipped: false
-applicable-gates: [red, green, refactor, complete]
+applicable-gates: [red, green, refactor, ledger, gates-passed]
 retry-limit: 2
 policy:
-  resume: "completed skipped; blocked/skipped carried; in-progress re-enters; not-started runs"
+  resume: "completed/for-review skipped (for-review goes to Review); blocked/skipped carried; in-progress re-enters; not-started runs"
   blocked: "green-not-reached-within-retry-limit -> status blocked + reason"
   skip: "explicit user confirm only -> status skipped + reason"
-  complete: "refactor green -> status completed; checkbox -[x]; index tick -[x]"
+  gates-passed: "refactor green -> status for-review; no checkbox change"
+  ledger: "touched-files per task; undeclared files reverted or recorded as deviations"
   regression: "green requires no NEW failure (snapshot empty for green baseline)"
 work-state: ready
 ```

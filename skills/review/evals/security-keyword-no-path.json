@@ -1,0 +1,12 @@
+{
+  "skills": ["review"],
+  "query": "/review HEAD",
+  "files": [],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "A diff that renames a local variable to `passwordHash`, adds a comment mentioning `token`, and calls a validated eval-free helper produces no blocker or major security finding",
+    "Any security note without a demonstrated source-to-sink path is minor at most and its evidence quotes the line",
+    "A diff that passes an unvalidated request parameter straight into a SQL string produces a blocker whose evidence names the parameter and the query line",
+    "No finding is located outside the changed hunks"
+  ]
+}

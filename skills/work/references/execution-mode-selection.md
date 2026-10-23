@@ -2,8 +2,8 @@
 title: Execution Mode Selection
 description: Authoritative reference for the Prepare phase. Defines the three execution modes (inline/serial/parallel), their selection defaults, the risk floor (HIGH-risk forces inline, non-downgradable), and the per-mode flows Execute follows.
 type: reference
-version: 1.1
-timestamp: "2026-10-01"
+version: 1.2
+timestamp: "2026-10-23"
 ---
 
 # Execution Mode Selection
@@ -16,17 +16,17 @@ Authoritative reference for the **Prepare** phase (Step 3). Defines the three ex
 
 | Mode       | Behavior                                                                    | Select when (default)                                            |
 | ---------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `inline`   | One task at a time; pause between tasks; re-confirm the user before each destructive (Red) step. | `interactionMode: detailed`, **or** any task in the list is HIGH-risk or `P0` |
+| `inline`   | One task at a time; pause between tasks; re-confirm the user before each destructive (Red) step. | `interactionMode: detailed`, **or** any task in the list is HIGH-risk |
 | `serial`   | Run the ordered list sequentially; no per-task pause; stop only on a `blocked` task. | Default fallback — most task lists                              |
-| `parallel` | Run each wave's independent tasks concurrently; waves run in order (Wave N starts after Wave N-1 settles). | `execution-list` has 2+ independent waves **and** no task is HIGH-risk |
+| `parallel` | Run each wave's independent tasks concurrently; waves run in order (Wave N starts after Wave N-1 settles). Waves are file-disjoint (see Parallel Safety). | `execution-list` has a wave of 2+ file-disjoint tasks **and** no task is HIGH-risk |
 
 ## Selection Algorithm (authoritative)
 
 ```
-1. Read from the Work Manifest each task's priority (P0/P1/P2) and any HIGH-risk flag.
+1. Read from the Work Manifest each task's HIGH-risk flag. Priority (P0/P1/P2) orders work; it never selects a mode.
 2. default_mode =
-     inline    if interactionMode == detailed OR any task is HIGH-risk OR any P0 task present
-     parallel  if execution-list has >= 2 independent waves AND no task is HIGH-risk
+     inline    if interactionMode == detailed OR any task is HIGH-risk
+     parallel  if some wave has >= 2 file-disjoint tasks AND no task is HIGH-risk
      serial    otherwise (fallback)
 3. Apply the risk floor (below): any HIGH-risk task is forced to inline
    treatment — record per-task inline-override for that task.
@@ -44,13 +44,14 @@ Authoritative reference for the **Prepare** phase (Step 3). Defines the three ex
 **Evaluation rules:**
 
 - The `default_mode` branches are checked **in the order written**; the first match wins. `serial` is the result **only** when neither earlier branch matches — it is a fallback, not a neutral default.
-- Evaluate with the real manifest data (task count, priorities, HIGH-risk flags, wave count). Do not copy a mode from an example.
+- Evaluate with the real manifest data (task count, HIGH-risk flags, wave count, file overlap). Do not copy a mode from an example.
+- `P0` means "blocks other tasks"; `/plan` gives every Foundation task `P0`, so using it as a trigger would force `inline` on every plan.
 - The recommendation shown to the user is `default_mode` after the risk floor.
 
 **Detailed-mode question** — build it from computed values; replace every `<…>`:
 
 ```
-This run has <N> tasks in <W> wave(s); <H> HIGH-risk, <P0> P0. I recommend <default_mode>.
+This run has <N> tasks in <W> wave(s); <H> HIGH-risk. I recommend <default_mode>.
 Which execution mode would you like?
   - Inline: one task at a time, pause between tasks
   - Serial: ordered list, no per-task pause
@@ -65,7 +66,7 @@ Append ` [Recommended]` to the option equal to `default_mode`; if the risk floor
 - **Any HIGH-risk task forces `inline` treatment for that task**, regardless of the selected `executionMode`.
   - If the list-level `executionMode` is `serial`/`parallel` but an individual task is HIGH-risk, that task runs inline (pause + re-confirm before its Red step) while independent non-HIGH-risk tasks may keep the list mode elsewhere.
   - The user may not downgrade a HIGH-risk task below `inline`. A preference that violates this is rejected; the user is asked to accept `inline`.
-- HIGH-risk is carried from the Work Manifest (Triage preserved the per-task risk flag from the `/plan` design/research artifacts or inferred it for ad-hoc tasks).
+- HIGH-risk is carried from the Work Manifest. It is judged by **consequence, not keywords** (same principle as `/plan`): a task is HIGH-risk only when running it can cause irreversible or externally visible harm — destructive or backfilling data changes on real data, authentication/authorization or secrets handling, payments or billing, deleting or rewriting many files, or deploy/config changes to shared infrastructure. Triage sets the flag: plan-based tasks start from the plan's Risk Analysis rows with high impact that name the task's files or area; ad-hoc tasks are judged by reading the files they touch. A word like "transaction" or "session" in a task title is only a reason to look, never a reason to flag.
 
 ## Per-Mode Flow (authoritative; Execute follows these)
 
@@ -82,12 +83,21 @@ Append ` [Recommended]` to the option equal to `default_mode`; if the risk floor
 
 ### parallel
 - Group `execution-list` into waves:
-  - **Wave 0** — tasks with all dependencies already `completed`.
+  - **Wave 0** — tasks with all dependencies already satisfied (`completed` or `for-review`).
   - **Wave N** — tasks all of whose dependencies are in Waves `< N`; each wave is independent internally and runs concurrently.
   - Within a wave, stable order by original unit number.
-- Waves run in order: Wave N starts only after Wave N-1 fully settles (all its tasks completed/blocked/skipped).
+- Waves run in order: Wave N starts only after Wave N-1 fully settles (all its tasks `for-review`/blocked/skipped).
 - A `blocked` task in an earlier wave blocks only its dependents in later waves, not the whole current wave.
 - A HIGH-risk task in any wave is, per the risk floor, pulled to inline treatment (pause + re-confirm) even though surrounding tasks run concurrently.
+
+## Parallel Safety (authoritative)
+
+Tasks of one wave share a working tree and one test suite, so concurrency is only safe when the tasks cannot interfere:
+
+- **File-disjoint:** the declared sets (`files.create` ∪ `files.modify` ∪ `files.test`) of any two tasks in a wave must not overlap. If they do, split the wave: keep the earlier task (by unit number) and move the other into the next sub-wave. Record the split in the Execution Plan.
+- **Regression attribution:** a failure seen while tasks run concurrently cannot be attributed to one task. Run the regression gate **once per wave**, after every task of the wave has reached Refactor; a new failure blocks the wave's tasks together until it is attributed by re-running them one at a time.
+- **Ledger:** the touched-files ledger is taken per wave and attributed by declared files (see [task-execution-rules.md](task-execution-rules.md)); an undeclared touched file in a parallel wave is a deviation for every task whose declared set it could belong to, and is surfaced for the user.
+- If no wave has two or more file-disjoint tasks, `parallel` offers nothing; default to `serial`.
 
 ## Resume Behavior
 

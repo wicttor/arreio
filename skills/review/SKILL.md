@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Review code changes through a deterministic pipeline of micro-skills: Scope -> Prepare -> Analyze -> Report. Accepts a PR / branch diff / commit range / working tree, a /work run's changes, or an ad-hoc target; produces graded findings and an approval status. Local-only; no GitHub sync. No agent dependency, no fallback paths."
+description: "Review code changes through a deterministic pipeline of micro-skills: Scope -> Prepare -> Analyze -> Report. Accepts a PR / branch diff / commit range / working tree, a /work run's changes, or an ad-hoc target; produces graded, evidence-backed findings and an approval status (per task for tasks awaiting review). Local-only; no GitHub sync. No agent dependency, no fallback paths."
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,7 @@ Orchestrates a deterministic pipeline of micro-skills: `Scope -> Prepare -> Anal
 This skill is invoked by prompting:
 
 - `/review <change-set>` — review a git change set: `git diff <base>..<head>`, a PR's commits, a commit range (`A..B`), `HEAD` (uncommitted), staged changes, a branch-vs-base diff, or a set of paths/globs.
-- `/review <work-id>` — review the changes a `/work` run produced. Scope discovers `status: for-review` tasks (see below); if found, reviews those task changes and gates approval. Also accepts a Work `review-id` to scope to that run.
+- `/review <work-id>` — review the changes a `/work` run produced. Scope discovers tasks awaiting review (`for-review`, or `blocked` by an earlier review); if found, reviews exactly those tasks' changes and gives each its own verdict. Otherwise reviews the run's completed tasks. Also accepts a Work `review-id` to scope to that run.
 - `/review <target description>` — ad-hoc review of a described target (e.g. "review the auth module", "review `src/lib/redis-client.ts`"). Scope resolves the description into a concrete change boundary.
 
 This skill runs the review pipeline, analyzing changes and producing a report, acting as the Orchestrator.
@@ -48,10 +48,10 @@ Each phase runs sequentially: the orchestrator calls the phase module, receives 
 - Receives a context object from the user, a saved prompt, a document, or a combination.
 - **Four input shapes:**
   1. **Change-set** — a git change set spec: a diff range (`<base>..<head>`), a commit range (`A..B`), `HEAD` (uncommitted working tree), staged changes, a branch-vs-base diff, or a set of paths/globs. Scope resolves it to a concrete file + hunk boundary.
-  2. **Work-linked** — a `work-id` (e.g. `2026-07-10-001`) or a Work `review-id`. Scope resolves it to the changes that `/work` run touched: the union of every task file's `files.create` / `files.modify` (filtered by the `completed`/`blocked`/`skipped` outcomes in the Work Report), bounded to commits attributable to that run if discoverable.
-  3. **Task-in-review** — ✅ **NEW**: a `work-id` where one or more tasks have `status: for-review` (gated by Work Review Phase 4). Scope resolves it to files touched by those tasks. After Analyze, Report updates task file frontmatter: `status: completed` (if approved) or `status: blocked` (if changes-requested). This is the approval gate for tasks awaiting review.
+  2. **Work-linked** — a `work-id` (e.g. `2026-07-10-001`) or a Work `review-id` whose tasks are all settled (`completed`, `skipped`, or plainly `blocked`). Scope resolves it to what the run's tasks actually changed: the per-task `touched-files` in the Work Report, falling back to each task's declared files for older runs.
+  3. **Task-in-review** — a `work-id` with one or more tasks at `status: for-review` (held by Work's Review phase) or `status: blocked` with `blocked-by: review:<report-id>` (a re-review after the user addressed an earlier verdict). Scope resolves the evaluated tasks' touched files and records a `task-files` map. Findings are attributed to tasks, Report derives a verdict per task, and each task becomes `completed` (checkboxes ticked) or `blocked` accordingly.
   4. **Ad-hoc** — a free-form target description. Scope maps it to a concrete change boundary by locating matching files/paths and, where applicable, the commits that most recently touched them.
-- **Optional requirements:** any review is sharper when there is a reference spec to test against. Accept an optional requirements ref — a `/plan` plan-id, a task's `## Acceptance Criterion`, a markdown spec, or a referenced doc. If provided, scope-creep detection runs against it; if absent, Scope marks `requirements-source: none` and Analyze skips the scope-creep-vs-requirements category (noting it).
+- **Optional requirements:** any review is sharper when there is a reference spec to test against. Accept an optional requirements ref — a `/plan` plan-id, a task's `## Acceptance Criterion`, a markdown spec, or a referenced doc. If provided, scope-creep detection runs against it; if absent, Scope marks `requirements-source: none` and Analyze skips the scope-creep-vs-requirements category (noting it). Task-in-review input defaults to the evaluated tasks' own Acceptance Criteria (and the plan), so creep detection runs there.
 - **If no context is provided**, ask: "What would you like to review? Provide a git ref/range, a work-id, or describe a target."
 - **Unified key:** downstream phases key off a `review-id` (`YYYY-MM-DD-NNN`), allocated by Scope per [id-generation.md](references/id-generation.md). For work-linked and task-in-review input, the `review-id` is **distinct** from the Work `review-id` (the two skills produce independent artifacts) — the work-id is carried alongside for traceability and optional index cross-linking. For task-in-review input specifically, Report's approval verdict updates the task files' frontmatter `status:` field (new behavior).
 - Output: [Review Input Artifact](references/templates/artifacts/review-input.md)
@@ -70,7 +70,7 @@ For **change-set** input, verify the repo is a git working tree and the spec par
 
 For **work-linked** input, verify the `work-id` exists (`docs/tasks/<work-id>/index.md`) and is non-empty; if given a Work `review-id`, verify `docs/plans/.work/.review/<review-id>.md` exists. If missing, ask the user to run `/work <work-id>` first or switch to a change-set spec.
 
-For **task-in-review** input, verify the `work-id` exists and contains at least one task with `status: for-review` (read task files' frontmatter or check the Work Report's task-outcome-rollup `for-review` count). If none found, inform the user: "No tasks in for-review status for this work-id. Did you run `/work <work-id>` first?" or offer to review the work-linked changes instead.
+For **task-in-review** input, verify the `work-id` exists and contains at least one task with `status: for-review` or `blocked-by: review:*` (read the task files' frontmatter). If none found, inform the user: "No tasks in for-review status for this work-id. Did you run `/work <work-id>` first?" or offer to review the work-linked changes instead.
 
 ### Phases
 
@@ -89,7 +89,8 @@ Between phases, the orchestrator validates the output artifact before passing it
 2. **Cross-phase consistency** — IDs (`review-id`, `scope-id`, `prepare-id`, `analyze-id`, `report-id`) match the upstream artifacts; `interactionMode` is identical across artifacts.
 3. **Status check** — the artifact's `status` is `complete` (not `pending` or `failed`).
 4. **Scope coherence** (after Scope) — the change boundary is non-empty and parses to a concrete file list; referenced requirements resolve (or are explicitly marked `none`). Required- vs optional-only files are separated.
-5. **Findings coherence** (after Analyze) — every finding carries a `severity`, a `category` (quality / security / tests / documentation / integration / scope-creep), a repository-relative `location`, and either a requirement trace or a `scope-creep` flag.
+5. **Findings coherence** (after Analyze) — every finding carries a `severity`, a `category` (quality / security / tests / documentation / integration / scope-creep), a repository-relative `location`, `evidence` (non-empty for `blocker`/`major`), and exactly one of a requirement trace or a `scope-creep` flag.
+6. **Report coherence gate** (after Report) — `scripts/check-review.py` prints `PASS`: the findings list matches the rollup, the approval status follows from the tallies, per-task verdicts and task statuses/checkboxes agree, and the registry row and work-index block appear once. A manual checklist covers environments without Python.
 
 If a gate fails, the orchestrator returns to the producing phase with the error context (per the recovery workflow in [error-handling.md](references/error-handling.md)).
 
@@ -104,7 +105,7 @@ Each phase is responsible for its own index updates:
 | Analyze | _(none)_                                                               | Produces findings; no index write.                                                                                             |
 | Report  | `docs/review/index.md`                                          | Append a registry row: `<report-id>`, review target summary, approval status, link to the report file.                         |
 | Report  | `docs/tasks/<work-id>/index.md` _(work-linked or task-in-review only)_ | Append a distinct `## Review Report — <report-id>` block (separate from Work's own `## Work Report` block).                    |
-| Report  | Task frontmatter _(task-in-review only)_                               | Update task file `status:` field to `completed` (if approved) or `blocked` (if changes-requested, with reason in frontmatter). |
+| Report  | Task frontmatter _(task-in-review only)_                               | Per-task verdict: `approved` → `completed` (checkboxes ticked); `changes-requested`/`rejected` → `blocked` with `block-reason` and `blocked-by: review:<report-id>`. |
 
 **Idempotency rule:** re-running Review over the same target re-derives findings fresh (reviews are not resume-safe like execution — the change set may have evolved). The registry row and any work-index block are **idempotent on `report-id`**: a re-run overwrites the row/block with the same id, never duplicates it.
 
@@ -113,10 +114,10 @@ Each phase is responsible for its own index updates:
 - **Review Report:** Saved to `docs/review/.report/<report-id>.md`, with: the change boundary, the approval status (`approved` / `changes-requested` / `rejected`), the graded findings rollup, recommendations, and (when requirements were available) the scope-creep summary.
 - **Registry row:** `docs/review/index.md` updated with the new review.
 - **(Work-linked or task-in-review only) Index cross-link:** `docs/tasks/<work-id>/index.md` gets a `## Review Report — <report-id>` block so a future glance at the work index shows that an external Review ran over it.
-- **(Task-in-review only) Task Status Update:** ✅ **NEW**: For each task with `status: for-review`:
-  - If approval status = `approved` → update task file's frontmatter `status: completed`
-  - If approval status = `changes-requested` → update task file's frontmatter `status: blocked` (with reason in `block-reason:` field)
-  - Idempotent on `report-id` (re-running overwrites, never duplicates)
+- **(Task-in-review only) Task Status Update:** each evaluated task gets its own verdict, derived from the findings attributed to it plus any run-level finding:
+  - `approved` → frontmatter `status: completed`, `block-reason`/`blocked-by` removed, its `## Acceptance Criteria` checkbox and its row in `docs/tasks/<work-id>/index.md` ticked (Work leaves both unticked while a task is `for-review`)
+  - `changes-requested` or `rejected` → `status: blocked` with `block-reason:` (finding ids) and `blocked-by: review:<report-id>`; checkboxes stay unticked
+  - Idempotent on `report-id`; a `completed` task is never reverted. A blocked task is not retried by `/work` — the user fixes it and runs `/review <work-id>` again.
 - **No GitHub sync:** This skill does not post comments, formal reviews, or labels to GitHub. Findings live on disk only — the user wires outbound posting as a separate step if desired.
 - **(Optional) Learnings:** Recurring traps or confirmed patterns surfaced during Analyze are handed to the Learn skill (`/learn`) to persist — Review does not write `docs/learn/` directly.
 
@@ -146,6 +147,13 @@ Artifact templates live in [references/templates/artifacts/](references/template
 | [findings.md](references/templates/artifacts/findings.md)           | Analyze      |
 | [review-report.md](references/templates/artifacts/review-report.md) | Report       |
 
+## Scripts and Evals
+
+| Path | Purpose |
+| --- | --- |
+| [scripts/check-review.py](scripts/check-review.py) | Report Step 8 coherence gate (Python 3 standard library; optional — a manual checklist covers environments without Python) |
+| [evals/](evals/README.md) | Scenario evals and good/bad report fixtures that exercise the gate |
+
 ## Execution Rules
 
 Follow these literally; they exist to keep runs consistent across agents.
@@ -156,18 +164,22 @@ Follow these literally; they exist to keep runs consistent across agents.
 4. **One question at a time**, with 2–4 concrete options; build the question text from the current values.
 5. **Announce phase transitions in one line** (e.g., "Phase 2/4 Analyze complete: <key result>") so the user can follow progress, even in Autopilot.
 6. **Honor write rules:** intermediate phase artifacts only in `detailed` mode; final deliverables always.
+7. **Never accept on the user's behalf.** Only the user can mark scope-creep `accepted`, and never in Autopilot; severities come from the rubric, never from the desired verdict.
+8. **The report is complete on its own.** It carries the full findings list with evidence, because the Findings artifact is not written outside `detailed` mode.
 
 ## Core Principles
 
 - **Deterministic Pipeline:** Phases always execute in sequence (no agent switching, no fallback paths).
 - **Review ≠ Work's Review phase:** This is a heavyweight code review of arbitrary changes against standards (quality / security / tests / docs / integration / scope-creep) with an explicit approval status. Work's built-in Phase-4 Review is a lightweight, behavior-preserving cleanup + gate of the tasks it just executed. The two are **complementary, not overlapping**:
   - **Work Review** (Phase 4 of `/work`): Pre-check gate. Simplify, consolidate, run regression check, detect scope-creep. If any regression/scope-creep found → tasks enter `for-review` status (not `completed`).
-  - **Standalone Review** (this skill): Comprehensive audit. Full quality/security/tests/docs analysis. Can accept `/review <work-id>` → finds `status: for-review` tasks (task-in-review input shape) → audits them with full severity rubric → approval verdict updates task status to `completed` or `blocked`.
+  - **Standalone Review** (this skill): Comprehensive audit. Full quality/security/tests/docs analysis. Can accept `/review <work-id>` → finds `status: for-review` tasks (task-in-review input shape) → audits them with full severity rubric → each task's own verdict then moves it to `completed` or `blocked` (with `blocked-by: review`); after the user fixes a blocked task, `/review <work-id>` evaluates it again.
   - **Sequential**, not parallel: `/work` executes and gates to `for-review`; user runs `/review` next to approve or reject. No overlap in purpose.
 - **Cascade Graded Findings:** Every finding has a severity (`blocker` / `major` / `minor` / `nit`) that drives the final approval status. Severity criteria are authoritative in [severity-rubric.md](references/severity-rubric.md); Analyze assigns, Report aggregates and never re-encodes the rubric.
 - **Scope-Creep Requires Requirements:** Scope-creep detection runs only when a reference spec is available; without one, Analyze skips that category and records `requirements-source: none`. The logic is authoritative in [scope-creep-detection.md](references/scope-creep-detection.md).
+- **Evidence-Bound Findings:** Every finding quotes the evidence that warrants it and stays inside the change; one finding per root cause, nits roll up past five, and security findings need a demonstrated source-to-sink path (a keyword is never a finding). Rules are authoritative in [review-categories.md](references/review-categories.md#finding-discipline-authoritative).
+- **Per-Task Verdicts:** One bad task does not hold the others: each evaluated task is judged on the findings attributed to it plus any run-level finding.
 - **Test the Tests:** Reviewing changes includes evaluating the tests that accompany them — coverage, correctness of assertions, and whether they assert the intended Acceptance Criterion — not just production code.
-- **Read-Only Review:** Review analyzes and reports; it never edits the code under review. Required changes become a follow-up task (a new `/plan` + `/work`, or manual edits) — never applied inline here.
+- **Read-Only Review:** Review analyzes and reports; it never edits the code under review. Its only writes are the report, the registry row, the work-index block, and (task-in-review) task statuses and checkboxes. Required changes become a follow-up task (a new `/plan` + `/work`, or manual edits) — never applied inline here.
 - **Single Source of Truth:** This skill defines all its own rules; it does not depend on any external agent rule file. Category, severity, and approval definitions live once in their authoritative references and are never re-encoded inline in the modules.
 - **Lean Persistence:** Phase artifacts hit disk only in `detailed` mode; `smart`/`autopilot` pass them in context to save tokens and time.
 - **Transparent Artifacts:** Each phase produces an explicit output artifact for the next phase.

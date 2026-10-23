@@ -1,0 +1,13 @@
+{
+  "skills": ["work"],
+  "query": "/work 2026-10-23-001",
+  "files": ["fixtures/plan-coverage.md"],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "Triage creates work/<slug> even though docs/plans/ and docs/tasks/ have uncommitted files (they are bookkeeping paths); it only errors on uncommitted changes elsewhere",
+    "Prepare does not choose inline just because Foundation tasks are P0; with no HIGH-risk task and no file-disjoint wave it selects serial",
+    "Execute leaves each green task at for-review with no checkbox ticked; Review promotes them to completed and ticks both checkboxes",
+    "Re-running /work on the same branch does not raise a dirty-tree error and does not re-run completed tasks",
+    "check-work.py prints PASS and the Work Report lists every Source Coverage item as done"
+  ]
+}

@@ -34,7 +34,7 @@ Run this command in your AI coding agent to:
 2. Create the project structure (`docs/plans/`, `docs/learn/`, etc.)
 3. Set up architectural documentation and index files
 
-**Optional:** Python 3 enables the `/plan` coverage gate (`skills/plan/scripts/check-plan.py`). Without it, `/plan` falls back to a manual checklist.
+**Optional:** Python 3 enables the `/plan` coverage gate (`skills/plan/scripts/check-plan.py`) the `/work` coherence gate (`skills/work/scripts/check-work.py`), and the `/review` report gate (`skills/review/scripts/check-review.py`). Without it, each falls back to a manual checklist.
 
 This makes all six skills available in your AI development environment:
 
@@ -96,7 +96,7 @@ Plan outputs: `docs/plans/YYYY-MM-DD-NNN-<name>.md` (indexed in `docs/plans/inde
 
 ### Work
 
-Invoke with `/work <plan-id>`, `/work <task file or task-id>`, or `/work <task description>` (ad-hoc). Work runs on its own `work/<short-description>` git branch, executes each task Red → Green → Refactor, and chooses an **execution mode** (inline, serial, or parallel waves) from task priority, risk, and dependencies; HIGH-risk tasks always run inline.
+Invoke with `/work <plan-id>`, `/work <task file or task-id>`, or `/work <task description>` (ad-hoc). Work runs on its own `work/<short-description>` git branch, executes each task Red → Green → Refactor against the plan's source of truth, and chooses an **execution mode** (inline, serial, or parallel waves of file-disjoint tasks) from risk and dependencies; HIGH-risk tasks (judged by consequence, not keywords) always run inline. Green tasks wait at `for-review` until Review verifies them (regression check, touched-files scope check) and promotes them to `completed`; the Work Report rolls up which source items are done.
 
 | Phase | Module Name | Purpose                                   |
 | ----- | ----------- | ----------------------------------------- |
@@ -107,7 +107,7 @@ Invoke with `/work <plan-id>`, `/work <task file or task-id>`, or `/work <task d
 
 ### Review
 
-Invoke with `/review <git range | HEAD | branch | paths>`, `/review <work-id>`, or `/review <target description>`. Findings are graded `blocker` / `major` / `minor` / `nit` across quality, security, tests, documentation, integration, and scope creep, and the approval status (`approved` / `changes-requested` / `rejected`) is derived from the findings. Review is local and read-only: reports are written to `docs/review/`, never posted to GitHub.
+Invoke with `/review <git range | HEAD | branch | paths>`, `/review <work-id>`, or `/review <target description>`. For a `/work` run, `/review <work-id>` judges each task still held at `for-review` on its own findings: approved tasks become `completed`, the rest `blocked` until fixed and re-reviewed. Findings are graded `blocker` / `major` / `minor` / `nit` across quality, security, tests, documentation, integration, and scope creep, and the approval status (`approved` / `changes-requested` / `rejected`) is derived from the findings. Review is local and read-only: reports are written to `docs/review/`, never posted to GitHub.
 
 | Phase | Module Name | Purpose                          |
 | ----- | ----------- | -------------------------------- |

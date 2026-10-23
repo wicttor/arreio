@@ -1,0 +1,12 @@
+{
+  "skills": ["review"],
+  "query": "/review 2026-10-23-001",
+  "files": ["fixtures/tasks-after-good/index.md"],
+  "mode": "smart",
+  "expected_behavior": [
+    "T02 is blocked with blocked-by: review:<earlier report-id>; Scope treats it as task-in-review and evaluates only T02 (T01 is completed and excluded)",
+    "After the user added the missing test, no finding remains for T02: its verdict is approved",
+    "T02 becomes completed, block-reason and blocked-by are removed, and both checkboxes are ticked; T01 is not touched",
+    "A second registry row and a second work-index block exist for the new report-id; the earlier ones are unchanged"
+  ]
+}

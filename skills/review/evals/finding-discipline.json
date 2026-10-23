@@ -1,0 +1,13 @@
+{
+  "skills": ["review"],
+  "query": "/review main..feature/logging",
+  "files": [],
+  "mode": "autopilot",
+  "expected_behavior": [
+    "The same missing-docstring defect in nine changed files is one finding (first location, the rest listed in the message), not nine",
+    "Eight style nits yield five individually listed nits plus one 'N further style nits' finding",
+    "Lint errors in files the change did not touch are not reported; a linter message inside a changed hunk is used only as corroboration",
+    "Every blocker and major finding has non-empty evidence quoted from the hunk; findings phrased only as 'might' or 'consider' are dropped",
+    "check-review.py prints PASS"
+  ]
+}

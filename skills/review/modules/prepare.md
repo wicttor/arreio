@@ -2,8 +2,8 @@
 title: Prepare
 description: Second step in the Review workflow. Reads the Review Scope, gathers the diffs/hunks for the change boundary, resolves the spec content (when requirements are present), derives test context (which tests cover the changed files and whether the change ships its own tests), and inventories available static-analysis tools. Returns a Review Kit for the Analyze phase.
 type: module
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 2 - Prepare
@@ -29,7 +29,7 @@ If the change boundary is explicitly `empty` (Scope recorded a nothing-to-review
 1. For each `required` file in the change boundary, gather the actual diff/hunks using the `attribution` source recorded in the Scope:
    - `commits` — `git diff <base>..<head> -- <files>` (or the per-file range).
    - `working-tree` — `git diff -- <files>` (and `git diff --cached -- <files>` for staged portions).
-   - `task-files` (work-linked, no attributable commits) — the working-tree diff of the `required` files; note `diff-source: working-tree-fallback`.
+   - `task-files` (work-linked or task-in-review, no attributable commits) — the working-tree diff of the `required` files; note `diff-source: working-tree-fallback`.
    - `current-contents` (ad-hoc, no diff) — record the file's current contents as the review target (`diff-source: current-contents`); no hunks.
 2. Capture per file: status (added/modified/deleted/renamed), line counts (`+N / -M`), and the hunks. Deleted files record the deletion (no hunks to review).
 3. **Enrich `context`:** for each modified `required` file, discover key callers/importers of changed public symbols (best-effort: grep import/usage). Record them in `context` with a one-line role ("caller of `foo()`"). Keep this bounded — `context` is reviewer aid, not a second `required` set.
@@ -55,6 +55,8 @@ For each `required` file, identify tests that cover it — Analyze's **tests** c
 2. **Find covering tests** for each changed file by: (a) naming-convention match (`foo.ts` → `foo.test.ts`; `test_foo.py`; `foo_test.go`), and (b) grepping test files for imports of the changed module/symbol. Record, per changed file, the covering test files (possibly empty).
 3. **Note whether the change ships its own tests** — i.e. whether any test files appear in the `required` (added/modified) set. A change that adds production code with **no** accompanying test is itself a finding candidate Analyze will evaluate.
 
+4. **Work baseline** (work-linked and task-in-review): carry the Work Report's `regression-check` (`baseline-state`, `failing-tests`) into the kit as `work-baseline`, so a regression claim in Analyze is judged against what Work recorded rather than assumed.
+
 ### Step 4: Inventory Static-Analysis Tools
 
 Detect available static analysis Analyze may optionally run to corroborate findings (corroborative, not authoritative — Analyze frames findings against the change, not the whole repo). Record the tool inventory (name + command + `configured: true|false` for this repo):
@@ -76,7 +78,7 @@ If **no** linter/type-checker is configured for the repo, that is a Smart pause 
    - `spec-content` (the structured criteria list, or `none`)
    - `test-context` (per changed file: covering tests; whether the change ships its own tests)
    - `tool-inventory` (linters/type-checkers/test runner with `configured` flags)
-   - `work-id` carried (work-linked only)
+   - `work-id` carried (work-linked and task-in-review), plus `work-baseline`
 
 ### Step 6: Present, Confirm, and Save
 

@@ -2,8 +2,8 @@
 title: Report
 description: Fourth and final step in the Review workflow. Derives the final approval status (approved / changes-requested / rejected) from the Findings per the authoritative approval criteria, composes non-binding recommendations, generates the Review Report, registers it in docs/review/index.md, and (work-linked only) appends a distinct ## Review Report — <report-id> block to the work task index. Returns the Review Report as the Review skill's final deliverable.
 type: module
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 4 - Report
@@ -30,15 +30,19 @@ If the Findings set is empty (the nothing-to-review case, or a genuinely clean r
 The approval criteria are authoritative in **[approval-criteria.md](../references/approval-criteria.md)** — Report looks them up, it does not re-encode them:
 
 - **approved** — no `blocker`, no `major` (any number of `minor`/`nit` acceptable). The change is mergeable.
-- **changes-requested** — at least one `major`, **no** `blocker`; **or** any finding flagged `scope-creep: true`. Fix before merge.
+- **changes-requested** — at least one `major`, **no** `blocker`; **or** any finding flagged `scope-creep: true` that the user has not `accepted`. Fix before merge.
 - **rejected** — at least one `blocker`. Do not merge.
 
 Derive the status deterministically from the tallies (count of `blocker`/`major` findings and whether any finding carries `scope-creep: true`). Record `approval-status` and a one-line rationale tied to the tallies.
 
+### Step 1b: Per-Task Verdicts (task-in-review only)
+
+Derive one verdict per evaluated task by applying the same rule to only that task's findings, as defined in [approval-criteria.md](../references/approval-criteria.md#per-task-verdicts-task-in-review-input): a finding with `tasks` counts for those tasks; a run-level finding (no `tasks`) counts for every evaluated task. Record `task-verdicts: [{task-id, verdict, findings: [ids]}]`. A task with no findings is `approved` even when the run-level `approval-status` is not.
+
 ### Step 2: Compose Recommendations
 
 1. For **changes-requested / rejected**, list the actionable `blocker`/`major` findings as recommended next steps, each referencing the finding id and `location`. These are **non-binding** — Review is read-only; the user turns them into a follow-up `/plan` + `/work`, or manual fixes.
-2. For **approved** with `minor`/`nit` findings, optionally list them as non-blocking polish suggestions.
+2. For **approved** with `minor`/`nit` findings, optionally list them as non-blocking polish suggestions. For task-in-review, end each blocking recommendation set with: "after the fix, run `/review <work-id>` again" (blocked tasks are re-evaluated).
 3. Summarize the **scope-creep** outcome: if the scope-creep category ran, summarize the confirmed creep findings (or `none`); if it was `skipped (no requirements)`, record that.
 4. Surface **learnings to capture** — confirmed patterns, gotchas, or forced decisions discovered during Analyze — as candidates (with title, domain, source finding id, and a 1–2 sentence summary). Review does not write `docs/learn/` directly; these are handed to the Learn skill (`/learn`).
 
@@ -49,11 +53,12 @@ Derive the status deterministically from the tallies (count of `blocker`/`major`
 2. Produce a **Review Report** block (as markdown) following the schema in [review-report.md](../references/templates/artifacts/review-report.md). Include:
    - `report-id`, inherited `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `interactionMode`
    - the `approval-status` and rationale
-   - the findings rollup (counts by severity and by category)
+   - the full `findings` list (as Analyze produced it, including `evidence`, `tasks`, and `accepted`) and the findings rollup (counts by severity and by category)
+   - `task-verdicts` (task-in-review)
    - `recommendations` (actionable for changes-requested/rejected; polish for approved)
    - `scope-creep-summary` (confirmed findings, `none`, or `skipped (no requirements)`)
    - `learnings-to-capture` (candidates) and any `learning-gaps`
-   - `work-id` carried (work-linked only, for the index cross-link)
+   - `work-id` carried (work-linked and task-in-review, for the index cross-link and task updates)
 
 ### Step 4: Register in the Review Registry
 
@@ -65,15 +70,16 @@ Append a registry row to `docs/review/index.md`:
 
 Create the index with a registry header (`# Reviews`) if it does not yet exist. The row is **idempotent on `report-id`**: a re-run overwrites the row with the same id, never duplicates it.
 
-### Step 5: Cross-Link the Work Index (work-linked only)
+### Step 5: Cross-Link the Work Index (work-linked and task-in-review)
 
-When `input-shape: work-linked`, append a **distinct** status block to `docs/tasks/<work-id>/index.md` — clearly labeled to never collide with Work's own `## Work Report` block:
+When `input-shape` is `work-linked` or `task-in-review`, append a **distinct** status block to `docs/tasks/<work-id>/index.md` — clearly labeled to never collide with Work's own `## Work Report` block:
 
 ```markdown
 ## Review Report — <report-id>
 
 - **Status:** approved | changes-requested | rejected
 - **Findings:** <blocker> blocker, <major> major, <minor> minor, <nit> nit
+- **Tasks:** <approved> approved (completed), <blocked> blocked by this review | n/a
 - **Scope creep:** none | <count> | skipped (no requirements)
 - **Learnings to capture:** <count> (run `/learn` to persist)
 - **Review Report:** docs/review/.report/<report-id>.md
@@ -81,29 +87,54 @@ When `input-shape: work-linked`, append a **distinct** status block to `docs/tas
 
 The block is **append-only** and **idempotent on `report-id`** (a re-run overwrites the block with the same id, never duplicates it). If the work index does not exist, skip the cross-link and note it in the report (do not fabricate a work index).
 
-### Step 6: Present, Confirm, and Save
+### Step 6: Update Task Statuses (task-in-review only)
+
+Apply each task's verdict to its task file and the work index. This is bookkeeping, not an edit of the code under review. Statuses move only through the transitions in the Work skill's [task-execution-rules.md](../../work/references/task-execution-rules.md).
+
+For each evaluated task:
+
+1. **`approved`** → set frontmatter `status: completed`, remove any `block-reason` / `blocked-by`, flip the `## Acceptance Criteria` checkbox to `- [x]`, and tick its row in `docs/tasks/<work-id>/index.md` (`- [ ]` → `- [x]`).
+2. **`changes-requested` or `rejected`** → set `status: blocked`, `block-reason: "<finding ids and one line>"`, and `blocked-by: review:<report-id>`. Leave both checkboxes unticked and append `— blocked: review <report-id>` to the index row.
+3. Idempotent on `report-id`: a re-run produces the same state; a task already `completed` is never reverted.
+
+Record `registration.tasks-updated: true`. For any other input shape record `not-applicable`. A blocked task is not retried by `/work`; the user fixes it (manually or via `/work` ad-hoc) and runs `/review <work-id>` again, which evaluates it as task-in-review.
+
+### Step 7: Present, Confirm, and Save
 
 Apply the **[phase confirmation behavior](../references/interaction-mode-propagation.md)** for the current `interactionMode`, using these report-specific **Smart pause triggers**:
 
 - `approval-status` is `changes-requested` or `rejected` (confirm the user wants to finalize vs. re-analyze), or
+- Finalizing would block one or more tasks (task-in-review: show which tasks and why before Step 6 writes them), or
 - `learnings-to-capture` is non-empty and the user may want to capture them now via `/learn` before closing.
 
-- **Detailed:** present the Review Report and ask one question with options *(1) Finalize Review, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–5 reusing the `report-id` (the registry row and work-index block are overwritten, not duplicated, because they key on `report-id`). On **Abort**, stop and inform the Orchestrator.
+- **Detailed:** present the Review Report and ask one question with options *(1) Finalize Review, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–6 reusing the `report-id` (the registry row and work-index block are overwritten, not duplicated, because they key on `report-id`). On **Abort**, stop and inform the Orchestrator.
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.
 - **Autopilot:** auto-proceed (no confirmation).
 
 Then save the artifact to `docs/review/.report/<report-id>.md` (ensure `interactionMode` included).
 
-### Step 7: Return to Orchestrator
+### Step 8: Run the Coherence Gate
 
-Return the Review Report to the Orchestrator — `path`, `report-id`, `review-id`, `approval-status`, `work-id` (if work-linked), `interactionMode`, and `learnings-to-capture` count. The Orchestrator marks the Review workflow complete. Optionally chain to the Learn skill (`/learn`) when `learnings-to-capture` is non-empty; otherwise the session ends. **No GitHub sync is performed** — findings live on disk only; outbound posting is left to a separate, optional step the user may add later.
+When Python 3 is available, run:
+
+```bash
+python skills/review/scripts/check-review.py docs/review/.report/<report-id>.md --registry docs/review/index.md [--tasks docs/tasks/<work-id>]
+```
+
+(adjust the script path to where the skill is installed; pass `--tasks` for task-in-review input). On `FAIL`, fix exactly what it names and re-run. Without Python, verify the same properties by hand per [approval-criteria.md](../references/approval-criteria.md#validation-report-step-1-re-checks) and the Report Output list below.
+
+### Step 9: Return to Orchestrator
+
+Return the Review Report to the Orchestrator — `path`, `report-id`, `review-id`, `approval-status`, `work-id` (if work-linked or task-in-review), the tasks completed/blocked, `interactionMode`, and `learnings-to-capture` count. The Orchestrator marks the Review workflow complete. Optionally chain to the Learn skill (`/learn`) when `learnings-to-capture` is non-empty; otherwise the session ends. **No GitHub sync is performed** — findings live on disk only; outbound posting is left to a separate, optional step the user may add later.
 
 ## Output: Review Report Artifact
 
 - Verify that the Review Report is complete and valid: `report-id`, `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `interactionMode`, `approval-status`, the findings rollup, `recommendations`, `scope-creep-summary`, and `learnings-to-capture`.
 - Verify that **findings coherence** held (re-verified in Step 0): every finding has a severity, category, repo-relative location, and a `trace` or `scope-creep: true`.
 - Verify that the approval status was **derived from** [approval-criteria.md](../references/approval-criteria.md) rather than re-defined inline (no second rule contradicting the authoritative reference).
-- Verify the registry row was appended to `docs/review/index.md` (idempotent on `report-id`), and — for work-linked input — the distinct `## Review Report — <report-id>` block was appended to `docs/tasks/<work-id>/index.md` (idempotent, never colliding with Work's `## Work Report` block).
+- Verify the registry row was appended to `docs/review/index.md` (idempotent on `report-id`), and — for work-linked and task-in-review input — the distinct `## Review Report — <report-id>` block was appended to `docs/tasks/<work-id>/index.md` (idempotent, never colliding with Work's `## Work Report` block).
+- Verify that the report carries the full `findings` list and that the rollup matches it; for task-in-review, that every evaluated task has one `task-verdict` and its task file/checkboxes match (approved → `completed` and ticked; otherwise `blocked` with `block-reason` and `blocked-by`).
+- Verify that the coherence gate printed `PASS` (or the manual checks held).
 - Verify that the artifact is saved to `docs/review/.report/<report-id>.md`.
 
 > The Review Report is the primary deliverable of the Review Skill. The Orchestrator marks the workflow complete; optionally chains to `/learn` when learnings were surfaced.

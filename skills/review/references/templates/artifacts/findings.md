@@ -2,8 +2,8 @@
 title: Findings Artifact
 description: Template for the Findings Artifact produced by the Analyze phase. Carries the per-finding list (severity + category + repo-relative location + message + a requirement trace OR a scope-creep flag + optional non-binding suggested-fix + optional tool corroboration), the per-category and per-severity tallies, and the scope-creep-ran flag; consumed by Report.
 type: template
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Findings Artifact
@@ -17,7 +17,7 @@ analyze-id: YYYY-MM-DD-NNN-analyze
 prepare-id: YYYY-MM-DD-NNN-prepare
 scope-id: YYYY-MM-DD-NNN-scope
 review-id: YYYY-MM-DD-NNN
-input-shape: change-set | work-linked | ad-hoc
+input-shape: change-set | work-linked | task-in-review | ad-hoc
 interactionMode: detailed | smart | autopilot
 status: complete
 timestamp: ISO-8601 timestamp
@@ -28,10 +28,13 @@ findings: [] |                         # empty list when the review was clean or
     category: quality | security | tests | documentation | integration | scope-creep
     location: "src/lib/redis-client.ts:42" | "src/lib/redis-client.ts:hunk-2"   # repository-relative
     message: "[1-2 sentence description of the issue]"
+    evidence: "[quoted hunk line(s), failing test output, or tool message that warrants the finding]"
+    tasks: [<task-id>, ...]           # task-in-review: tasks whose touched files contain the location; omit for run-level findings
     trace: "C1" | "general-quality" | "no-requirements"   # present when in-scope (NOT scope-creep)
     scope-creep: true | false         # opposite of trace: a finding with scope-creep: true carries NO trace
     suggested-fix: "[non-binding suggestion; Review is read-only]"   # optional
     corroborated-by: "eslint rule @typescript-eslint/no-explicit-any" | null   # optional; tool evidence
+    accepted: null | "<reason>"       # scope-creep findings only; set by the user during the confirmation pause, never inferred
     tentative-file: false | true      # echoes the boundary's tentative flag (work-linked blocked/skipped file)
 
 tallies:
@@ -69,6 +72,9 @@ In `detailed` mode only, also save the Findings to `docs/review/.analyze/<analyz
   - **exactly one of** `trace` **or** `scope-creep: true` (findings coherence, orchestrator gate #5). A `trace: no-requirements` is used for non-creep findings when `spec-content: none`. A `scope-creep: true` finding carries **no** `trace`.
   - `suggested-fix` and `corroborated-by` optional (suggested-fix is non-binding — Review is read-only)
   - `tentative-file` echoes the boundary's `tentative` flag for work-linked blocked/skipped files
+  - `evidence` required for every finding and never empty for `blocker`/`major` (see Finding Discipline in [review-categories.md](../../review-categories.md#finding-discipline-authoritative))
+  - `tasks` required for task-in-review findings located in a task's files (the ids from `task-files`); omitted for run-level findings
+  - `accepted` only on `scope-creep: true` findings, only with a user reason, never in Autopilot
 - **tallies.by-severity / by-category:** Required. Counts must match the findings list exactly.
 - **scope-creep-ran:** Required. `true` only when the scope-creep category actually ran (i.e., `spec-content` was present); otherwise `skipped (no requirements)`. Never silently `false`-absent.
 - **work-id:** Required for work-linked input; `null` otherwise.
@@ -91,6 +97,7 @@ findings:
     category: tests
     location: "src/lib/session-store.ts:22"
     message: "Production-code change to get/save/delete ships no test for the new behavior."
+    evidence: "src/lib/session-store.ts:22 adds save(); no test file under src/lib covers session-store"
     trace: C2
     scope-creep: false
     suggested-fix: "Add session-store.test.ts covering get/save/delete per C2."
@@ -101,6 +108,7 @@ findings:
     category: scope-creep
     location: "src/lib/cache.ts:hunk-1"
     message: "Adds a new TTL cache layer beyond C1/C2; no requirement it serves."
+    evidence: "src/lib/cache.ts:hunk-1 adds class TtlCache; no criterion in C1/C2 mentions caching"
     trace: null
     scope-creep: true
     suggested-fix: "Split the cache layer into its own task with its own AC, or roll back here."
@@ -111,6 +119,7 @@ findings:
     category: quality
     location: "src/lib/redis-client.ts:42"
     message: "Magic number 3 for retry count; extract to a named constant."
+    evidence: "src/lib/redis-client.ts:42 `for (let i = 0; i < 3; i++)`"
     trace: C1
     scope-creep: false
     suggested-fix: "const MAX_RETRIES = 3;"
@@ -140,6 +149,7 @@ findings:
     category: documentation
     location: "src/auth/session.ts:8"
     message: "Public export lacks a docstring."
+    evidence: "src/auth/session.ts:8 `export function createSession(`"
     trace: no-requirements
     scope-creep: false
     suggested-fix: null

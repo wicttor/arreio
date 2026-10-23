@@ -2,8 +2,8 @@
 title: Scope-Creep Detection
 description: Authoritative reference for the Scope phase (Step 4 pre-check) and the Analyze phase (final scope-creep category). Defines how changed files/behaviors are compared against resolved requirements to detect changes beyond the intended scope, the requirement-trace logic, and the rule that scope-creep can only run when a requirements source is present.
 type: reference
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Scope-Creep Detection
@@ -100,16 +100,21 @@ Report's approval derivation treats **any** `scope-creep: true` finding as forci
 
 ## Work-linked Edge Cases
 
-For `input-shape: work-linked`:
+For `input-shape: work-linked` or `task-in-review`:
 
+- For task-in-review input, the Work Report's `deviations` and `scope-creep` entries are `known-candidates`: Scope seeds the pre-check with them and Analyze confirms or dismisses each with evidence (a deviation the AC genuinely required is dismissed with that reason; it is not creep). Files a task touched outside its declared set (the ledger) are candidates even if Work did not list them.
 - The Work Manifest's resolved task list and each task's single Acceptance Criterion **are** the de facto requirements when Scope maps `requirements-source` to those task criteria. Scope records `requirements-source.type: plan-id | task-criterion` accordingly.
 - A `dependency-warning: expanded-to-upstream` from the Work run is **expected** (the user explicitly expanded scope), **not** creep — Analyze must not flag upstream-task files as creep when the Work record shows the expansion was authorized.
 - A `tentative` (blocked/skipped) task's files are still reviewed, but creep findings on them are flagged with the `tentative` note so the reviewer knows the file may not reflect final intent.
 
+## Accepting Scope-Creep
+
+Scope-creep findings are the only findings the user may accept (see [approval-criteria.md](approval-criteria.md#accepted-scope-creep)). Acceptance is recorded on the finding as `accepted: "<reason>"` during Analyze's confirmation pause; it is never inferred, never applied in Autopilot, and never changes severity. Accepting creep that came from a Work deviation is how the user signals that the extra file is fine; the requirement itself is not edited here (Review is read-only).
+
 ## Validation (Scope Step 4 / Analyze Step 1 re-checks)
 
 - The category ran only when requirements were present (else explicitly skipped with the note).
-- Every scope-creep finding carries `scope-creep: true` (never a `trace`) and a `location`.
+- Every scope-creep finding carries `scope-creep: true` (never a `trace`), a `location`, and `evidence`; `accepted` is present only with a user reason.
 - No scope-creep finding was emitted when `spec-content: none`.
 - The confirmed count reconciles with the preliminary count (any delta is a documented Analyze pause trigger, not a silent discrepancy).
 

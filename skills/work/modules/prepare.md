@@ -2,8 +2,8 @@
 title: Prepare
 description: Set up the execution environment, assemble the ordered execution list from the Work Manifest, select an execution mode (inline/serial/parallel), select the per-task gates from task-execution-rules, and return an Execution Plan for the Execute phase.
 type: module
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 2 - Prepare
@@ -61,9 +61,10 @@ If the manifest reports `work-state: nothing-ready` (no runnable task), do **not
 
 1. **Take `ready-tasks`** from the Work Manifest (already dependency-filtered in Triage Step 4). Preserve the manifest's dependency order — do not re-sort.
 2. **Group into execution waves** (used only if Step 3 selects `parallel`):
-   - **Wave 0** — tasks with all dependencies already `completed` (the manifest's `ready-tasks` with satisfied deps).
+   - **Wave 0** — tasks with all dependencies already satisfied (`completed` or `for-review`; the manifest's `ready-tasks` with satisfied deps).
    - **Wave N** — tasks all of whose dependencies are in Waves `< N`; each wave is independent internally and can run concurrently.
    - Within a wave, order by original unit number for stable output.
+   - **File-disjoint split:** if two tasks in a wave declare overlapping files (`files.create` ∪ `files.modify` ∪ `files.test`), move the later task (by unit number) into the next sub-wave. See Parallel Safety in [execution-mode-selection.md](../references/execution-mode-selection.md). Record each split.
 3. Record the ordered list (flat for `inline`/`serial`; wave-grouped for `parallel`) as `execution-list`. If `input-shape: task-file` with the user having chosen **Proceed anyway**, the list is still the single task — record `upstream-skipped: true`.
 
 ### Step 3: Select Execution Mode
@@ -72,11 +73,11 @@ Select how `execution-list` is run. The three modes are defined canonically in *
 
 | Mode       | Behavior                                                                    | Default when                                       |
 | ---------- | --------------------------------------------------------------------------- | -------------------------------------------------- |
-| `inline`   | One task at a time; pause between tasks; re-confirm the user before each destructive step. | `interactionMode: detailed`, **or** any `P0`/HIGH-risk task is in the list |
+| `inline`   | One task at a time; pause between tasks; re-confirm the user before each destructive step. | `interactionMode: detailed`, **or** any HIGH-risk task is in the list |
 | `serial`   | Run the ordered list sequentially; no per-task pause (still stops on a blocked task). | Default fallback — most task lists                 |
-| `parallel` | Run each wave's independent tasks concurrently (waves run in order).        | `execution-list` has 2+ independent waves **and** none is HIGH-risk |
+| `parallel` | Run each wave's independent tasks concurrently (waves run in order).        | Some wave has 2+ file-disjoint tasks **and** none is HIGH-risk |
 
-1. **Compute the default** from the table above, reading each task's `priority` and any HIGH-risk flag carried from the manifest.
+1. **Compute the default** from the table above, reading each task's HIGH-risk flag carried from the manifest and the wave file overlap. `priority` (P0/P1/P2) never selects a mode.
 2. **Apply the risk floor (authoritative in [execution-mode-selection.md](../references/execution-mode-selection.md)):** any HIGH-risk task forces `inline` for that task; the user may not downgrade a HIGH-risk task below `inline`.
 3. **Determine user preference:**
    - **Detailed:** ask the user which mode to run using the question template in [execution-mode-selection.md](../references/execution-mode-selection.md), filled with the computed values (including `Auto`).
@@ -93,9 +94,10 @@ Select the gates and transitions Execute will enforce. Their definitions are aut
    - **Red** — the new test in `files.test` exists and **fails for the right reason** (not a setup/import/compile error).
    - **Green** — the task's single Acceptance-Criterion test now passes, with no new regression beyond the Step 1 baseline.
    - **Refactor** — the test stays green after cleanup, with no regression.
-   - **Complete transition** — frontmatter `status → completed`; the task file's `## Acceptance Criteria` checkbox flips to `- [x]`; the index checklist ticks forward (`- [ ]` → `- [x]`).
+   - **Ledger** — the touched-files ledger is taken around each task; undeclared files are reverted or recorded as deviations (see the ledger policy in [task-execution-rules.md](../references/task-execution-rules.md)).
+   - **Gates-passed transition** — frontmatter `status → for-review`; no checkbox changes. Review promotes the task to `completed` and ticks the checkboxes.
 2. **Resume policy (authoritative in [task-execution-rules.md](../references/task-execution-rules.md)):**
-   - Re-entry reads each task file's `status`; a `completed` task is skipped (never re-opened, checkboxes never reset).
+   - Re-entry reads each task file's `status`; `completed` and `for-review` tasks are skipped by Execute (never re-opened, checkboxes never reset); `for-review` tasks are carried to Review.
    - `blocked` and `skipped` tasks are carried with their recorded reasons; they are not auto-retried.
 3. **Blocked transition (record the thresholds; definitions in [task-execution-rules.md](../references/task-execution-rules.md)):** if the Green gate isn't reached within the documented retry limit, the task → `blocked` with a recorded reason and a per-task snapshot of the failing assertion. Execute pauses (per mode) before the next task.
 4. **Skip transition:** skipping a task requires explicit user confirmation (never auto-skip); the index checkbox stays `- [ ]` and the reason is recorded.

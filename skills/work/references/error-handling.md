@@ -2,8 +2,8 @@
 title: Error Handling & Recovery
 description: Reference for all Work Skill phases (Triage, Prepare, Execute, Review). Defines the Step 0 artifact verification procedure, per-type required fields, error categories, recovery workflow, retry limits, and cross-phase consistency checks.
 type: reference
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Error Handling & Recovery
@@ -33,7 +33,7 @@ Every phase receives an artifact from the previous phase (or the Orchestrator, f
 | Artifact Type   | Required Fields                                                                                                                                                                                                    | Produced By  |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | `work-input`    | `type`, `timestamp`, `source`, `status`, input shape (`plan-id` **or** `task-file` **or** `ad-hoc` description), `interactionMode`                                                                                | Orchestrator |
-| `work-manifest` | `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, resolved task list, `ready-tasks` | Triage       |
+| `work-manifest` | `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, resolved task list, `ready-tasks`, `pending-review-tasks`, `source` | Triage       |
 | `execution-plan`| `prepare-id`, `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, `executionMode`, `execution-list`, `runner`, `baseline`, `applicable-gates`                                                      | Prepare      |
 | `execution-log` | `execute-id`, `prepare-id`, `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, `executionMode`, per-task result table, aggregator counts                                                          | Execute      |
 | `work-report`   | `review-id`, `execute-id`, `prepare-id`, `triage-id`, `work-id`, `work-branch`, `input-shape`, `status`, `interactionMode`, `executionMode`, task-outcome rollup, `regression-check`, `scope-creep`                               | Review       |
@@ -104,9 +104,9 @@ Errors related to `interactionMode` propagation.
 | Task's Green gate not reached within retry-limit      | Mark task `blocked` with reason + assertion snapshot; pause per mode | No         |
 | Test runner command fails to execute (not an assertion failure) | Ask user to verify runner/packageManager; category-2 recovery | No         |
 | Dependency install fails during a Green step         | Log error; retry once; then mark task `blocked`                    | No         |
-| New regression beyond baseline snapshot on a completed task | Surface as Review Smart pause trigger; do not auto-mark blocked | No         |
+| New regression beyond baseline snapshot on a for-review task | Surface as Review Smart pause trigger; do not auto-mark blocked | No         |
 
-Initial values: a task starts `not-started`; Execute sets `in-progress` mid-task, then transitions to `completed`, `blocked`, or `skipped`. Only `completed` ticks the index checkbox.
+Initial values: a task starts `not-started`; Execute sets `in-progress` mid-task, then `for-review`, `blocked`, or `skipped`. Only Review sets `completed`, and only then are the checkboxes ticked (see the status model in [task-execution-rules.md](task-execution-rules.md)).
 
 ### Category 7: Git / Branch Errors
 
@@ -115,10 +115,14 @@ Errors from Work Branch Creation (Triage Step 2d).
 | Trigger                                                      | Recovery Action                                                                                                       | Terminate?                |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------- |
 | Working directory is not a git repository                    | Log one explicit warning; record `work-branch: null`, `work-branch-state: not-a-git-repo`; continue without a branch  | No                        |
-| Dirty working tree (uncommitted changes)                      | Fail branch creation with an explicit error; ask the user: commit/stash & retry, proceed without a work branch, or abort | Yes (unless user picks proceed) |
+| Dirty working tree (uncommitted changes)                      | Fail branch creation with an explicit error; ask the user: commit/stash & retry, proceed without a work branch, or abort. Only changes outside `docs/plans/`, `docs/tasks/`, and `docs/learn/` count, and the check is skipped when already on the work branch | Yes (unless user picks proceed) |
 | Branch slug cannot be derived (vague ad-hoc description)      | Ask the user for a short kebab-case slug for `work/<slug>`                                                             | No                        |
 | Current HEAD is not the default branch at creation            | Smart pause; ask which base to branch from (default branch / current HEAD / abort); autopilot: default branch + warning | No                        |
 | Branch checkout/create fails (permissions, lock, etc.)        | Log error; retry once; then terminate with a suggestion                                                                 | Yes, after 1 retry        |
+
+### Coherence Gate Failures
+
+If `scripts/check-work.py` (Review Step 7) prints `FAIL`, fix exactly what it names — a task file whose status and checkbox disagree, a missing index row, a task with two `files.test` entries, a duplicate Work Report block, a task whose unit no source item covers — and re-run it. Do not edit the script's inputs to silence it, and do not mark a task `completed` to satisfy it: statuses change only through the transitions in [task-execution-rules.md](task-execution-rules.md).
 
 ## Recovery Workflow
 

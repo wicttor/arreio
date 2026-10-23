@@ -16,7 +16,7 @@ The product of the **Prepare** phase is a Review Kit: the gathered **diffs/hunks
 prepare-id: YYYY-MM-DD-NNN-prepare
 scope-id: YYYY-MM-DD-NNN-scope
 review-id: YYYY-MM-DD-NNN
-input-shape: change-set | work-linked | ad-hoc
+input-shape: change-set | work-linked | task-in-review | ad-hoc
 interactionMode: detailed | smart | autopilot
 status: complete
 timestamp: ISO-8601 timestamp
@@ -57,7 +57,8 @@ tool-inventory:
     - { name: "tsc", command: "npx tsc --noEmit", configured: true }
   test-runner-present: true | false   # whether a runner was detected (echoes test-runner != unknown)
 
-work-id: YYYY-MM-DD-NNN | null    # work-linked only; null otherwise
+work-baseline: { baseline-state: green | snapshot-and-continue, failing-tests: [...] } | null   # work-linked / task-in-review: from the Work Report
+work-id: YYYY-MM-DD-NNN | null    # work-linked and task-in-review; null otherwise
 ```
 
 In `detailed` mode only, also save the Review Kit to `docs/review/.prepare/<prepare-id>.md`. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.

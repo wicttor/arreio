@@ -2,8 +2,8 @@
 title: Review Categories
 description: Authoritative reference for the Analyze phase. Defines the six review categories (quality, security, tests, documentation, integration, scope-creep) and the per-category checks Analyze runs across the Review Kit's diffs. Analyze applies the categories; it does not re-encode them.
 type: reference
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Review Categories
@@ -53,7 +53,7 @@ Review the change for:
 | Unsafe patterns         | No `eval`/`exec`/`innerHTML`/deserialization-of-untrusted-data/path-traversal introduced               |
 | Dependency safety      | No known-vulnerable dependency added (Analyze notes it; corroborate with a scanner if configured)      |
 
-A security finding is almost always at least `major`, often `blocker` per [severity-rubric.md](severity-rubric.md).
+A security finding must show a concrete path — the untrusted source and the sink it reaches inside the change. With a demonstrated path it is at least `major`, often `blocker` per [severity-rubric.md](severity-rubric.md); without one it is a hardening note at most (`minor`). Keywords alone are never a finding.
 
 ### tests
 
@@ -100,11 +100,22 @@ An integration finding that breaks consumers is typically `major`; a silent brea
 
 **Only when `spec-content` is not `none`.** The detection algorithm is authoritative in [scope-creep-detection.md](scope-creep-detection.md). Each creep finding carries `scope-creep: true` (never a `trace`) and a `location`. When `spec-content: none`, Analyze records this category as `skipped (no requirements)` and emits no scope-creep findings.
 
+## Finding Discipline (authoritative)
+
+These rules keep a review proportional to the change, the same way the plan skill keeps a plan proportional to its source:
+
+1. **Evidence.** Every finding carries `evidence`: the quoted line(s) from the hunk, the failing test output, or the tool message that warrants it. A `blocker` or `major` without evidence is downgraded or dropped. Phrases such as "might", "could potentially", or "consider" without a demonstrated consequence are not findings.
+2. **Bounded to the change.** A finding's `location` is inside a changed hunk, or in a `context` file whose behavior the change demonstrably alters. Pre-existing conditions are out (see the failure table below).
+3. **One finding per root cause.** The same defect repeated across files or hunks is one finding with the first `location` and the others listed in the message, not N findings.
+4. **Nits roll up.** At most five `nit` findings are listed individually; further nits are folded into one `nit` finding "N further style nits" that names the files. Nits never drive a verdict.
+5. **Attribute to tasks.** For task-in-review input every finding lists `tasks: [task-id, ...]` from the boundary's `task-files`; a finding in no task's files is run-level (no `tasks`).
+6. **Read-only.** `suggested-fix` is a hint, never an applied change.
+
 ## How to Use This Reference (Analyze)
 
 1. For each changed file in the Review Kit's `diffs`, run the five always-on categories against the hunks.
 2. Run the scope-creep category only when `spec-content` is present, per [scope-creep-detection.md](scope-creep-detection.md).
-3. Tag each finding with exactly one `category` from the table above, a `severity` from [severity-rubric.md](severity-rubric.md), and a `location`.
+3. Tag each finding with exactly one `category` from the table above, a `severity` from [severity-rubric.md](severity-rubric.md), a `location`, and `evidence`, following the Finding Discipline above.
 4. Attach a `trace` **or** `scope-creep: true` flag per [scope-creep-detection.md](scope-creep-detection.md).
 5. Optionally corroborate a finding with a configured tool (linter/type-checker/test run) — tools corroborate, they never create findings outside the change boundary.
 

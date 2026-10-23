@@ -2,8 +2,8 @@
 title: Triage
 description: Classify work input (plan-id, task file, or ad-hoc description), resolve it into a unified, dependency-ordered Work Manifest carrying one Acceptance Criterion per task with a Red-first test, and return it for the Prepare phase.
 type: module
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 1 - Triage & Work Input Resolution
@@ -45,6 +45,8 @@ Resolve the classified input into a unified **Work Manifest** — a single task 
 3. For each task file, parse its frontmatter (`id`, `title`, `plan-id`, `unit`, `status`, `priority`, `dependencies`, `files`, `estimated-effort`) and body sections.
 4. Build the manifest in **dependency order** using the same topological ordering as the `/plan` Tasks phase (a task never appears before its dependencies). On a cycle, surface the involved tasks and ask the user whether to break the cycle (remove a dependency) or abort.
 5. Record the full task list. Do **not** filter by status here — resume filtering happens in Step 4.
+6. **Read the plan** at `docs/plans/<plan-id>-*.md` and record, read-only: `source` (frontmatter), the `Source Coverage` rows (source item → units), and the `Open Decisions` entries (`OD<n>`, recommended default, affected units). Tasks are executed against that source — Work never re-plans. If the plan file cannot be found, log one warning and continue with `source: unknown` (Review then skips the coverage rollup).
+7. **Resolve Open Decisions that affect runnable tasks.** For each `OD` whose affected units have tasks in the manifest that are not `completed`: *Detailed* and *Smart* — ask one question per decision (options: use the recommended default / give a different answer / abort); *Autopilot* — apply the recommended default and record it; if the decision has no recommended default, ask the one question anyway (Autopilot never invents an answer). Record every outcome as `decisions: [{id, answer, by: user|recommended-default}]` and append them to `docs/tasks/<work-id>/index.md` under a `## Decisions` heading (append-only; skip ids already present on resume). Never fill in an answer the plan does not recommend and the user has not given.
 
 #### 2b. Task-file
 
@@ -52,8 +54,8 @@ Resolve the classified input into a unified **Work Manifest** — a single task 
 2. Set `work-id = plan-id` inferred from the file's folder.
 3. Parse the task file into a one-entry manifest.
 4. Read the task's `dependencies`; for each referenced `task-id`, read that upstream task file's `status`:
-   - If **all** upstream tasks are `completed`: no warning; proceed.
-   - If **any** upstream task is not `completed`: this is a Smart pause trigger. Ask the user one question:
+   - If **all** upstream tasks are satisfied (`completed` or `for-review`): no warning; proceed.
+   - If **any** upstream task is not satisfied: this is a Smart pause trigger. Ask the user one question:
      ```
      Task <id> depends on <upstream-ids> which are not yet completed.
      What would you like to do?
@@ -72,8 +74,8 @@ Resolve the classified input into a unified **Work Manifest** — a single task 
 
 2. Resolve the raw description into task-shaped work — **one Acceptance Criterion per task, one test per task, Red-first**. For the resolution rules (problem-frame/intended-behavior collection, AC extraction, test-file assignment, sizing, dependency ordering, priority assignment), see **[ad-hoc-input-resolution.md](../references/ad-hoc-input-resolution.md)**. Minimally:
    - Identify the problem frame and intended behavior from the description; if either is missing or vague, ask the user one question at a time to collect them.
-   - Derive 1–3 Acceptance Criteria, **one AC per task**. If a criterion would need > 5 files or > 1 day of effort, split it into finer sub-criteria (mirror the `/plan` task-slicing rules — one test per AC).
-   - For each task: assign a dedicated test file, populate `files.create`/`files.modify` from the description, and draft Red → Green → Refactor steps.
+   - The prompt is the **source of truth**. Derive **one AC per outcome the user stated**, one task per AC. Do not add criteria the user did not ask for (hardening, extra edge cases, docs, refactors); record them as `suggestions` in the manifest for the Work Report instead. Merge criteria that one test can assert before splitting any; split only when a criterion needs > 5 files or > 1 day of effort.
+   - For each task: use the module's existing test file for `files.test` when there is one (new test file only when none exists), populate `files.create`/`files.modify` with exact paths from reading the code — never "as needed" — and draft Red → Green → Refactor steps.
    - Order tasks by dependency; assign priorities (`P0` / `P1` / `P2`).
 
 Do **not** write any files in this step — task-file materialization is deferred to Step 2e, so the work branch exists before anything is written (Step 2d).
@@ -90,7 +92,7 @@ Every new feature or plan runs on its own git branch. This step runs for all inp
    - Sanitize: lowercase; replace every character outside `[a-z0-9]` with `-`; collapse repeated `-`; trim leading/trailing `-`; cap at 50 characters. If the result is empty, fall back to the `work-id`.
    - If no slug can be confidently derived (vague ad-hoc description), ask the user one question: "What short name should the work branch use?" (accept the raw text and sanitize it). This is a Smart pause trigger.
 
-3. **Dirty working tree check:** the tree must be clean (`git status --porcelain` empty). If there are uncommitted changes, **fail branch creation with an explicit error** (Category 7 in [error-handling.md](../references/error-handling.md)) and ask the user one question: (a) I've committed/stashed — retry, (b) proceed without a work branch (`work-branch-state: skipped-by-user`), or (c) abort. Never stash, commit, or carry changes silently.
+3. **Dirty working tree check** (only when a branch must be created or checked out): the tree must have no uncommitted changes **outside the Work/Plan bookkeeping paths** — `docs/plans/`, `docs/tasks/`, and `docs/learn/` are ignored, because `/plan` leaves its artifacts uncommitted and Work itself edits task files. If other files have uncommitted changes, **fail branch creation with an explicit error** (Category 7 in [error-handling.md](../references/error-handling.md)) and ask the user one question: (a) I've committed/stashed — retry, (b) proceed without a work branch (`work-branch-state: skipped-by-user`), or (c) abort. Never stash or commit silently. **Skip this check entirely when already on `work/<slug>`** (a resume carries the previous run's uncommitted work by design).
 
 4. **Determine the base branch:** detect the repository's default branch (e.g., resolve `origin/HEAD` → `main`); fall back to an existing `main`, then `master`, then the current HEAD.
 
@@ -127,9 +129,9 @@ On any failure: never silently drop the task. Surface the specific failure and a
 ### Step 4: Dependency & Resume Check
 
 1. Read each manifest task's current `status` from its task file frontmatter.
-2. **Resume-safe filtering:** a task is `ready` only if all its dependencies are `completed`. Tasks already `completed` are skipped (never re-opened — index checkboxes are ticked forward only). Tasks `blocked` or `skipped` are carried as-is with their recorded reasons.
-3. Record the manifest's `ready-tasks` (to run this session) and `already-complete-tasks` (carried for the Work Report).
-4. If **no** task is `ready` (all blocked or already complete), record `work-state: nothing-ready` and proceed to Step 6 — the Work Report will surface that no work was runnable. Do **not** abort; the Review phase handles the empty outcome.
+2. **Resume-safe filtering:** a task is `ready` only if its status is `not-started` or `in-progress` and all its dependencies are satisfied (`completed` or `for-review`, per Dependency Satisfaction in [task-execution-rules.md](../references/task-execution-rules.md)). Tasks already `completed` are skipped (never re-opened). Tasks at `for-review` are carried as `pending-review-tasks` — Execute skips them and Review promotes or keeps them. Tasks `blocked` or `skipped` are carried as-is with their recorded reasons.
+3. Record the manifest's `ready-tasks` (to run this session), `pending-review-tasks`, and `already-complete-tasks` (carried for the Work Report).
+4. If **no** task is `ready` and none is pending review (all blocked, skipped, or already complete), record `work-state: nothing-ready` and proceed to Step 6 — the Work Report will surface that no work was runnable. Do **not** abort; the Review phase handles the empty outcome.
 
 ### Step 5: Learnings Index Gate
 
@@ -147,7 +149,9 @@ Search `docs/learn/index.md` for entries relevant to the task domains in the man
 2. Produce a **Work Manifest Artifact** block (as markdown) following the schema in [work-manifest.md](../references/templates/artifacts/work-manifest.md). Include:
    - `triage-id`, `work-id`, `input-shape`, `interactionMode`, `work-branch` (plus `work-branch-base` and `work-branch-state` from Step 2d)
    - the resolved task list (one row per task: `task-id`, `title`, `unit`, `acceptance-criterion`, `priority`, `dependencies`, `status`, `ready?`)
-   - `ready-tasks` and `already-complete-tasks`
+   - `ready-tasks`, `pending-review-tasks`, and `already-complete-tasks`
+   - `source`, `source-coverage` (rows copied from the plan), and `decisions` (Step 2a.7); ad-hoc: `source: prompt` and `suggestions`
+   - a per-task `risk` flag judged by consequence per [execution-mode-selection.md](../references/execution-mode-selection.md#risk-floor-authoritative-non-downgradable)
    - `Related Learnings` (per task) and `Learning Gaps`
    - any `dependency-warning` (task-file shape only)
    - `work-state` (`nothing-ready`, if applicable)
@@ -160,7 +164,8 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 - Task-file input has an unmet upstream dependency (Step 2b warning case), or
 - One or more task artifacts failed validation (Step 3) and required recovery, or
 - The work branch slug could not be derived automatically and was supplied by the user (Step 2d.2), or
-- The current HEAD was not the default branch when the work branch was created (Step 2d.5).
+- The current HEAD was not the default branch when the work branch was created (Step 2d.5), or
+- An Open Decision needed the user's answer (Step 2a.7).
 
 - **Detailed:** present the Work Manifest Artifact and ask one question with options *(1) Proceed to Prepare, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–6 reusing the `triage-id`. On **Abort**, stop and inform the Orchestrator.
 - **Smart:** pause only when a pause trigger above is true; otherwise auto-proceed.

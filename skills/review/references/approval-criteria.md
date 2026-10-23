@@ -2,8 +2,8 @@
 title: Approval Criteria
 description: Authoritative reference for the Report phase. Defines how the final approval status (approved / changes-requested / rejected) is derived deterministically from the Findings tallies and the presence of any scope-creep flag. Report looks this up; it does not re-encode the rule.
 type: reference
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Approval Criteria
@@ -48,6 +48,25 @@ else:
 
 A `scope-creep: true` finding (per [scope-creep-detection.md](scope-creep-detection.md)) means the change goes **beyond** the resolved requirements. That is a scope decision the merge should not make silently — the reviewer must explicitly accept the creep as intentional (often by amending the requirements) or roll it back. Hence it forces `changes-requested` even at `minor` severity. A creep finding can still be elevated to `rejected` if it also carries `blocker` via the rubric (e.g. creep that breaks a core flow).
 
+## Accepted Scope-Creep
+
+A `scope-creep: true` finding forces `changes-requested` because a scope decision should not be made silently. The user can make that decision: when Analyze pauses on a creep finding (Smart/Detailed), they may **accept** it as intentional, recording `accepted: "<reason>"` on the finding. An accepted finding keeps its severity and stays in the tallies, but no longer counts toward `creep` in the rule above. Accepting never changes a severity: an accepted `blocker` still yields `rejected`. In Autopilot nothing is accepted (there is no one to decide), so any creep stays blocking. Nothing else can be accepted.
+
+## Per-Task Verdicts (task-in-review input)
+
+For `input-shape: task-in-review`, the run-level `approval-status` above is still derived, but each evaluated task also gets its own verdict, derived by the same rule over **only the findings attributed to that task** (`tasks: [...]` on the finding, from the boundary's `task-files`):
+
+```
+for each evaluated task t:
+    F(t) = findings whose tasks include t, plus run-level findings that carry no task attribution
+    verdict(t) = the rule above applied to F(t)
+```
+
+- A finding with no task attribution (a cross-cutting issue in a shared file or a run-level finding) is in `F(t)` for every evaluated task: it holds all of them.
+- `approved` → Report promotes the task to `completed` (checkboxes ticked).
+- `changes-requested` or `rejected` → Report sets the task to `blocked` with `block-reason` (finding ids) and `blocked-by: review:<report-id>`.
+- A task with no findings is `approved` even when the run-level status is not, so one bad task does not hold the others.
+
 ## Rationale Format
 
 Record a one-line rationale tied to the tallies (Report Step 1):
@@ -82,14 +101,16 @@ A clean review is `approved` by default. The Report records whether this was a g
 
 ## Work-linked Edge Cases
 
-For `input-shape: work-linked`:
+For `input-shape: work-linked` or `task-in-review`:
 
 - The Review's `approval-status` is **independent** of the Work run's own `work-state` (`complete`/`partial`/`nothing-done`). Work's Phase-4 Review is a behavior-preserving cleanup; this Review is a standards review. The two verdicts coexist without one overriding the other.
 - The `## Review Report — <report-id>` block appended to the work index records this `approval-status` next to Work's `## Work Report` block so both are visible.
+- Work's own gate (regression, ledger-based scope check) already held these tasks at `for-review`; this Review's per-task verdicts decide whether each becomes `completed` or `blocked`. After the user addresses a `blocked-by: review` task, `/review <work-id>` evaluates it again.
 
 ## Validation (Report Step 1 re-checks)
 
 - `approval-status` is one of `approved` / `changes-requested` / `rejected`.
+- Per-task verdicts (task-in-review) match the per-task rule above, and every evaluated task has exactly one verdict.
 - The derivation matches the rule above for the recorded tallies (a `rejected` only when `b >= 1`; a `changes-requested` only when `b == 0` and (`m >= 1` or `creep`); `approved` only when `b == 0`, `m == 0`, and not `creep`).
 - The rationale surfaces the driving counts.
 - No `approval-status` is derived when findings-coherence failed (Step 0 returned the Findings to Analyze per [error-handling.md](error-handling.md) Category 2).

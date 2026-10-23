@@ -1,6 +1,6 @@
 {
   "name": "arreio",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Agent skills for AI coding agents (Claude Code, Codex, Copilot, Cursor): a guardrailed Plan → Work → Review → Learn workflow with /plan, /work, /review and /learn slash commands for predictable, test-first software delivery.",
   "license": "MIT",
   "author": {

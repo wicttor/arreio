@@ -2,8 +2,8 @@
 title: Change-Set Resolution
 description: Authoritative reference for the Scope phase. Defines how a review target (a git change-set, a /work run via work-id/Work review-id, or an ad-hoc description) is resolved into a concrete change boundary: a `required` file list (with status), an optional `context` list (callers/importers), and an `attribution` source (commits / working-tree / task-files / current-contents).
 type: reference
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Change-Set Resolution
@@ -28,6 +28,7 @@ change-boundary:
 
 - **`required`** — files the change actually touches; these are the subjects of the review. Repository-relative.
 - **`context`** — files recommended for reviewer context (callers, importers, sibling modules); **never** subjects of review themselves. Prepare enriches this; Scope seeds it lightly.
+- **`task-files`** (task-in-review only) — a map `{task-id: [paths]}` of what each evaluated task touched, so Analyze can attribute every finding to the task(s) it affects.
 - **`attribution`** — names how the boundary was derived, so Prepare picks the right diff invocation and Analyze judges severity against the right baseline.
 
 ## Resolution by Shape
@@ -53,30 +54,44 @@ change-boundary:
    context empty otherwise (Prepare expands it).
 ```
 
-### 2b. Work-linked
+### 2b. Work-linked (every task already `completed`)
 
 ```
 1. Resolve the work-id:
    - given a work-id (YYYY-MM-DD-NNN): use it directly
    - given a Work review-id: read docs/plans/.work/.review/<review-id>.md -> work-id
-2. Read docs/tasks/<work-id>/index.md and parse the task checklist
-3. For each task file, read its frontmatter files.create / files.modify
-4. required = union of all files.create + files.modify across the run's tasks
-5. Filter by task outcome from the Work Report:
-   - completed tasks -> include their files (status "modified" or "added" as declared)
-   - blocked / skipped tasks -> include their files but mark them "tentative"
-     (their changes may be partial / not present); Analyze notes the tentative flag
-   - tasks not part of this run -> excluded entirely
-6. Attribution heuristic (best-effort):
-   - if commits attributable to the run are discoverable (message references <work-id>):
-     attribution = "commits"; diff-source = those commits
-   - else fall back to the working-tree diff of the required files:
-     attribution = "task-files"; diff-source = "working-tree-fallback"
-7. Either way, record the work-id and outcome filter on the boundary
-8. Seed `context` lightly as in 2a.
+2. Read the Work Report for the run (docs/plans/.work/.review/<review-id>.md; for a bare work-id use the
+   latest report that names it) and take its `tasks[]` with each task's `touched-files`.
+   - If the report has no `tasks[]` (a run from before 1.4), fall back to each task file's declared set
+     (files.create + files.modify + files.test) and record `attribution: task-files (declared)`.
+3. required = the union of `touched-files` of `completed` tasks (deviation files included, because the
+   ledger records them). blocked / skipped tasks' files are included but marked "tentative".
+   Never include files from tasks that were not part of the run, or Work's own bookkeeping under docs/tasks/.
+4. Attribution:
+   - if commits referencing the work-id exist: attribution = "commits"; diff-source = those commits
+   - else attribution = "task-files"; diff-source = "working-tree-fallback" (Work does not commit)
+5. Seed `context` lightly as in 2a.
 ```
 
 > The `tentative` flag on blocked/skipped task files is the warning that those changes may be incomplete; Analyze treats a `tentative` file's findings with the understanding the file may not reflect intended final state, but does not silently downgrade severity — the reviewer sees the flag and decides.
+
+### 2b-bis. Task-in-review (tasks awaiting this review)
+
+```
+1. Resolve the work-id as in 2b.
+2. Evaluated tasks = tasks whose frontmatter status is `for-review`, plus tasks that are `blocked` with
+   `blocked-by: review:<report-id>` (a re-review after the user addressed an earlier verdict).
+   Every other task (completed, skipped, plain blocked, not-started) is excluded.
+3. For each evaluated task take `touched-files` from the Work Report `tasks[]` (same fallback as 2b).
+   required = the union; record `task-files: { <task-id>: [paths] }` on the boundary.
+   A file touched by several evaluated tasks is attributed to all of them.
+4. attribution / diff-source as in 2b step 4.
+5. Carry the Work Report's `deviations` and `scope-creep` entries as `known-candidates` for the
+   Scope-Creep pre-check (Work held those tasks for exactly this reason).
+6. Requirements default to the evaluated tasks' own `## Acceptance Criterion` (type `task-criterion`),
+   plus the plan when `docs/plans/<plan-id>-*.md` resolves (type `plan-id`). The scope-creep category
+   therefore runs for task-in-review input unless the user explicitly passes `none`.
+```
 
 ### 2c. Ad-hoc
 
@@ -112,6 +127,7 @@ change-boundary:
 
 A resolved change boundary is **accepted** only when:
 
+- Task-in-review: `task-files` is present, every `required` path appears in at least one task's list, and every evaluated task has an entry (possibly empty)
 - `required` paths are repository-relative and each carries a `status` (added/modified/deleted/renamed; `tentative` is allowed for blocked/skipped work-linked tasks)
 - `context` is separated from `required` and each `context` entry has a `role` (even if brief)
 - `attribution` and `diff-source` are set consistently (e.g., `attribution: commits` pairs with a real `diff-source: <range>`; `current-contents` pairs with `diff-source: current-contents`)

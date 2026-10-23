@@ -2,8 +2,8 @@
 title: Analyze
 description: Third step in the Review workflow. Runs the review categories (quality / security / tests / documentation / integration / scope-creep) across the Review Kit's diffs, assigns each finding a severity (blocker / major / minor / nit) per the authoritative severity rubric, attaches a requirement trace or a scope-creep flag to every finding, and aggregates the tallies. Returns Findings for the Report phase.
 type: module
-version: 1.0
-timestamp: "2026-08-08"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Phase 3 - Analyze
@@ -35,6 +35,8 @@ Run the six review categories across the kit's diffs. The category definitions a
 - **integration** — caller/contract impact (use the kit's `context` callers), module-boundary and convention conformance, and whether the change breaks consumers.
 - **scope-creep** — **only when** `spec-content` is not `none`: confirm Scope's `preliminary-scope-creep` candidates with severity, and detect any further changes beyond the requirements. When `spec-content: none`, record this category as **skipped** with the note `skipped (no requirements)` and emit no scope-creep findings (Review does not invent requirements).
 
+Apply the **Finding Discipline** in [review-categories.md](../references/review-categories.md#finding-discipline-authoritative) to every finding: evidence, bounded to the change, one finding per root cause, nits rolled up past five.
+
 Optionally run the available tools captured in `tool-inventory` (linters / type-checkers / the test suite) to **corroborate** a finding — but tools are corroborative, not authoritative: a finding must be warranted by the change, not by a pre-existing repo-wide condition outside the change boundary.
 
 ### Step 2: Assign Severity
@@ -46,7 +48,7 @@ For each finding, assign a severity per **[severity-rubric.md](../references/sev
 - **minor** — nice to fix: a small quality or documentation issue.
 - **nit** — style / preference; optional.
 
-If a finding's severity is borderline, default to the **lower** severity (do not over-escalate); Report derives the approval status from the tallies.
+If a finding's severity is borderline, default to the **lower** severity (do not over-escalate; the security exception applies only with a demonstrated path, per the rubric); Report derives the approval status from the tallies.
 
 ### Step 3: Attach a Requirement Trace or a Scope-Creep Flag
 
@@ -54,6 +56,8 @@ Every finding must carry either a **requirement trace** or a **scope-creep flag*
 
 1. **Requirement trace** — for findings inside the intended scope: reference the requirement/expected-behavior from `spec-content` the finding relates to (by criterion id or short label). Format: `trace: <criterion>` (or `trace: general-quality` for quality findings that are not tied to a specific criterion but are within the change's intent — acceptable as a trace).
 2. **Scope-creep flag** — for findings the change **goes beyond** the requirements: set `scope-creep: true` (no requirement trace). These findings describe the creep, not a defect in the intended change. When `spec-content: none`, all findings carry `trace: no-requirements` (scope-creep cannot be assessed) — never `scope-creep: true` without a spec.
+
+3. **Task attribution** (task-in-review only) — set `tasks: [...]` on each finding to the evaluated tasks whose `task-files` contain its `location`; a finding in no task's files is run-level and carries no `tasks`. Report derives each task's verdict from these.
 
 This makes the findings set self-describing for Report's scope-creep summary and approval derivation.
 
@@ -72,10 +76,10 @@ Tools never **create** a finding on their own outside the change boundary; they 
 2. **Assign an `analyze-id`** per [id-generation.md](../references/id-generation.md) (format `YYYY-MM-DD-NNN-analyze`, saved to `docs/review/.analyze/`). Reuse it if the user later picks **Edit & Retry**.
 3. Produce a **Findings** block (as markdown) following the schema in [findings.md](../references/templates/artifacts/findings.md). Include:
    - `analyze-id`, inherited `prepare-id`, `scope-id`, `review-id`, `input-shape`, `interactionMode`
-   - the findings list: per finding — `id`, `severity`, `category`, `location` (repository-relative `file:line` or `file:hunk`), `message`, `trace` **or** `scope-creep: true`, and an optional non-binding `suggested-fix` (Review is read-only — suggestions are informational, never applied)
+   - the findings list: per finding — `id`, `severity`, `category`, `location` (repository-relative `file:line` or `file:hunk`), `message`, `evidence`, `tasks` (task-in-review), `trace` **or** `scope-creep: true`, `accepted` (user-set, creep findings only), and an optional non-binding `suggested-fix` (Review is read-only — suggestions are informational, never applied)
    - per-category and per-severity tallies
    - a note whether the scope-creep category ran or was `skipped (no requirements)`
-   - `work-id` carried (work-linked only)
+   - `work-id` carried (work-linked and task-in-review)
 
 ### Step 6: Present, Confirm, and Save
 
@@ -83,7 +87,7 @@ Apply the **[phase confirmation behavior](../references/interaction-mode-propaga
 
 - Any **blocker** finding was detected (pause before auto-continuing to Report), or
 - Any **major** finding was detected (smart mode), or
-- A finding was flagged `scope-creep: true` (confirm the creep is real before finalizing), or
+- A finding was flagged `scope-creep: true` (confirm the creep is real before finalizing; in Detailed/Smart the user may mark it `accepted` with a reason — never in Autopilot), or
 - The scope-creep category ran and the count of confirmed creep findings differs from Scope's `preliminary-scope-creep` (sanity-check the delta).
 
 - **Detailed:** present the Findings and ask one question with options *(1) Proceed to Report, (2) Edit & Retry, (3) Abort*. On **Edit & Retry**, loop back through Steps 1–5 reusing the `analyze-id`. On **Abort**, stop and inform the Orchestrator.
@@ -95,7 +99,8 @@ Then, **in `detailed` mode only**, save the artifact to `docs/review/.analyze/<a
 ## Output: Findings Artifact
 
 - Verify that the Findings are complete and valid: `analyze-id`, `prepare-id`, `scope-id`, `review-id`, `input-shape`, `interactionMode`, the findings list, and the per-category / per-severity tallies.
-- Verify **findings coherence** (orchestrator gate #5): every finding has a `severity`, a `category`, a repository-relative `location`, and either a `trace` or `scope-creep: true`.
+- Verify **findings coherence** (orchestrator gate #5): every finding has a `severity`, a `category`, a repository-relative `location`, `evidence` (non-empty for `blocker`/`major`), and exactly one of `trace` or `scope-creep: true`.
+- Verify the Finding Discipline held: no pre-existing-condition findings, one finding per root cause, at most five individually listed `nit`s, and (task-in-review) `tasks` set on every finding located in a task's files.
 - Verify the **scope-creep** category either ran (with `spec-content` not `none`) or is recorded `skipped (no requirements)` — never silently absent, never inventing requirements.
 - Verify severities were **assigned from** [severity-rubric.md](../references/severity-rubric.md) rather than re-defined inline (no second rubric contradicting the authoritative reference).
 - Verify the category checks were **run from** [review-categories.md](../references/review-categories.md) rather than re-encoded inline.

@@ -2,8 +2,8 @@
 title: Work Manifest Artifact
 description: Template for the Work Manifest produced by the Triage phase. Carries the resolved, dependency-ordered task list (one AC per task, one test per task), ready-tasks, related learnings, and any dependency-warning; consumed by Prepare.
 type: template
-version: 1.0
-timestamp: "2026-08-07"
+version: 1.1
+timestamp: "2026-10-23"
 ---
 
 # Work Manifest Artifact
@@ -35,12 +35,13 @@ tasks:
       test: [path/to/test]          # exactly one
     priority: P0 | P1 | P2
     dependencies: [<task-id>, ...]
-    status: not-started | in-progress | completed | blocked | skipped   # current task-file status
+    status: not-started | in-progress | for-review | completed | blocked | skipped   # current task-file status
     risk: low | medium | high                  # carried for execution-mode selection
-    ready: true | false                        # deps completed and status not completed
+    ready: true | false                        # deps satisfied (completed|for-review) and status not-started|in-progress
 
 ready-tasks: [<task-id>, ...]                 # subset of tasks runnable this session
 already-complete-tasks: [<task-id>, ...]      # completed tasks (skipped on resume)
+pending-review-tasks: [<task-id>, ...]        # for-review tasks from earlier runs, carried to Review
 
 related-learnings:                            # per-task; from docs/learn/index.md
   <task-id>:
@@ -53,7 +54,16 @@ learning-gaps:
     suggested_action: "Research external resource" | "Document post-implementation"
 
 dependency-warning: null | proceeded-without-upstream | expanded-to-upstream   # task-file shape only
-work-state: ready | nothing-ready              # nothing-ready if no task is runnable
+work-state: ready | nothing-ready              # nothing-ready if no task is runnable and none is pending review
+
+# Source binding (Triage Step 2a; read-only copy of the plan)
+source: path/to/doc.mdx#section | prompt | unknown
+source-coverage:                               # plan-based only; copied from the plan's Source Coverage table
+  - { item: SC1, title: "[title]", units: [U1] }
+  - { item: SC3, title: "[title]", excluded: "[reason quoted from the plan]" }
+decisions:                                     # Open Decisions resolved at Triage (also appended to the task index)
+  - { id: OD1, answer: "[answer]", by: user | recommended-default }
+suggestions: []                                # ad-hoc only: extras the user did not ask for
 ```
 
 In `detailed` mode only, also save the manifest to `docs/plans/.work/.triage/<triage-id>.md` for future reference or reuse. In `smart`/`autopilot` mode, do not write it; pass it to the next phase in context.
@@ -72,11 +82,14 @@ In `detailed` mode only, also save the manifest to `docs/plans/.work/.triage/<tr
   - exactly one `acceptance-criterion` and exactly one `files.test` entry
   - `files` repository-relative
   - `dependencies` referencing task-ids that exist (plan-based: in the index; task-file/ad-hoc: in the manifest or parent plan)
-- **ready-tasks:** Required (may be empty). Subset of `tasks` whose dependencies are all `completed` and whose status is not `completed`.
+- **ready-tasks:** Required (may be empty). Subset of `tasks` whose dependencies are all satisfied (`completed` or `for-review`) and whose status is `not-started` or `in-progress`.
 - **already-complete-tasks:** Required (may be empty). Tasks with `status: completed` — skipped on resume.
 - **related-learnings:** Required (may be empty per task). References `docs/learn/index.md` entries.
 - **dependency-warning:** Required for the task-file shape (`proceeded-without-upstream` or `expanded-to-upstream` record the upstream-dep decision); `null` for other shapes.
 - **work-state:** Required. `nothing-ready` if `ready-tasks` is empty and no task is runnable.
+- **pending-review-tasks:** Required (may be empty). Tasks at `for-review` from an earlier run; Execute skips them, Review evaluates them.
+- **source / source-coverage / decisions:** Required for plan-based input (`source: unknown` with a warning when the plan file is missing); `source: prompt` for ad-hoc and task-file input without a plan. Every Open Decision affecting a runnable task has an entry in `decisions`.
+- **risk:** Required per task. Judged by consequence, not keywords — see the risk floor in [execution-mode-selection.md](../../execution-mode-selection.md).
 
 ## Example (plan-based)
 
@@ -109,6 +122,10 @@ related-learnings:
 learning-gaps: []
 dependency-warning: null
 work-state: ready
+source: prompt
+source-coverage: []
+decisions: []
+suggestions: []
 ```
 
 ## Notes

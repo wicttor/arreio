@@ -150,17 +150,17 @@ Work executes tasks Red → Green → Refactor, then updates task status to `com
 **Implementation:**
 
 1. **Work Review Phase 4** (lightweight pre-check):
-   - Simplify, consolidate, run regression check (binary: any failure = gate blocks), detect scope-creep (any finding = gate blocks)
-   - If `regression-check: regressions-found` **OR** `scope-creep` findings exist → tasks enter `status: for-review` (not `completed`)
-   - Else → tasks move to `status: completed`
+   - Execute leaves every green task at `status: for-review` and records a touched-files ledger per task
+   - Review simplifies, consolidates, runs the regression check (any failure holds every task) and compares each ledger to the task's declared files (a finding holds only that task)
+   - Tasks without findings are promoted to `status: completed` (checkboxes ticked at that moment); held tasks stay `for-review`
    - Surface learnings-to-capture for later `/learn` invocation (orthogonal to approval)
 
 2. **Standalone Review** (definitive audit):
    - New input shape: **task-in-review** — accepts `/review <work-id>`, discovers `status: for-review` tasks
    - Runs full 4-phase audit (Scope → Prepare → Analyze → Report)
-   - Report phase (new behavior): updates task file frontmatter based on approval verdict:
-     - If `approved` → `status: completed`
-     - If `changes-requested` → `status: blocked` (with reason)
+   - Report phase: derives a verdict per task from the findings attributed to it and updates task files:
+     - `approved` → `status: completed` (checkboxes ticked)
+     - `changes-requested` / `rejected` → `status: blocked` with `block-reason` and `blocked-by: review:<report-id>`; re-running `/review <work-id>` re-evaluates it
    - Idempotent on `report-id`
 
 3. **Learn Skill** (durable knowledge):
@@ -178,20 +178,20 @@ Execute tasks (Red → Green → Refactor)
   ↓
 Work Review Phase 4:
   - Simplify & consolidate
-  - Regression check (any failure = gate)
-  - Scope-creep detection (any finding = gate)
-  - Learnings summary (for later /learn)
+  - Regression check (any failure holds all tasks)
+  - Scope-creep detection from the ledger (a finding holds its task)
+  - Source-coverage rollup, learnings summary (for later /learn)
   ↓
-If regression/scope-creep:
-  - Tasks → status: for-review
+Clean tasks: for-review → completed
+Held tasks (regression/scope-creep): stay for-review
   ↓
 User runs /review <work-id>  (if for-review tasks exist)
   ↓
 Standalone Review (full audit):
   - Scope → Prepare → Analyze → Report
-  - Report updates task status:
-    - approved → status: completed
-    - changes-requested → status: blocked
+  - Report updates each task by its own verdict:
+    - approved → status: completed (checkboxes ticked)
+    - changes-requested/rejected → status: blocked (blocked-by: review:<report-id>)
   ↓
 User runs /learn <work-id>  (optional; orthogonal to approval)
   ↓
