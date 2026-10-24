@@ -103,7 +103,7 @@ Plan 003 for soulcrystals M2 matched the source one-to-one but its review found 
 
 ### Changed
 
-- **npm discoverability.** Rewrote the package description, expanded keywords (agent skills, Claude Code, Codex, Copilot, Cursor, TDD, slash commands, etc.), made `author` an object with a profile URL, and now publish `CHANGELOG.md` and `ARCHITECTURE.md`.
+- **npm discoverability.** Rewrote the package description, expanded keywords (agent skills, Codex, Copilot, Cursor, TDD, slash commands, etc.), made `author` an object with a profile URL, and now publish `CHANGELOG.md` and `ARCHITECTURE.md`.
 
 ## [1.2.0] - 2026-10-01
 
